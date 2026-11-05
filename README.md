@@ -1,7 +1,8 @@
 # Erdős research
 
 PGAL's workspace for open Erdős problems ([erdosproblems.com](https://www.erdosproblems.com)),
-starting with Sidon sets. Results are formalised in Lean 4 with Mathlib, so that every claim
+starting with Sidon sets. #43 turned out to be resolved (`notes/erdos-43-status.md`); the current
+problem is #1052, unitary perfect numbers (`notes/erdos-1052.md`). Results are formalised in Lean 4 with Mathlib, so that every claim
 is checked by the compiler, not by trust.
 
 - `ErdosResearch/`: definitions, statements and proofs.
