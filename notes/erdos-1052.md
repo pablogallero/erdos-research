@@ -83,3 +83,27 @@ only `propext`, `Classical.choice`, `Quot.sound`):
 4. Only then look for a new partial result: extend Wall's bound (≥ 9 odd prime factors) or
    close cases of `H_even` from the 2026 paper. Before calling it new, check the literature
    again.
+
+## Daily summary (2026-11-05)
+
+- **Approaches tried:** (a) status check of #43 on erdosproblems.com, arXiv and
+  formal-conjectures → resolved, so dropped; (b) choice of #1052 from the teorth table
+  (prize, Lean statement, little attention); (c) Lean base for #1052: definition equivalence,
+  multiplicativity of `σ*`, parity, the case with ≤ 1 odd prime factor, the five known examples.
+- **What failed and why:** `set` + `omega` (omega unfolds the definition; fixed with
+  `clear_value`); `decide` on large examples (too slow; replaced by multiplicativity +
+  `norm_num`). The two-odd-primes classification was not reached in this session.
+- **Advances:** formal base compiled without `sorry` or added axioms. No mathematically new
+  result.
+- **Quota consumed:** one `lean-research` session (2 h limit), within budget. The exact token
+  count is not visible from inside the session, so it is not reported here; PGAL should take it
+  from its own accounting. No money spent, no Mathlib build (cache only), AWS priority untouched.
+
+## Not verified
+
+- **Task #49 / PART 1 / `docs/cost-analysis.md`:** the email says PART 1 is done in
+  `docs/cost-analysis.md`. That file does **not** exist in this repo (there is no `docs/`
+  directory) and the GitHub API gives 404 when looking for it elsewhere. The reference to task
+  #49 and to PART 1 is therefore **not verified**.
+- General web search (no egress beyond lean-lang, erdosproblems and arXiv).
+- Wall / Frey / Goto results, cited from memory.
