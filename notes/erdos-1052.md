@@ -228,6 +228,62 @@ Parity and "power of two" are not needed; coprimality alone kills the spurious i
    which needs `k = 5…8` (out of reach with this tree). The deliverable is the formalisation.
    Formal-conjectures could take it, but I will not publish it without Pablo's approval.
 
+## Session 4 (2026-11-06): proved, failed, next step
+
+**Proved (Lean; no sorry; axioms `propext`, `Classical.choice`, `Quot.sound` only; `lake build`
+OK, 7356 jobs, ~45 s, new module ~34 s):** `ErdosResearch/UnitaryPerfectFiveOdd.lean`
+- `upnCheck`: a Boolean search over `y₁ < ⋯ < y_r`, pairwise coprime, coprime to a prefix
+  `pre`, with entries `≥ L`. It returns `true` only if `Q · ∏(1+y) = 2P · ∏y` has no
+  solution. Its steps: `2P ≤ Q` ⇒ none; one variable ⇒ linear (`y = Q/(2P−Q)`); a bound
+  `Q·(L+1)⋯(L+r) < 2P·L⋯(L+r−1)` ⇒ none; otherwise split into `y₁ = L` (pruned by gcd) or
+  `y₁ ≥ L+1`.
+- `upnCheck_sound`: the soundness proof, once and for all (induction on the fuel). The key
+  lemma is `prod_succ_mul_le`: for sorted entries `≥ L`,
+  `∏(1+y) · L⋯(L+r−1) ≤ ∏y · (L+1)⋯(L+r)`.
+- `upnCheck_six : upnCheck 5000 1 1 2 [] 6 = true := by decide +kernel`. The kernel evaluates it
+  in ~30 s (29392 nodes, depth 2087, using GMP arithmetic on `Nat`). This is reflection, not
+  `native_decide`, so no extra axiom.
+- `not_isUnitaryPerfect_of_card_primeFactors_eq_six`: **there is no UPN with exactly 5 odd prime
+  factors.**
+- `isUnitaryPerfect_of_card_primeFactors_le_six_iff`: **ω(n) ≤ 6 ⇒ n ∈ {6, 60, 90, 87360}.**
+- `scripts/upn_search_count.py R [--ppow]`: the same search in Python, used to count nodes before
+  running it in the kernel.
+- **Not new mathematically.** It is implied by Wall 1988 (≥ 9 odd prime factors for a sixth UPN,
+  cited second-hand). It is new only as a formalisation.
+
+**Decision and why:** I dropped the session 3 plan (shrinking the generated `linarith` tree)
+in favour of reflection. A ~120× bigger tree meant a ~100k-line file and 1–2 h of compilation.
+With reflection the proof is ~200 lines and 30 s. The bound "ratio ≤ ∏(L+1+j)/(L+j)" (because
+`(1+y)/y` decreases) is much simpler to prove in general than the positivity of polynomial
+coefficients used by the old generator. The old tree for k = 4 stays as it is: it works, and
+there was no reason to touch it.
+
+**Failed / lessons:**
+- First version of the checker: the `2P ≤ Q` branch returned `true`, which is **unsound** when
+  `P = Q = 0` (`0 = 0`). The soundness proof would not close, and that is how I found it. Fix:
+  return `0 < Q`.
+- `rw [hq]` with `hq : Q = …` also rewrites the `Q` inside the denominator. Use
+  `Nat.div_eq_of_eq_mul_left` / `Nat.mod_eq_zero_of_dvd` directly.
+- **k = 6 (7 factors) is not feasible with this checker as is.** With coprimality only it needs
+  20.9M nodes, and it finds the spurious solution `(3,5,7,13,67,1741,8704)`, where
+  `8704 = 2⁹·17` is not a prime power. With prime-power pruning it needs 5.8M nodes and finds no
+  solution. At ~1000 nodes/s in the kernel that is ≥ 1.5 h, over the CI limit (60 min).
+
+**Next step (in order):**
+1. k = 6 (7 factors). Shrink the search before giving it to the kernel:
+   (a) 2-adic constraint: `1 + 2^a` is odd and every `1 + p^e` is even, so
+   `a + 1 = Σ v₂(1 + pᵢ^eᵢ) ≥ k`, i.e. the even factor is `≥ 2^{k−1}`. Also, each `pᵢ^eᵢ ≡ 3
+   (mod 4)` contributes `v₂ ≥ 2`;
+   (b) a prime-power check in the checker (`IsPrimePow`, by trial division with fuel);
+   (c) with two variables left, use `(dy − Q)(dz − Q) = Q(Q + d)` (`d = 2P − Q`) instead of walking
+   `y` up to its bound. Measure each idea with `scripts/upn_search_count.py` first. Aim for
+   < 1M nodes. If it does not fit, split by `y₁` into several modules.
+2. Optional: redo k ≤ 4 with `upnCheck` (an extension that returns the solutions, to allow
+   87360) and remove the ~900 generated lines. This is cosmetic, low priority.
+3. Honest assessment (unchanged): reaching k = 8 would reproduce Wall 1988 by computation, and
+   it is not new. Something new would need k ≥ 9, which a naive search cannot reach. The value
+   is the formalisation. formal-conjectures could take it, but only with Pablo's approval.
+
 ## Daily summary (2026-11-05)
 
 - **Approaches tried:** (a) status check of #43 on erdosproblems.com, arXiv and
@@ -272,6 +328,22 @@ Parity and "power of two" are not needed; coprimality alone kills the spurious i
   session, so PGAL should take them from its own accounting. About 15 compilations (scratch files
   + `lake build`), Mathlib from cache only, never compiled. Two zbMATH queries. No money spent.
 
+## Daily summary (2026-11-06, session 4)
+
+- **Approaches tried:** (a) a reflective checker `upnCheck` + its soundness proof + `decide
+  +kernel` for k = 5 odd primes; (b) measuring k = 6 in Python (coprimality only, and with
+  prime-power pruning).
+- **What failed and why:** the first checker was unsound for `P = Q = 0` (the soundness proof
+  caught it). k = 6 needs 5.8M nodes even with prime-power pruning, too many for the kernel within
+  the CI.
+- **Advances:** no UPN with exactly 5 odd prime factors, so `ω(n) ≤ 6 ⇒ n ∈ {6, 60, 90, 87360}`.
+  In Lean, without `sorry`, with standard axioms only. Known mathematically (Wall 1988,
+  second-hand). No new mathematical result.
+- **Quota consumed:** one `lean-research` session. I cannot see exact tokens from inside the
+  session (PGAL should use its own accounting). About 8 compilations, Mathlib from cache only,
+  never compiled. Python counts: ~35 s for k = 6 and a few minutes with `--ppow`. No network
+  queries. No money spent.
+
 ## Not verified
 
 - **Task #49 / PART 1 / `docs/cost-analysis.md`:** the email says PART 1 is done in
@@ -284,5 +356,4 @@ Parity and "power of two" are not needed; coprimality alone kills the spurious i
   Graham 1989 are not confirmed.
 - The gap in Prop. 1.1 of arXiv:2605.20475 is my own reading. Nobody else has checked it.
 - Who first proved "≤ 4 odd prime factors ⇒ {6, 60, 90, 87360}": zbMATH has no review of
-  Subbarao–Warren 1966 or of SCNW 1972. The "no UPN with 5 odd prime factors" from the `k = 5` count
-  is my own computation (a Python script), not checked in Lean yet.
+  Subbarao–Warren 1966 or of SCNW 1972. "No UPN with 5 odd prime factors" is now checked in Lean (session 4).
