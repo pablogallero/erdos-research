@@ -21,6 +21,10 @@ What is proved here (all already known mathematically; see `notes/erdos-1052.md`
 * `even_of_isUnitaryPerfect`: every unitary perfect number is even.
 * `eq_six_of_isUnitaryPerfect_of_card_primeFactors_le_two`: the only unitary perfect number with
   at most one odd prime factor is `6`.
+* `eq_sixty_or_ninety_of_isUnitaryPerfect_of_card_primeFactors_eq_three`: with exactly two odd
+  prime factors, the only ones are `60` and `90`.
+* `isUnitaryPerfect_of_card_primeFactors_le_three_iff`: with at most two odd prime factors, the
+  unitary perfect numbers are exactly `6`, `60` and `90`.
 * `isUnitaryPerfect_6`, `_60`, `_90`, `_87360`, `_146361946186458562560000`: the five known
   examples (the last two via multiplicativity, which keeps them fast).
 -/
@@ -297,6 +301,119 @@ theorem eq_six_of_isUnitaryPerfect_of_card_primeFactors_le_two {n : ℕ} (h : Is
     have hX2 : X = 2 := by nlinarith
     rw [← hnm, hYX, hX2]
 
+/-! ## Exactly two odd prime factors -/
+
+/-- Splitting off the full power of a prime `p ∣ m`: `m = p ^ e * r` with `p ∤ r`, and `r`
+has one prime factor fewer than `m`. -/
+lemma exists_split_of_dvd {m p : ℕ} (hp : p.Prime) (hm0 : m ≠ 0) (hpm : p ∣ m) :
+    ∃ e r, 0 < e ∧ (p ^ e).Coprime r ∧ p ^ e * r = m ∧
+      r.primeFactors.card + 1 = m.primeFactors.card := by
+  refine ⟨m.factorization p, m / p ^ m.factorization p, hp.factorization_pos_of_dvd hm0 hpm,
+    (Nat.coprime_ordCompl hp hm0).pow_left _, Nat.ordProj_mul_ordCompl_eq_self m _, ?_⟩
+  have he : 0 < m.factorization p := hp.factorization_pos_of_dvd hm0 hpm
+  have hcop : Nat.Coprime p (m / p ^ m.factorization p) := Nat.coprime_ordCompl hp hm0
+  have hmr := Nat.ordProj_mul_ordCompl_eq_self m p
+  set e := m.factorization p
+  set r := m / p ^ e
+  clear_value e r
+  have hpr : p ∉ r.primeFactors := fun h =>
+    hp.one_lt.ne' (Nat.Coprime.eq_one_of_dvd hcop (Nat.dvd_of_mem_primeFactors h))
+  rw [← hmr, Nat.Coprime.primeFactors_mul (hcop.pow_left e),
+    Nat.primeFactors_prime_pow he.ne' hp, ← insert_eq, card_insert_of_notMem hpr]
+
+/-- Arithmetic core of the case with two odd prime factors (sorted). -/
+lemma arith_sorted {a P Q : ℕ} (ha : 0 < a) (hP : P % 2 = 1) (hQ : Q % 2 = 1) (hP1 : 1 < P)
+    (hPQ : P < Q) (h : (1 + 2 ^ a) * (1 + P) * (1 + Q) = 2 * 2 ^ a * P * Q) :
+    2 ^ a * P * Q = 60 ∨ 2 ^ a * P * Q = 90 := by
+  have hP3 : 3 ≤ P := by omega
+  have hQ5 : 5 ≤ Q := by omega
+  rcases (show a = 1 ∨ a = 2 ∨ 3 ≤ a by omega) with rfl | rfl | ha3
+  · right
+    norm_num at h ⊢
+    rcases (show P = 3 ∨ P = 5 ∨ 7 ≤ P by omega) with rfl | rfl | hP7
+    · omega
+    · omega
+    · exfalso
+      have hQ9 : 9 ≤ Q := by omega
+      nlinarith [Nat.mul_le_mul (show 4 ≤ P - 3 by omega) (show 6 ≤ Q - 3 by omega)]
+  · left
+    norm_num at h ⊢
+    rcases (show P = 3 ∨ 5 ≤ P by omega) with rfl | hP5
+    · omega
+    · exfalso
+      have hQ7 : 7 ≤ Q := by omega
+      nlinarith [Nat.mul_le_mul hP5 hQ7]
+  · exfalso
+    set X := 2 ^ a with hX
+    have hX8 : 8 ≤ X := by
+      calc 8 = 2 ^ 3 := by norm_num
+        _ ≤ 2 ^ a := Nat.pow_le_pow_right (by norm_num) ha3
+    clear_value X
+    obtain ⟨x, rfl⟩ : ∃ x, X = x + 8 := ⟨X - 8, by omega⟩
+    obtain ⟨p, rfl⟩ : ∃ p, P = p + 3 := ⟨P - 3, by omega⟩
+    obtain ⟨q, rfl⟩ : ∃ q, Q = q + 5 := ⟨Q - 5, by omega⟩
+    ring_nf at h
+    nlinarith [Nat.zero_le (x * p), Nat.zero_le (x * q), Nat.zero_le (p * q),
+      Nat.zero_le (x * p * q)]
+
+/-- `(1 + 2^a)(1 + P)(1 + Q) = 2^{a+1} P Q` with `P ≠ Q` odd and `> 1` forces
+`2^a P Q ∈ {60, 90}`. -/
+lemma arith_two_odd {a P Q : ℕ} (ha : 0 < a) (hP : P % 2 = 1) (hQ : Q % 2 = 1) (hP1 : 1 < P)
+    (hQ1 : 1 < Q) (hPQ : P ≠ Q) (h : (1 + 2 ^ a) * (1 + P) * (1 + Q) = 2 * 2 ^ a * P * Q) :
+    2 ^ a * P * Q = 60 ∨ 2 ^ a * P * Q = 90 := by
+  rcases lt_or_gt_of_ne hPQ with hlt | hlt
+  · exact arith_sorted ha hP hQ hP1 hlt h
+  · have h' : (1 + 2 ^ a) * (1 + Q) * (1 + P) = 2 * 2 ^ a * Q * P := by
+      rw [mul_right_comm, h]; ring
+    have := arith_sorted ha hQ hP hQ1 hlt h'
+    rwa [mul_right_comm (2 ^ a) Q P] at this
+
+/-- The only unitary perfect numbers with exactly two odd prime factors are `60` and `90`
+(Subbarao–Warren 1966; elementary). -/
+theorem eq_sixty_or_ninety_of_isUnitaryPerfect_of_card_primeFactors_eq_three {n : ℕ}
+    (h : IsUnitaryPerfect n) (hcard : n.primeFactors.card = 3) : n = 60 ∨ n = 90 := by
+  have hev := even_of_isUnitaryPerfect h
+  rw [isUnitaryPerfect_iff] at h
+  obtain ⟨hs, hpos⟩ := h
+  have hn0 : n ≠ 0 := hpos.ne'
+  have h2n : 2 ∣ n := even_iff_two_dvd.1 hev
+  -- `n = 2 ^ a * m` with `m` odd and with two prime factors.
+  obtain ⟨a, m, ha, hc2, hnm, hcm⟩ := exists_split_of_dvd Nat.prime_two hn0 h2n
+  have hm0 : m ≠ 0 := by rintro rfl; rw [mul_zero] at hnm; exact hn0 hnm.symm
+  have hm2 : m.primeFactors.card = 2 := by omega
+  have hm1 : 1 < m := by
+    by_contra hle
+    interval_cases m <;> simp at hm2
+  have hmodd : m % 2 = 1 := Nat.odd_iff.1 <|
+    (Nat.coprime_two_left.1 (Nat.Coprime.coprime_dvd_left (dvd_pow_self 2 ha.ne') hc2))
+  -- `m = p ^ e * r` and `r = q ^ f`.
+  have hp := Nat.minFac_prime (show m ≠ 1 by omega)
+  obtain ⟨e, r, he, hcpr, hmr, hcr⟩ := exists_split_of_dvd hp hm0 (Nat.minFac_dvd m)
+  have hr1 : r.primeFactors.card = 1 := by omega
+  obtain ⟨q, f, hq, hf, hqf⟩ :=
+    (isPrimePow_nat_iff r).1 (isPrimePow_iff_card_primeFactors_eq_one.2 hr1)
+  subst hqf
+  set P := m.minFac ^ e with hPdef
+  set Q := q ^ f with hQdef
+  have hP1 : 1 < P := Nat.one_lt_pow he.ne' hp.one_lt
+  have hQ1 : 1 < Q := Nat.one_lt_pow hf.ne' hq.one_lt
+  have hPQ : P ≠ Q := by
+    intro hEq
+    rw [← hEq, Nat.coprime_self] at hcpr
+    omega
+  have hPodd : P % 2 = 1 := Nat.odd_iff.1 <|
+    (Nat.odd_iff.2 hmodd).of_dvd_nat (Dvd.intro _ hmr)
+  have hQodd : Q % 2 = 1 := Nat.odd_iff.1 <|
+    (Nat.odd_iff.2 hmodd).of_dvd_nat (Dvd.intro_left _ hmr)
+  have hsig : usigma n = (1 + 2 ^ a) * (1 + P) * (1 + Q) := by
+    rw [← hnm, ← hmr, usigma_mul (by rwa [hmr]), usigma_mul hcpr, usigma_prime_pow
+      Nat.prime_two ha, usigma_prime_pow hp he, usigma_prime_pow hq hf, mul_assoc]
+  have heq : (1 + 2 ^ a) * (1 + P) * (1 + Q) = 2 * 2 ^ a * P * Q := by
+    rw [← hsig, hs, ← hnm, ← hmr]; ring
+  clear_value P Q
+  have := arith_two_odd ha hPodd hQodd hP1 hQ1 hPQ heq
+  rwa [mul_assoc, hmr, hnm] at this
+
 /-! ## The known examples -/
 
 /-- Peeling off one prime power factor, in the form used for the examples below. -/
@@ -334,5 +451,21 @@ theorem isUnitaryPerfect_146361946186458562560000 :
   repeat rw [usigma_prime_pow_mul (by norm_num) (by norm_num) (by norm_num)]
   rw [usigma_one]
   norm_num
+
+/-! ## At most two odd prime factors: the classification -/
+
+/-- Classification of unitary perfect numbers with at most three prime factors (i.e. at most two
+odd prime factors): they are exactly `6`, `60` and `90`. -/
+theorem isUnitaryPerfect_of_card_primeFactors_le_three_iff {n : ℕ}
+    (hcard : n.primeFactors.card ≤ 3) : IsUnitaryPerfect n ↔ n = 6 ∨ n = 60 ∨ n = 90 := by
+  constructor
+  · intro h
+    rcases (show n.primeFactors.card ≤ 2 ∨ n.primeFactors.card = 3 by omega) with h2 | h3
+    · exact Or.inl (eq_six_of_isUnitaryPerfect_of_card_primeFactors_le_two h h2)
+    · exact Or.inr (eq_sixty_or_ninety_of_isUnitaryPerfect_of_card_primeFactors_eq_three h h3)
+  · rintro (rfl | rfl | rfl)
+    · exact isUnitaryPerfect_6
+    · exact isUnitaryPerfect_60
+    · exact isUnitaryPerfect_90
 
 end ErdosResearch.Erdos1052

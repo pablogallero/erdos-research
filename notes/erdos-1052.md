@@ -39,15 +39,48 @@ Checked on arXiv on 2026-11-05:
   Subbarao–Warren problem*. **It does not prove finiteness.** It eliminates "impostor
   kernels" for `1 ≤ a ≤ 10000` (with `2^a ∥ n`) and reduces what remains to a set `H_even` of
   `m` such that every prime factor of `2^m + 1` is "3-Higgs", bounding `|H_even ∩ [2, 50000]| ≤ 272`.
-  **Read it in full before calling anything about the 2-adic structure new.**
+  **Read in full in session 2 (LaTeX source from arXiv); see "Reading of arXiv:2605.20475" below.**
 - Nothing else on arXiv about unitary perfect *integers* (only polynomials over `F_2`/`F_4`).
 
-From memory, **not checked against the source** (journals not reachable):
-- Subbarao–Warren (1966): definition, the first four, no odd ones.
-- Wall (1975): the fifth, 146361946186458562560000.
-- Wall (1988, Fibonacci Quart.): a new unitary perfect number has at least 9 odd prime factors.
-- Frey (1978): if `3 ∤ n`, then `n` has at least 144 odd prime factors (approximate).
-- Goto (2007): `n < 2^{2^k}` if `n` has `k` odd prime factors (so finitely many for each `k`).
+Bibliographic existence **checked on zbMATH Open on 2026-11-06** (title search "unitary perfect").
+The contents were not read; the journals are not reachable:
+- Subbarao–Warren, *Unitary perfect numbers*, Can. Math. Bull. 9 (1966) 147–153, Zbl 0139.26901:
+  definition, the first four, no odd ones.
+- Wall, *The fifth unitary perfect number*, Can. Math. Bull. 18 (1975) 115–122, Zbl 0312.10004.
+- Frey, *On unitary perfect numbers*, Elem. Math. 33 (1978) 95–96, Zbl 0382.10004. (The content
+  "if `3 ∤ n`, at least 144 odd prime factors" is from memory and **not checked**.)
+- Goto, *Upper bounds for unitary perfect numbers and unitary harmonic numbers*, Rocky Mt. J.
+  Math. 37 (2007) 1557–1576, Zbl 1141.11006. (The content "`n < 2^{2^k}` with `k` odd prime
+  factors" is from memory and **not checked**.)
+- Also listed: Subbarao–Cook–Newberry–Weber, Delta 3 (1972), Zbl 0251.10007; DeBoer, *Non-existence
+  of certain unitary perfect numbers*, Pi Mu Epsilon J. 9 (1993), Zbl 0805.11006; He Bo, J. Guizhou
+  Norm. Univ. 23 (2005), Zbl 1128.11302. Not read.
+- Wall 1988 ("at least 9 odd prime factors") and Graham 1989 ("squarefree odd part ⇒ 6, 60,
+  87360; some prime > 2^15") are cited like this in arXiv:2605.20475. zbMATH has entries
+  Zbl 0657.10003 (1988) and Zbl 0678.10004 (1989), but their metadata is hidden ("contents
+  unavailable due to conflicting licenses"), so I **cannot confirm** that they are these papers.
+  The paper also cites Hagis for `ω(n) ≥ 7`; I have not checked that.
+
+## Reading of arXiv:2605.20475 (session 2)
+
+What it claims as rigorous: the 3-filter elimination of five "impostor kernels" for
+`a ≤ 10000`; the bounds `|H_even ∩ [2,40000]| ≤ 201` and `|H_even ∩ [2,50000]| ≤ 272`; the reduction
+of finiteness of `H_even` to `m = 2p`; a thinness theorem via Ford. It explicitly says it does
+**not** prove finiteness. Everything that is conditional (H1, H2, several conjectures) is
+labelled as such.
+
+**Gap I found (my reading, not checked by anyone else):** the whole link from UPNs to `H_even`
+goes through Proposition 1.1, "every prime divisor of a UPN is 3-Higgs". The proof as written
+does not work:
+- It uses `q ∣ p − 1 ∣ p^e + 1`, but `p^e + 1 ≡ 2 (mod p − 1)`, so `p − 1 ∤ p^e + 1` once
+  `p > 3`. (The divisibility that does hold is `p + 1 ∣ p^e + 1` for odd `e`.)
+- It gets the exponent caps `v_q(p−1) ≤ 3` from "the kernel exponents in the box enforce this".
+  That is circular for a general UPN.
+- I do not see why, say, 17 (with `17 − 1 = 2^4`, so not 3-Higgs) could not divide a UPN.
+So filter N, and with it `H_even`, are about the 3-Higgs constraint, which is not proved to hold
+for UPNs. The paper's results do not constrain UPNs unless that proposition gets a correct proof.
+**Consequence for us:** do not build on `H_even`. The paper's frontier is not a reliable target
+for a partial result. Per the rules I do not contact the author.
 
 ## Session 1 (2026-11-05): proved, failed, next step
 
@@ -73,16 +106,49 @@ only `propext`, `Classical.choice`, `Quot.sound`):
   keeps `n.factorization p` and later `rw` calls do not match.
 - `decide` on the definition is fine up to 90; for larger numbers, use multiplicativity.
 
+**Next step at the end of session 1 (superseded; see session 2):** read arXiv:2605.20475; classify
+the case with two odd primes; formalise finiteness for fixed `k`; then look for something new.
+
+## Session 2 (2026-11-06): proved, failed, next step
+
+**Done:**
+- Read arXiv:2605.20475 in full (LaTeX source; the PDF cannot be rendered here). There is a gap
+  in its Proposition 1.1 (see above). Decision: do not use `H_even`.
+- Checked on zbMATH that the classical references exist (list above).
+- **Lean** (`ErdosResearch/UnitaryPerfect.lean`, `lake build` OK, no `sorry`, axioms only
+  `propext`, `Classical.choice`, `Quot.sound`):
+  - `exists_split_of_dvd`: `m = p^e · r` with `p ∤ r` and `ω(r) = ω(m) − 1` (general; reusable
+    for any `k`).
+  - `arith_sorted`, `arith_two_odd`: `(1+2^a)(1+P)(1+Q) = 2^{a+1}PQ` with `P ≠ Q` odd and `> 1`
+    ⇒ `2^a P Q ∈ {60, 90}`. The argument: `a ≥ 3` is impossible by a size bound; for `a = 1` it
+    reduces to `(P−3)(Q−3) = 12`, and for `a = 2` to `(3P−5)(3Q−5) = 40`.
+  - `eq_sixty_or_ninety_of_isUnitaryPerfect_of_card_primeFactors_eq_three`.
+  - `isUnitaryPerfect_of_card_primeFactors_le_three_iff`: with at most two odd prime factors,
+    the UPNs are exactly `6, 60, 90`.
+- **Not new mathematically** (Subbarao–Warren 1966). It is new only as a formalisation, as far as
+  I know; formal-conjectures has only the statement.
+
+**Failed / lessons:**
+- `nlinarith` could not do the bound `2XPQ > (1+X)(1+P)(1+Q)` for `X ≥ 8, P ≥ 3, Q ≥ 5` directly,
+  even with product hints. Fix: shift the variables (`X = x+8`, `P = p+3`, `Q = q+5`), then
+  `ring_nf`, and then `nlinarith` with the nonnegative monomials `xp, xq, pq, xpq`. Since every
+  coefficient is positive, it closes at once. Reuse this trick for `k = 3`.
+- The PDF reader needs `pdftoppm` (not installed). Use the arXiv source at `arxiv.org/e-print/ID`.
+
 **Next step (in order):**
-1. Read arXiv:2605.20475 in full and write down what it proves and what it leaves open.
-2. Lean: the classification with exactly two odd prime factors (`{60, 90}`). Equation
-   `(1+2^a)(1+p^e)(1+q^f) = 2^{a+1} p^e q^f`. Goal: a general lemma "`n` with `k` odd prime
-   factors ⇒ `2^k ∣ σ*(n)` ⇒ `a ≥ k − 1`", useful for every `k`.
-3. Formalise the finiteness for fixed `k` (Subbarao/Goto). That would be a substantial formal
-   result even though it is known.
-4. Only then look for a new partial result: extend Wall's bound (≥ 9 odd prime factors) or
-   close cases of `H_even` from the 2026 paper. Before calling it new, check the literature
-   again.
+1. `k = 3` odd prime factors: prove that there is **no** UPN (87360 has 4). Same scheme, using
+   `exists_split_of_dvd` twice. The arithmetic needs more cases. Use the 2-adic balance:
+   `v₂((1+P)(1+Q)(1+R)) = a + 1`, so `a ≥ 2`, together with the bound
+   `∏(1+1/x) = 2`. Before writing it, do it by hand or with a small script to get the finite
+   list of `(a, P)` cases.
+2. Better than case-by-case: a general lemma "`n` has `k` odd prime factors ⇒ `2^k ∣ σ*(m)` ⇒
+   `a ≥ k − 1`" and a "smallest prime power is bounded" lemma. They are the building blocks of a
+   formal finiteness theorem for fixed `k` (Goto-type), which would be a substantial formal
+   result.
+3. Honest assessment: a mathematically new result (beyond Wall's ≥ 9 odd components) needs a
+   computer search far beyond what can be certified in Lean in a session. The realistic
+   deliverable is the formalisation (`k ≤ 3` or `k ≤ 4` classified; finiteness for fixed `k`).
+   Formal-conjectures could take that, but I will not publish it without Pablo's approval.
 
 ## Daily summary (2026-11-05)
 
@@ -99,6 +165,19 @@ only `propext`, `Classical.choice`, `Quot.sound`):
   count is not visible from inside the session, so it is not reported here; PGAL should take it
   from its own accounting. No money spent, no Mathlib build (cache only), AWS priority untouched.
 
+## Daily summary (2026-11-06)
+
+- **Approaches tried:** (a) full reading of arXiv:2605.20475; (b) checking the references on
+  zbMATH; (c) Lean classification of the case with two odd primes.
+- **What failed and why:** the PDF route (no renderer; I used the LaTeX source). Direct
+  `nlinarith` on the size bound (it needed shifted variables). The 2026 paper does not work as
+  a base, because its Prop. 1.1 has a gap.
+- **Advances:** UPNs with at most two odd prime factors = `{6, 60, 90}`, in Lean without `sorry`.
+  It is known mathematically. No new mathematical result yet.
+- **Quota consumed:** one `lean-research` session. Exact tokens are not visible from inside, so
+  PGAL should take them from its own accounting. About 5 builds of the repo file (Mathlib from
+  cache, never compiled). No money spent.
+
 ## Not verified
 
 - **Task #49 / PART 1 / `docs/cost-analysis.md`:** the email says PART 1 is done in
@@ -106,4 +185,7 @@ only `propext`, `Classical.choice`, `Quot.sound`):
   directory) and the GitHub API gives 404 when looking for it elsewhere. The reference to task
   #49 and to PART 1 is therefore **not verified**.
 - General web search (no egress beyond lean-lang, erdosproblems and arXiv).
-- Wall / Frey / Goto results, cited from memory.
+- Wall / Frey / Goto: on 2026-11-06 I confirmed on zbMATH that the papers exist. Their exact
+  *contents* (bounds) are still from memory or second-hand via arXiv:2605.20475. Wall 1988 and
+  Graham 1989 are not confirmed.
+- The gap in Prop. 1.1 of arXiv:2605.20475 is my own reading. Nobody else has checked it.
