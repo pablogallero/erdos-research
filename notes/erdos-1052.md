@@ -55,6 +55,11 @@ The contents were not read; the journals are not reachable:
 - Also listed: Subbarao–Cook–Newberry–Weber, Delta 3 (1972), Zbl 0251.10007; DeBoer, *Non-existence
   of certain unitary perfect numbers*, Pi Mu Epsilon J. 9 (1993), Zbl 0805.11006; He Bo, J. Guizhou
   Norm. Univ. 23 (2005), Zbl 1128.11302. Not read.
+- **Graham 1989 confirmed second-hand on 2026-11-06:** the zbMATH review of DeBoer 1993
+  (Zbl 0805.11006) says that S. W. Graham, Fibonacci Q. 27 (1989) 317–322, Zbl 0678.10004, showed
+  that 6, 60 and 87360 are the only UPNs `2^m s` with `s` odd and squarefree. It also says that DeBoer
+  shows 90 is the only one of the form `2^m 3^2 s` (`s` squarefree, coprime to 6).
+  The review of Subbarao–Cook–Newberry–Weber 1972 is empty, so its content is unknown.
 - Wall 1988 ("at least 9 odd prime factors") and Graham 1989 ("squarefree odd part ⇒ 6, 60,
   87360; some prime > 2^15") are cited like this in arXiv:2605.20475. zbMATH has entries
   Zbl 0657.10003 (1988) and Zbl 0678.10004 (1989), but their metadata is hidden ("contents
@@ -135,7 +140,7 @@ the case with two odd primes; formalise finiteness for fixed `k`; then look for 
   coefficient is positive, it closes at once. Reuse this trick for `k = 3`.
 - The PDF reader needs `pdftoppm` (not installed). Use the arXiv source at `arxiv.org/e-print/ID`.
 
-**Next step (in order):**
+**Next step at the end of session 2 (step 1 done in session 3; see below):**
 1. `k = 3` odd prime factors: prove that there is **no** UPN (87360 has 4). Same scheme, using
    `exists_split_of_dvd` twice. The arithmetic needs more cases. Use the 2-adic balance:
    `v₂((1+P)(1+Q)(1+R)) = a + 1`, so `a ≥ 2`, together with the bound
@@ -149,6 +154,79 @@ the case with two odd primes; formalise finiteness for fixed `k`; then look for 
    computer search far beyond what can be certified in Lean in a session. The realistic
    deliverable is the formalisation (`k ≤ 3` or `k ≤ 4` classified; finiteness for fixed `k`).
    Formal-conjectures could take that, but I will not publish it without Pablo's approval.
+
+## Session 3 (2026-11-06): proved, failed, next step
+
+**Proved in Lean** (`lake build` OK, 7355 jobs, 0 warnings, no `sorry`; `#print axioms` gives only
+`propext`, `Classical.choice`, `Quot.sound`):
+- `ErdosResearch/UnitaryPerfect.lean`:
+  - `arith3_sorted`, `arith_three_odd`, `not_isUnitaryPerfect_of_card_primeFactors_eq_four`:
+    **there is no UPN with exactly 3 odd prime factors.**
+  - `isUnitaryPerfect_of_card_primeFactors_le_four_iff`: ≤ 3 odd prime factors ⇒ `{6, 60, 90}`.
+- `ErdosResearch/UnitaryPerfectFourOdd.lean` (new):
+  - `exists_sorted_factors`: for `n ≠ 0`, the prime-power factors `p^{v_p(n)}` form a strictly
+    increasing, pairwise coprime list of numbers `> 1`, of length `ω(n)`, with product `n` and
+    `∏(1+y) = σ*(n)`. It is general and reusable for any `k`.
+  - `arith_sorted_5` (generated proof, 12 lemmas): if `1 < y₁ < … < y₅` are pairwise coprime and
+    `∏(1+yᵢ) = 2∏yᵢ`, then `∏yᵢ = 87360`.
+  - `eq_87360_of_isUnitaryPerfect_of_card_primeFactors_eq_five`: **the only UPN with exactly 4 odd
+    prime factors is 87360.**
+  - `isUnitaryPerfect_of_card_primeFactors_le_five_iff`: **≤ 4 odd prime factors ⇒ exactly
+    `{6, 60, 90, 87360}`.**
+- **Not new mathematically.** It is consistent with Graham 1989 and with Wall 1988's "a sixth UPN
+  has ≥ 9 odd prime factors" (cited second-hand). I could not check who first proved the
+  ≤ 4 classification; it is probably Subbarao–Warren 1966 or SCNW 1972. As far as I know it is
+  new *as a formalisation*: formal-conjectures has only the statement and the examples.
+
+**Method (reusable for any `k`):** `scripts/upn_case_tree.py M TARGET SPLIT` generates the case
+tree, and `python3 -I scripts/upn_case_tree.py 5 87360 2` reproduces the generated section exactly.
+Sort *all* prime-power factors, including `2^a`, as `y₁ < … < y_M`. At each level, either:
+- a size bound `yᵢ ≥ B`: shift the remaining variables to `B, B+1, …`. Then
+  `2∏y − ∏(1+y)` has nonnegative coefficients, so `linarith` closes it with the monomial hints
+  `0 ≤ z·z'·…`;
+- or one of the finitely many values below `B`: prune a value at once (`norm_num` on `Nat.Coprime`) if it shares a factor with an earlier `yⱼ`;
+- the last variable: the equation is linear, so `omega` decides it.
+Parity and "power of two" are not needed; coprimality alone kills the spurious integer solutions:
+- 4 factors: `(3,5,8,9)`, `(2,5,11,54)`, …;
+- 5 factors: `(3,5,9,11,32)`, `(3,5,9,16,17)`, … (26 non-coprime ones);
+- the only coprime 5-factor solution is `(3,5,7,13,64)`.
+
+**Failed / lessons:**
+- With only the odd primes as variables (as in the `k = 3` proof), the `k = 4` tree does not
+  terminate. `3,5,7,9` already give `∏(1+1/p) ≈ 2.03 > 2`, so no size bound on `a` exists, and
+  87360 has `a = 6`. Fix: put `2^a` into the sorted list like any other factor.
+- One lemma with the whole tree runs out of heartbeats (200000 per declaration). Fix: one lemma
+  per `(y₁, y₂)` prefix.
+- `nlinarith` on 4–5 shifted variables with 11–26 hints runs out of heartbeats. Fix:
+  `linarith` with the same hints, which is enough because its parser treats monomials as atoms. It
+  is much faster, and no `ring_nf` is needed first.
+- `rw [← h]` to permute the factors of the equation fails (the pattern does not match). Use
+  `convert h using 1 <;> ring`.
+- Naming a script `enum.py` shadows the stdlib module `enum` when it runs from that directory.
+
+**Measured for the next `k`:**
+- 5 odd primes (6 factors), coprimality pruning only: 4144 linear leaves, 2596 bounds and 15913
+  gcd-pruned branches. **No coprime solution**, so no UPN with exactly 5 odd prime factors (by
+  computation, not yet in Lean).
+- That is ~120× the 4-odd tree, which compiles in ~70 s. As is, it would be ~1–2 h of
+  compilation and a ~100k-line file: too much for the CI (60-minute timeout).
+- With parity + power-of-two pruning but no gcd pruning it is worse: 12370 leaves.
+
+**Next step (in order):**
+1. `k = 5` (no UPN with exactly 5 odd prime factors), in Lean. Make the tree smaller first. Ideas:
+   - combine gcd pruning with "at most one even factor, and it is a power of 2". For Lean, add
+     the hypothesis that exactly one `yᵢ` is even and pass `2 ∣ yᵢ → yᵢ = 2^a` as data;
+   - replace the explicit `rcases` over long ranges with `interval_cases` + `first | omega |
+     norm_num at …`;
+   - check in a scratch file (`lake env lean`) how long one `(y₁, y₂)` lemma takes before
+     generating them all;
+   - if it stays > 30 min, split it into several files so they compile in parallel in the CI.
+2. A uniform version: one theorem `card primeFactors = M ⇒ …` that uses `exists_sorted_factors`
+   for each generated `arith_sorted_M`. The `k ≤ 3` cases could be redone this way and simplified.
+3. Honest assessment (unchanged): with `k ≤ 4`, and `k = 5` if it gets done, this only reproduces
+   classical results. Something mathematically new would be beyond Wall's ≥ 9 odd prime factors,
+   which needs `k = 5…8` (out of reach with this tree). The deliverable is the formalisation.
+   Formal-conjectures could take it, but I will not publish it without Pablo's approval.
 
 ## Daily summary (2026-11-05)
 
@@ -178,6 +256,22 @@ the case with two odd primes; formalise finiteness for fixed `k`; then look for 
   PGAL should take them from its own accounting. About 5 builds of the repo file (Mathlib from
   cache, never compiled). No money spent.
 
+## Daily summary (2026-11-06, session 3)
+
+- **Approaches tried:** (a) the `k = 3` case with the odd primes as variables and `a` bounded by
+  size, generated by a script; (b) the same scheme for `k = 4` (it does not terminate, because `a`
+  is not bounded); (c) sorting all prime-power factors including `2^a`, pruned only by
+  coprimality, which works for `k = 4`; (d) counting the `k = 5` tree.
+- **What failed and why:** see "Failed / lessons" in session 3. In short: an unbounded `a` with
+  odd-only variables, the heartbeat limit for one big lemma, `nlinarith` being too slow with many
+  hints, and `rw` not matching a permuted product.
+- **Advances:** in Lean without `sorry`: no UPN with 3 odd prime factors; the only one with 4 is
+  87360; so `ω(n) ≤ 5 ⇒ n ∈ {6, 60, 90, 87360}`. Graham 1989 confirmed second-hand via zbMATH. No
+  new mathematical result.
+- **Quota consumed:** one `lean-research` session. I cannot see exact tokens from inside the
+  session, so PGAL should take them from its own accounting. About 15 compilations (scratch files
+  + `lake build`), Mathlib from cache only, never compiled. Two zbMATH queries. No money spent.
+
 ## Not verified
 
 - **Task #49 / PART 1 / `docs/cost-analysis.md`:** the email says PART 1 is done in
@@ -189,3 +283,6 @@ the case with two odd primes; formalise finiteness for fixed `k`; then look for 
   *contents* (bounds) are still from memory or second-hand via arXiv:2605.20475. Wall 1988 and
   Graham 1989 are not confirmed.
 - The gap in Prop. 1.1 of arXiv:2605.20475 is my own reading. Nobody else has checked it.
+- Who first proved "≤ 4 odd prime factors ⇒ {6, 60, 90, 87360}": zbMATH has no review of
+  Subbarao–Warren 1966 or of SCNW 1972. The "no UPN with 5 odd prime factors" from the `k = 5` count
+  is my own computation (a Python script), not checked in Lean yet.
