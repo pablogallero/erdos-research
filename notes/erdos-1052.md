@@ -50,8 +50,8 @@ The contents were not read; the journals are not reachable:
 - Frey, *On unitary perfect numbers*, Elem. Math. 33 (1978) 95–96, Zbl 0382.10004. (The content
   "if `3 ∤ n`, at least 144 odd prime factors" is from memory and **not checked**.)
 - Goto, *Upper bounds for unitary perfect numbers and unitary harmonic numbers*, Rocky Mt. J.
-  Math. 37 (2007) 1557–1576, Zbl 1141.11006. (The content "`n < 2^{2^k}` with `k` odd prime
-  factors" is from memory and **not checked**.)
+  Math. 37 (2007) 1557–1576, Zbl 1141.11006. (**Checked on zbMATH in session 6:** the review says
+  that a UPN with `k` distinct prime factors satisfies `N < 2^{2^k}`.)
 - Also listed: Subbarao–Cook–Newberry–Weber, Delta 3 (1972), Zbl 0251.10007; DeBoer, *Non-existence
   of certain unitary perfect numbers*, Pi Mu Epsilon J. 9 (1993), Zbl 0805.11006; He Bo, J. Guizhou
   Norm. Univ. 23 (2005), Zbl 1128.11302. Not read.
@@ -363,6 +363,43 @@ here is roughly 2–3 ms per node, so that is still several hours.
    so for k = 2, 4 a variant that collects solutions would be needed) and drop ~900 generated
    lines.
 
+## Session 6 (2026-11-08): proved, failed, next step
+
+**Decision:** I did not push the k = 7 search. It needs hours in the kernel and would still only
+reproduce Wall 1988. Instead I formalised the *structural* statement that was step 2 of session
+5, uniformly in k.
+
+**Proved (Lean; no sorry; axioms `propext`, `Classical.choice`, `Quot.sound` only; `lake build`
+OK, 7358 jobs; new module ~10 s, no warnings):** `ErdosResearch/UnitaryPerfectFinite.lean`
+- `finite_isUnitaryPerfect_card_primeFactors_eq k`: **for every k, only finitely many UPNs have
+  ω(n) = k.**
+- `finite_isUnitaryPerfect_card_primeFactors_le K`: the same for ω(n) ≤ K.
+- `erdos_1052_statement_iff_bddAbove`: **the formal-conjectures statement of #1052 is equivalent
+  to `∃ K, ∀ n, IsUnitaryPerfect n → ω(n) ≤ K`.** So any future attack can work on bounding ω.
+- How: the sorted prime-power factors `y₁ < ⋯ < y_k` (`exists_sorted_factors`) satisfy
+  `∏ (1 + 1/yᵢ) = 2`. For a sorted list with product `t` and length `m+1`, the smallest element `y`
+  satisfies `1 < t ≤ (1+1/y)^{m+1} ≤ 1 + (2^{m+1}−1)/y`, using the convexity bound
+  `(1+x)^n ≤ 1 + (2^n−1)x` on [0, 1]. So `y ≤ ⌈2^{m+1}/(t−1)⌉`. Induction on m (generalising t)
+  shows that the set of such lists is finite (`goodList_finite`).
+- **Not new mathematically.** zbMATH (review of Zbl 1141.11006, checked 2026-11-08) confirms Goto
+  2007: a UPN with k distinct prime factors satisfies `N < 2^{2^k}`. That is an explicit form of the
+  same finiteness. My Lean proof gives finiteness without an explicit bound.
+
+**Failed:** nothing this session. The file compiled on the first attempt.
+
+**Next step (in order):**
+1. Make the bound explicit in Lean. `goodList_finite` already yields `y ≤ ⌈2^{m+1}/(t−1)⌉` at
+   each level, but `t − 1` can be tiny (it is a rational with a large denominator). A Goto-style
+   explicit bound needs `t − 1 ≥ 1/(denominator)`, i.e. tracking `t = Q/P` in ℕ, which gives
+   `y ≤ 2^{m+1}·P` and a doubly exponential bound. Formalising `n < 2^{2^k}` (or a weaker
+   explicit tower) would be a stronger formal result than finiteness.
+2. k = 7 by search is still the session 5 plan (divisor enumeration, `powLoop` from `2^{k−1}`),
+   but it is low value: it only reproduces Wall 1988.
+3. Honest assessment, unchanged: a *new* mathematical result on #1052 would need ≥ 9 odd primes
+   (beyond Wall) or a new structural constraint. Neither is in sight. The realistic deliverable
+   is the formalisation package (ω ≤ 7 classification + finiteness for fixed ω + equivalence
+   with bounded ω). Submitting it anywhere (e.g. formal-conjectures) needs Pablo's approval.
+
 ## Daily summary (2026-11-05)
 
 - **Approaches tried:** (a) status check of #43 on erdosproblems.com, arXiv and
@@ -443,6 +480,20 @@ here is roughly 2–3 ms per node, so that is still several hours.
   k = 6 run of the abandoned odd-only search that did not terminate (killed by timeout, ~2 min).
   One zbMATH query. No money spent.
 
+## Daily summary (2026-11-08, session 6)
+
+- **Approaches tried:** a general Dickson-type finiteness argument for a fixed number of prime
+  factors, formalised in Lean (rational products `∏(1+1/y)`, a convexity bound, induction on
+  the length).
+- **What failed and why:** nothing. I set aside the k = 7 search on purpose (hours of kernel
+  time, and only Wall 1988 again).
+- **Advances:** in Lean, without `sorry`, standard axioms only: finiteness of UPNs with ω(n) = k
+  for every k, and #1052 ⇔ ω is bounded on UPNs. Classical (Goto 2007, confirmed on zbMATH). No
+  new mathematical result.
+- **Quota consumed:** one `lean-research` session. I cannot see exact tokens from inside the
+  session (PGAL should use its own accounting). One compilation of the new file and two
+  `lake build`s (Mathlib from cache, never compiled). Two zbMATH queries. No money spent.
+
 ## Not verified
 
 - **Task #49 / PART 1 / `docs/cost-analysis.md`:** the email says PART 1 is done in
@@ -451,8 +502,8 @@ here is roughly 2–3 ms per node, so that is still several hours.
   #49 and to PART 1 is therefore **not verified**.
 - General web search (no egress beyond lean-lang, erdosproblems and arXiv).
 - Wall / Frey / Goto: on 2026-11-06 I confirmed on zbMATH that the papers exist. Wall 1988
-  (≥ 9 odd prime factors) is confirmed by its zbMATH review (session 5). Frey's and Goto's
-  bounds are still from memory, and Graham 1989 is only second-hand (via DeBoer's review).
+  (≥ 9 odd prime factors) is confirmed by its zbMATH review (session 5). Goto's bound `N < 2^{2^k}` is
+  confirmed by its zbMATH review (session 6). Frey's bound is still from memory, and Graham 1989 is only second-hand (via DeBoer's review).
 - The gap in Prop. 1.1 of arXiv:2605.20475 is my own reading. Nobody else has checked it.
 - Who first proved "≤ 4 odd prime factors ⇒ {6, 60, 90, 87360}": zbMATH has no review of
   Subbarao–Warren 1966 or of SCNW 1972. "No UPN with 5 odd prime factors" is now checked in Lean (session 4).
