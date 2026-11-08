@@ -4,3 +4,4 @@ import ErdosResearch.UnitaryPerfectFourOdd
 import ErdosResearch.UnitaryPerfectFiveOdd
 import ErdosResearch.UnitaryPerfectSixOdd
 import ErdosResearch.UnitaryPerfectFinite
+import ErdosResearch.UnitaryPerfectBound
