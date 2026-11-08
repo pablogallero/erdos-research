@@ -89,3 +89,45 @@ jobs; module ~10 s):** `ErdosResearch/OddWeird.lean`
   the session; PGAL should take it from its own accounting. About 10 network queries (GitHub raw,
   erdosproblems.com, arXiv, zbMATH, OpenAlex), 3 compilations of the module and 1 full `lake build`.
   Mathlib came from the cache and was not compiled. No money spent.
+
+## Session 9 (2026-11-08): proved, failed, next step
+
+**Proved (Lean; no sorry; axioms `propext`, `Classical.choice`, `Quot.sound`; full `lake build` OK,
+7361 jobs; new module ~15 s):** `ErdosResearch/OddWeirdThree.lean` (imported from the root)
+- `Nat.Pseudoperfect.of_dvd`: a positive multiple of a pseudoperfect number is pseudoperfect.
+- The 8 odd primitive abundant numbers with ω = 3 are pseudoperfect, each with an explicit subset of
+  divisors: 945, 1575, 2205 (r = 7), 7425 (r = 11), 78975, 131625, 342225, 570375 (r = 13).
+  The subsets were found with a small Python DFS and are checked in Lean by `norm_num` + `rfl`.
+- `pseudoperfect_of_odd_of_abundant_of_card_primeFactors_eq_three`, plus
+  `not_weird_of_odd_of_card_primeFactors_le_three`: **an odd number with ω ≤ 3 is not weird.**
+- Method: sort the primes p < q < r. From `σ(n)∏(p−1) ≤ n∏p` and abundance we get p = 3, q = 5,
+  r ∈ {7, 11, 13}. Then the exponent vector either dominates one of the 8 PANs (so n is a multiple
+  of it), or it lies in a "box" where σ(n) ≤ 2n. The general lemma `box` combines one ratio bound per
+  prime: exact `σ(p^e)/p^e` for a fixed exponent, `< p/(p−1)` for a free one. There are 6 boxes and 2
+  fully fixed cases (315, 3⁴·5²·13).
+- Classical: Liddy–Riedl prove ω ≥ 6. It is new only as a formalisation, and it closes a sub-case of
+  the `sorry` in formal-conjectures `erdos_470.parts.i` (which uses the same Mathlib `Nat.Weird`).
+
+**Failed (minor):** `omega` does not identify `2 + 1` with `3` inside products after
+`obtain rfl : x = 2` (fixed by stating the helper with `(2 + 1)`). `interval_cases z <;> norm_num at …`
+closed goals and broke the bullet structure (fixed by `first | omega | (exfalso; revert hr; norm_num)`).
+
+**Next step (in order):**
+1. ω = 4 in Lean. The same scheme works, but there are 576 PANs and many more boxes, so generate the
+   case tree with a script (as for #1052) or write a reflective checker: a decidable
+   "dominates a PAN with a certificate, or box bound" check over exponent vectors, with the subsets
+   supplied as data. First decide the prime 4-tuples in Lean from the bound `2∏(p−1) < ∏p`.
+2. A fast enumerator for odd PANs with ω = 5 (C, `__int128` or GMP). This is needed to judge ω = 6.
+   Liddy–Riedl did ω ≤ 5, so ω = 5 is feasible. ω = 6 would be new, but the count probably blows up
+   doubly exponentially.
+3. Honest assessment unchanged: the realistic deliverable is formalising the small-ω cases. Nothing
+   new mathematically so far.
+
+## Daily summary (2026-11-08, session 9)
+
+- **Approaches tried:** formalising ω = 3 via the "PAN multiple or deficient box" case split.
+- **What failed and why:** only tactic details (see above). No mathematical dead ends this session.
+- **Advances:** Lean, without `sorry`: odd ω ≤ 3 ⇒ not weird, plus `Pseudoperfect.of_dvd`. Classical,
+  and new as a formalisation only.
+- **Quota consumed:** one `lean-research` session (exact tokens: from PGAL's accounting). No network
+  queries; 3 module compilations and 1 full `lake build`; Mathlib from the cache. No money spent.

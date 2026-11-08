@@ -6,3 +6,4 @@ import ErdosResearch.UnitaryPerfectSixOdd
 import ErdosResearch.UnitaryPerfectFinite
 import ErdosResearch.UnitaryPerfectBound
 import ErdosResearch.OddWeird
+import ErdosResearch.OddWeirdThree
