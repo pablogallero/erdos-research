@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Erdős #470, ω = 4: split the `chk` search into kernel-sized chunks.
+
+Usage: python3 scripts/odd_weird_chunks.py ErdosResearch/OddWeirdFourChunks.lean [LIMIT=1500]
+
+Mirrors `chk` from ErdosResearch/OddWeirdFourCore.lean exactly, on the bases of
+ErdosResearch/OddWeirdFourData.lean (read from `scripts/odd_pan_search.py`'s output via the Lean
+file itself). Subtrees with at most LIMIT calls become separate theorems
+`chunk_i : chk rs 300 A B j q e = true` (checked by `decide +kernel`, each with its own kernel
+cache: one theorem for the whole search needs more than 8 GB). The levels above are assembled
+with the combinators `sound_loop`, `sound_exp`, `sound_prune`.
+"""
+import re
+import sys
+
+sys.setrecursionlimit(1000000)
+FUEL = 300
+
+
+def read_facts(path):
+    src = open(path).read()
+    body = src[src.index("def panCerts"):]
+    facts = []
+    for m in re.finditer(r"\((\d+), \[([^\]]*)\], \[[^\]]*\]\)", body):
+        pes = re.findall(r"\((\d+), (\d+)\)", m.group(2))
+        facts.append(tuple((int(p), int(k)) for p, k in pes))
+    return facts
+
+
+def ascP(q, j):
+    r = 1
+    for i in range(j):
+        r *= q + 2 * i
+    return r
+
+
+def geom(q, e):
+    return sum(q ** i for i in range(e + 1))
+
+
+def findDiv(q, d, f):
+    while f > 0:
+        if q < d * d:
+            return 1
+        if q % d == 0:
+            return d
+        d += 2
+        f -= 1
+    return 0
+
+
+def skipB(q):
+    return findDiv(q, 3, q) >= 2
+
+
+def step(q, e, rs):
+    out = []
+    for r in rs:
+        if not r:
+            out.append(r)
+        elif r[0][0] < q:
+            pass
+        elif r[0][0] == q:
+            if r[0][1] <= e:
+                out.append(r[1:])
+        else:
+            out.append(r)
+    return tuple(out)
+
+
+class Node:
+    __slots__ = ("rs", "rse", "A", "B", "j", "q", "e", "ok", "size", "kind", "kids")
+
+
+def build(rs, rse, A, B, j, q, e):
+    """Evaluate chk (lazy `||`/`&&` as in Lean) and record the proof structure."""
+    n = Node()
+    n.rs, n.rse, n.A, n.B, n.j, n.q, n.e = rs, rse, A, B, j, q, e
+    n.kids = []
+    if e == 0 and j == 0:
+        n.kind, n.ok, n.size = "zero", A < 2 * B, 1
+        return n
+    if e == 0:
+        if A * ascP(q, j) < 2 * B * ascP(q - 1, j):
+            n.kind, n.ok, n.size = "prune", True, 1
+            return n
+        n.kind = "loop"
+        if skipB(q):
+            left = None
+        else:
+            left = build(rs, rse, A, B, j, q, 1)
+            if not left.ok:
+                n.ok, n.size, n.kids = False, 1 + left.size, [left]
+                return n
+        right = build(rs, rse, A, B, j, q + 2, 0)
+        n.kids = [left, right]
+        n.ok = right.ok
+        n.size = 1 + (left.size if left else 0) + right.size
+        return n
+    rs2 = step(q, e, rs)
+    rse2 = f"(step {q} {e} {rse})"
+    if any(len(r) == 0 for r in rs2):
+        n.kind, n.ok, n.size = "nil", True, 1
+        return n
+    reg = build(rs2, rse2, A * q, B * (q - 1), j - 1, q + 2, 0)
+    if reg.ok:
+        n.kind, n.ok, n.size, n.kids = "region", True, 1 + reg.size, [reg]
+        return n
+    ex = build(rs2, rse2, A * geom(q, e), B * q ** e, j - 1, q + 2, 0)
+    if not ex.ok:
+        n.kind, n.ok, n.size, n.kids = "fail", False, 1 + reg.size + ex.size, [ex]
+        return n
+    nxt = build(rs, rse, A, B, j, q, e + 1)
+    n.kind, n.ok, n.kids = "exact", nxt.ok, [ex, nxt]
+    n.size = 1 + reg.size + ex.size + nxt.size
+    return n
+
+
+def main():
+    out = sys.argv[1]
+    limit = int(sys.argv[2]) if len(sys.argv) > 2 else 1500
+    facts = tuple(read_facts("ErdosResearch/OddWeirdFourData.lean"))
+    root = build(facts, "R0", 1, 1, 4, 3, 0)
+    assert root.ok, "search does not close"
+    chunks = []
+
+    def args(n):
+        return f"{n.rse} {FUEL} {n.A} {n.B} {n.j} {n.q} {n.e}"
+
+    def term(n):
+        if n.size <= limit and n.kind not in ("prune", "nil", "zero"):
+            chunks.append(n)
+            return f"(chk_sound {FUEL} _ _ _ _ _ _ chunk_{len(chunks) - 1})"
+        if n.kind == "zero":
+            return "(sound_zero (by decide))"
+        if n.kind == "prune":
+            return "(sound_prune (by decide))"
+        if n.kind == "nil":
+            return "(sound_exp (Or.inl (by decide +kernel)))"
+        if n.kind == "loop":
+            left, right = n.kids
+            lt = "(Or.inl (by decide))" if left is None else f"(Or.inr {term(left)})"
+            return f"(sound_loop ⟨{lt}, {term(right)}⟩)"
+        if n.kind == "region":
+            return f"(sound_exp (Or.inr (Or.inl {term(n.kids[0])})))"
+        if n.kind == "exact":
+            return f"(sound_exp (Or.inr (Or.inr ⟨{term(n.kids[0])}, {term(n.kids[1])}⟩)))"
+        raise ValueError(n.kind)
+
+    top = term(root)
+    with open(out, "w") as fh:
+        fh.write("import ErdosResearch.OddWeirdFourCore\nimport ErdosResearch.OddWeirdFourData\n\n")
+        fh.write("/-!\nGenerated by `scripts/odd_weird_chunks.py` (do not edit): the search `chk` "
+                 f"for four odd primes,\nsplit into {len(chunks)} chunks of at most {limit} calls "
+                 f"({root.size} calls in total), assembled\ninto `sound_top`.\n-/\n\n")
+        fh.write("namespace Erdos470Research\n\n")
+        fh.write("-- Check the chunks one at a time: in parallel they exceed the memory of the CI runner.\n")
+        fh.write("set_option Elab.async false\n\n")
+        fh.write("/-- The factorizations of the bases. -/\ndef R0 : Facts := panCerts.map (·.2.1)\n\n")
+        for i, n in enumerate(chunks):
+            fh.write(f"theorem chunk_{i} : chk {args(n)} = true := by\n  decide +kernel\n\n")
+        fh.write("set_option maxRecDepth 100000 in\n")
+        fh.write(f"theorem sound_top : Sound R0 1 1 4 3 0 :=\n  {top}\n\n")
+        fh.write("end Erdos470Research\n")
+    print(f"calls={root.size} chunks={len(chunks)} max_chunk={max(c.size for c in chunks)}")
+
+
+if __name__ == "__main__":
+    main()
