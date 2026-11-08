@@ -551,3 +551,10 @@ appears when building the root `ErdosResearch.lean`, so always run a full `lake 
 - The gap in Prop. 1.1 of arXiv:2605.20475 is my own reading. Nobody else has checked it.
 - Who first proved "≤ 4 odd prime factors ⇒ {6, 60, 90, 87360}": zbMATH has no review of
   Subbarao–Warren 1966 or of SCNW 1972. "No UPN with 5 odd prime factors" is now checked in Lean (session 4).
+
+## Session 8 (2026-11-08): switch to #470
+
+Following step 2 of session 7, I re-checked every open prize problem (teorth `problems.yaml`, 54 of
+them) and **switched to #470 (odd weird numbers)**. The reasons and the first Lean steps are in
+`notes/erdos-470.md`. #1052 is paused: its formalisation package (ω ≤ 7 classification, finiteness,
+explicit bound, equivalence with bounded ω) is complete, and anything new needs ≥ 9 odd primes.
