@@ -65,6 +65,16 @@ The contents were not read; the journals are not reachable:
   Zbl 0657.10003 (1988) and Zbl 0678.10004 (1989), but their metadata is hidden ("contents
   unavailable due to conflicting licenses"), so I **cannot confirm** that they are these papers.
   The paper also cites Hagis for `ω(n) ≥ 7`; I have not checked that.
+- **Wall 1988 confirmed on zbMATH on 2026-11-08** (session 5): the *review* of Zbl 0657.10003 is
+  visible even though the metadata is hidden. It says that the fifth UPN is `N = 2^18 · 5^4 · Q`,
+  with `Q` a squarefree product of ten odd primes, and that "if n is a unitary perfect number
+  which exceeds N then n is divisible by at least nine distinct odd primes" (review by P. Hagis
+  jun.). Together with Wall 1975 (Zbl 0312.10004, whose review says the paper proves there are
+  no UPNs between 87360 and N; that part is cut off in the API text, so it is second-hand), a
+  sixth UPN has ≥ 9 odd prime factors. So "≤ 8 odd prime factors ⇒ one of the known four" is
+  classical. The review of Zbl 0625.10003
+  (1987, same hidden metadata) states that a sixth UPN has an odd prime power `p^e`
+  with … (cut off). Not read further.
 
 ## Reading of arXiv:2605.20475 (session 2)
 
@@ -284,6 +294,75 @@ there was no reason to touch it.
    it is not new. Something new would need k ≥ 9, which a naive search cannot reach. The value
    is the formalisation. formal-conjectures could take it, but only with Pablo's approval.
 
+## Session 5 (2026-11-08): proved, failed, next step
+
+**Proved (Lean; no sorry; axioms `propext`, `Classical.choice`, `Quot.sound` only; `lake build`
+OK, 7357 jobs; new module ~41 s):** `ErdosResearch/UnitaryPerfectSixOdd.lean`
+- **No UPN has exactly 6 odd prime factors** (`not_isUnitaryPerfect_of_card_primeFactors_eq_seven`).
+- `isUnitaryPerfect_of_card_primeFactors_le_seven_iff`: **ω(n) ≤ 7 ⇒ n ∈ {6, 60, 90, 87360}.**
+- **Not new mathematically.** Wall 1988 (now confirmed on zbMATH, see the literature section)
+  gives ≥ 9 odd prime factors for a sixth UPN. New only as a formalisation.
+
+**How (and why it fits when the session 4 plan did not):** a new reflective checker `fchk`,
+which treats `2^a` separately instead of as one more sorted variable:
+1. *2-adic bound* (`two_pow_le_of_eq`): each `1 + qᵢ` is even and `∏ qᵢ` is odd, so
+   `2^k ∣ 2^{a+1}`, i.e. `2^a ≥ 2^{k−1} = 32`. This is the decisive pruning: without it (A0 = 1)
+   the same search needs 11.9M nodes; with it, 5447.
+2. *"free" state* (`2^a` not placed yet): walk `L` by 1; odd `L` → branch `y = L` (gcd pruning;
+   `2 ∈ pre` makes everything odd); even `L` → branch `2^a = L` if `L` is a power of 2 and
+   `≥ 32` (`isPow2From`). The bound uses stride 2 for the odd variables (`ascProd2`,
+   `prod2_succ_mul_le`) and `(1+E)/E ≤ (1+M')/M'` with `M' = max(L, 32)` for the power of two.
+3. *"placed" state*: the rest is the session 4 `upnCheck`, reused as is (its soundness lemma is
+   applied directly).
+4. *Last odd variable while `2^a` is still free*: no walk. `2^a ∣ Q(1+y)` (since `2^a ⟂ 1+2^a`) and
+   `min(y, 2^a)·(2P−Q) ≤ 3Q` (`min_bound`) give `2^a ≤ Q(1 + 3Q/(2P−Q))` (`pow_le_bound`), so
+   the checker loops over the powers of two (`powLoop`) and solves for `y` linearly (`candOk`).
+- `fchk 5000 1 1 32 2 [2] 6 = true` by `decide +kernel`: 5447 nodes + 7779 loop steps, depth 1794.
+- Sanity checks (`#eval` in a scratch file): `fchk … 4 = false` (it finds 87360 = 2⁶·3·5·7·13)
+  and `fchk … 2 = false` (60, 90), so the checker is not vacuously `true`. `fchk … 3/5/6 = true`.
+- `scripts/upn_search_hybrid.py K [A0]`: the same search in Python, used to count nodes.
+
+**Failed / lessons:**
+- *Odd variables only, with `a` eliminated by the 2-adic valuation* (first idea): the target
+  ratio is then an interval `[2^k/(1+2^{k−1}), 2)` instead of a number, and once the partial
+  ratio enters the interval the bound never prunes, so the walk does not terminate (Python
+  looped for k = 6). Making `2^a` an explicit, specially-handled variable fixes it.
+- First hybrid version missed 60 = 2²·3·5: the power-of-two branch was only tested at `L+1` after
+  choosing `y = L`, which skips `4` between `3` and `5`. Fixed by walking `L` by 1 in the free
+  state and testing parity. The small cases k = 1, 2, 4 (which must find 6; 60, 90; 87360)
+  caught it.
+- Prime-power pruning and the 2-adic check in the "placed" state barely help (462k vs 463k nodes
+  before the `powLoop` change), so they were left out of the Lean checker.
+- `rw [← heq]` fails when the goal has a permuted product. Rewrite the goal into the exact
+  form with `show … = … by ring` first.
+- A careless `sed` on `ErdosResearch.lean` replaced every import line. I restored it with
+  `git checkout` and appended the one import. Edit that file with an append, not `sed`.
+
+**k = 7 (8 factors), measured in Python, not feasible yet:** 12.9M nodes + 4.9M loop steps. Of
+those, 8.6M nodes are in the "placed" state with two odd variables left and 0.66M in the "free"
+state with two odd variables left. With two variables left the equation is
+`(dy − Q)(dz − Q) = Q(Q + d) = 2PQ` (`d = 2P − Q`), and `P`, `Q` are products of known
+factors. Replacing that walk by an enumeration of the divisors of `2PQ` gives ~0.8M nodes +
+0.55M divisors + 4.9M loop steps (estimate; it counts `d(2PQ)/2` per node). The kernel speed
+here is roughly 2–3 ms per node, so that is still several hours.
+
+**Next step (in order):**
+1. k = 7 needs ~10× fewer kernel steps than the divisor estimate. Options, to measure in Python
+   first: (a) start `powLoop` at `max(L, 2^{k−1})` instead of 1 (most of the 4.9M loop steps
+   are below that); (b) divisors of `2PQ` for two variables left, in both states (needs a
+   verified divisor enumeration from a known factorisation: carry the prime factorisation of
+   `P` and `Q` along the search); (c) measure the real kernel time per node on a k = 7 sub-tree
+   (fix `y₁ = 3`) before writing anything. If it stays > 30 min, split by `y₁` into modules.
+2. Honest assessment (updated): k ≤ 8 is exactly Wall 1988 (now confirmed). A *new* result would
+   need either k ≥ 9 odd prime factors (out of reach for any search like this; Wall's own proof
+   is not a plain enumeration) or a structural statement, e.g. finiteness for fixed k (Goto 2007
+   proves `n < 2^{2^k}`, from memory, **not checked**). The realistic deliverable is still the
+   formalisation, now ω ≤ 7, which nobody has in Lean (formal-conjectures only states #1052).
+   Submitting it anywhere needs Pablo's approval.
+3. Optional/cosmetic: redo k ≤ 4 with `fchk` (it returns `false` exactly when a solution exists,
+   so for k = 2, 4 a variant that collects solutions would be needed) and drop ~900 generated
+   lines.
+
 ## Daily summary (2026-11-05)
 
 - **Approaches tried:** (a) status check of #43 on erdosproblems.com, arXiv and
@@ -344,6 +423,26 @@ there was no reason to touch it.
   never compiled. Python counts: ~35 s for k = 6 and a few minutes with `--ppow`. No network
   queries. No money spent.
 
+## Daily summary (2026-11-08, session 5)
+
+- **Approaches tried:** (a) odd-only search with `a` eliminated 2-adically (does not terminate:
+  interval target); (b) hybrid search with `2^a` as a special variable, the 2-adic lower bound
+  `2^a ≥ 2^{k−1}`, stride-2 bounds and a loop over powers of two for the last odd variable,
+  formalised as `fchk` + soundness proof + `decide +kernel`; (c) Python estimates for k = 7,
+  including divisor enumeration for the two-variable step; (d) zbMATH check of Wall 1988.
+- **What failed and why:** (a) see above; the first hybrid version skipped a power of two
+  between consecutive odd candidates (caught by the k = 2 test); k = 7 is still ~13M nodes,
+  hours in the kernel.
+- **Advances:** in Lean, without `sorry`, standard axioms only: no UPN with exactly 6 odd prime
+  factors, so `ω(n) ≤ 7 ⇒ n ∈ {6, 60, 90, 87360}`. Kernel check ~30 s. Wall 1988 is now confirmed
+  on zbMATH, and it already implies this, so **no new mathematical result**. New only as a
+  formalisation.
+- **Quota consumed:** one `lean-research` session. I cannot see exact tokens from inside the
+  session (PGAL should use its own accounting). About 5 compilations of the new module plus two
+  full `lake build`s (Mathlib from cache, never compiled). Python runs: ~2 min in total, plus one
+  k = 6 run of the abandoned odd-only search that did not terminate (killed by timeout, ~2 min).
+  One zbMATH query. No money spent.
+
 ## Not verified
 
 - **Task #49 / PART 1 / `docs/cost-analysis.md`:** the email says PART 1 is done in
@@ -351,9 +450,9 @@ there was no reason to touch it.
   directory) and the GitHub API gives 404 when looking for it elsewhere. The reference to task
   #49 and to PART 1 is therefore **not verified**.
 - General web search (no egress beyond lean-lang, erdosproblems and arXiv).
-- Wall / Frey / Goto: on 2026-11-06 I confirmed on zbMATH that the papers exist. Their exact
-  *contents* (bounds) are still from memory or second-hand via arXiv:2605.20475. Wall 1988 and
-  Graham 1989 are not confirmed.
+- Wall / Frey / Goto: on 2026-11-06 I confirmed on zbMATH that the papers exist. Wall 1988
+  (≥ 9 odd prime factors) is confirmed by its zbMATH review (session 5). Frey's and Goto's
+  bounds are still from memory, and Graham 1989 is only second-hand (via DeBoer's review).
 - The gap in Prop. 1.1 of arXiv:2605.20475 is my own reading. Nobody else has checked it.
 - Who first proved "≤ 4 odd prime factors ⇒ {6, 60, 90, 87360}": zbMATH has no review of
   Subbarao–Warren 1966 or of SCNW 1972. "No UPN with 5 odd prime factors" is now checked in Lean (session 4).

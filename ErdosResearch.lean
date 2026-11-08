@@ -2,3 +2,4 @@ import ErdosResearch.Sidon
 import ErdosResearch.UnitaryPerfect
 import ErdosResearch.UnitaryPerfectFourOdd
 import ErdosResearch.UnitaryPerfectFiveOdd
+import ErdosResearch.UnitaryPerfectSixOdd
