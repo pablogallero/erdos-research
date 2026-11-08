@@ -400,6 +400,38 @@ OK, 7358 jobs; new module ~10 s, no warnings):** `ErdosResearch/UnitaryPerfectFi
    is the formalisation package (ω ≤ 7 classification + finiteness for fixed ω + equivalence
    with bounded ω). Submitting it anywhere (e.g. formal-conjectures) needs Pablo's approval.
 
+## Session 7 (2026-11-08): proved, failed, next step
+
+**Decision:** step 1 of session 6. I made the finiteness explicit by tracking the target as a
+ratio of naturals `b/a`.
+
+**Proved (Lean; no sorry; axioms `propext`, `Classical.choice`, `Quot.sound` only; `lake build`
+OK, 7359 jobs; new module ~10 s):** `ErdosResearch/UnitaryPerfectBound.lean`
+- `le_two_pow_of_isUnitaryPerfect`: **a UPN `n` with `k = ω(n)` satisfies `n ≤ 2^(k·2^k)`.**
+- `isUnitaryPerfect_card_primeFactors_eq_subset k`: the same, as `{UPN with ω = k} ⊆ [0, 2^(k·2^k)]`.
+- How: `mul_prod_le` shows that for a sorted list `l` of positive integers with
+  `a·∏(1+1/y) = b` (a, b ∈ ℕ, a > 0), `a·∏(1+y) ≤ (2^|l|·a)^(2^|l|)`. At each step `b ≥ a+1`
+  (the product is > 1), and convexity gives `y ≤ a(2^n − 1)` (`lt_two_pow_mul`). The rest of the
+  list has `a' = a(1+y) ≤ 2^n·a²`. Then `n = ∏y ≤ ∏(1+y)` with a = 1, b = 2.
+- **Not new mathematically.** It is weaker than Goto 2007 (`N < 2^{2^k}`, confirmed on zbMATH in
+  session 6) by a factor `k` in the exponent. New only as a formalisation.
+
+**Failed (minor):** `linarith` could not show `b > a` without the hint `1 < ff y · ∏`. My lemma
+name `prod_le_prod_succ` clashed with a private one in `UnitaryPerfectSixOdd.lean`. The clash only
+appears when building the root `ErdosResearch.lean`, so always run a full `lake build`. Renamed to
+`list_prod_le_prod_one_add`.
+
+**Next step (in order):**
+1. Optional: sharpen to Goto's `2^{2^k}`. It needs the finer step `1 + y ≤ 2^{?}·a` with an
+   exponent that does not grow with n, which is not immediate. Low value: still classical.
+2. The honest assessment of session 6 still holds. A new result on #1052 needs ≥ 9 odd primes
+   (beyond Wall 1988) or a new structural constraint. Neither is in sight with search. Before
+   another session on #1052, it is worth reconsidering a switch of problem: pick one from the
+   candidate table in "Why this problem" where a partial result (a special case or a better
+   bound) is plausible. Check its status on erdosproblems.com and formal-conjectures first.
+3. The formalisation package (ω ≤ 7 classification, finiteness, explicit bound, equivalence with
+   bounded ω) is a complete deliverable. Submitting it anywhere needs Pablo's approval.
+
 ## Daily summary (2026-11-05)
 
 - **Approaches tried:** (a) status check of #43 on erdosproblems.com, arXiv and
@@ -493,6 +525,18 @@ OK, 7358 jobs; new module ~10 s, no warnings):** `ErdosResearch/UnitaryPerfectFi
 - **Quota consumed:** one `lean-research` session. I cannot see exact tokens from inside the
   session (PGAL should use its own accounting). One compilation of the new file and two
   `lake build`s (Mathlib from cache, never compiled). Two zbMATH queries. No money spent.
+
+## Daily summary (2026-11-08, session 7)
+
+- **Approaches tried:** an explicit version of the session 6 finiteness, tracking the target as
+  `b/a` in ℕ so that `t − 1 ≥ 1/a`.
+- **What failed and why:** only small tactic problems (a missing `nlinarith` hint, `field_simp`
+  needing `ring`) and a lemma-name clash with `UnitaryPerfectSixOdd.lean`. All fixed.
+- **Advances:** in Lean, without `sorry`, standard axioms only: every UPN satisfies
+  `n ≤ 2^(ω(n)·2^ω(n))`. Classical (weaker than Goto 2007). No new mathematical result.
+- **Quota consumed:** one `lean-research` session. I cannot see exact tokens from inside the
+  session (PGAL should use its own accounting). About 4 compilations of the new module and 2 full
+  `lake build`s (Mathlib from cache, never compiled). No network queries. No money spent.
 
 ## Not verified
 
