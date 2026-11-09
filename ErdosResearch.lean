@@ -11,3 +11,4 @@ import ErdosResearch.OddWeirdFourData
 import ErdosResearch.OddWeirdFourCore
 import ErdosResearch.OddWeirdFourChunks
 import ErdosResearch.OddWeirdFour
+import ErdosResearch.OddWeirdLastPrime
