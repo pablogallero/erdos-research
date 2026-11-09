@@ -202,3 +202,78 @@ too close to the 60-min CI limit. Above that, shrink the search first or split t
 - **Quota consumed:** one `lean-research` session (exact tokens: from PGAL's accounting). No network
   queries. About 15 module compilations, 3 full `lake build`s (one of them clean for the project's
   own modules, 435 s); Mathlib from the cache, never compiled. No money spent.
+
+## Session 11 (2026-11-09): the last prime as a family
+
+**Idea:** in the ω = 4 and ω = 5 searches almost all the work is the loop over the last prime `q`.
+A deficient prefix `M` makes every prime `q ≤ σ(M)/D` (with `D = 2M − σ(M)`) give a *different*
+primitive abundant number `Mq`, so a finite list of bases cannot cover them. Instead, decide all `q`
+at once ("family" node):
+- `Mq` (q prime, q ∤ M) is pseudoperfect **iff** there are `a ∈ P` and `k = D + a` with
+  `kq ∈ P ∪ (M + P)`, where `P` = the subset sums of the proper divisors of `M`. Proof: the subset is
+  `B ∪ q·A` with `ΣA = M − k`, `ΣB = kq`, and `M − k ∈ P ⇔ k − D ∈ P` by the symmetry
+  `x ↦ σ(M) − M − x` of `P`.
+- `P` is computed exactly: a bitset below `C = 2^15`, plus the interval `[c, σ(M) − M − c] ⊆ P`,
+  proved by the chain condition over the sorted divisors (`d ≤ hi − lo + 1` extends the interval).
+  For most `q`, `a = 0` works because `Dq` lies inside `P` or `M + P`. Only the primes in three
+  windows of width ≈ `C/D` (near 0, near the gap `(σ−M, M)` and near `σ`) are tested one by one.
+- If `Mq` is deficient but the region bound `U·q/(q−1) ≥ 2`, go through the exponents of `q`. Once
+  `N = Mq^e` is abundant, test `σ(N) − 2N` as a base-`q` sum `Σ q^i s_i` with `s_i ∈ SS(div M)` and
+  `s_e ∈ P` (digit DFS). An undecided test returns False, and the parent then splits the exponent.
+
+**Results (Python, `scripts/odd_weird_family.py K`; exact arithmetic, not checked by Lean):**
+- ω = 4: True, 911 nodes (vs 65032 `chk` calls in session 10), 0.1 s, so it agrees with the Lean proof.
+- **ω = 5: True**, 447944 nodes, 234873 families, 104123 individually tested primes, 87788 exponent
+  cases, about 2.5 min. So there is no odd weird number with exactly 5 distinct prime factors (given ω ≤ 4).
+  This independently re-checks Liddy–Riedl's ω ≥ 6 (classical, *not new*). Note: this is the ω = 5 count
+  that did not finish in session 10.
+- ω = 6: **not feasible here.** In 25 min it did 4.4M nodes (≈ 1600 nodes/s), all inside `3^1` and
+  `3^2`. The `3^1` subtree alone is ≈ 3.3M nodes, and the exponent of 3 went up to 21 at ω = 5. My
+  estimate is ≥ 10^8 nodes, i.e. ≥ 15–20 h of pure Python. 90% of the time goes to `Pstruct`
+  (generating and sorting the divisors of `M` for the chain condition). No C compiler or numpy is
+  available (only `python3` and the Lean toolchain without `clang`), and background jobs are capped at 2 h.
+
+**Lean (no sorry; standard axioms; full `lake build` OK, 7366 jobs; module ~7 s):** new
+`ErdosResearch/OddWeirdLastPrime.lean`, imported from the root:
+- `pseudoperfect_of_compl`: some proper divisors summing to `σ(n) − 2n` ⇒ pseudoperfect.
+- `pseudoperfect_mul_prime`: the sufficient direction of the criterion above (`B ∪ q·A`).
+- `sum_properDivisors_mul_prime`, `pseudoperfect_mul_prime_of_sum_divisors` (the `a = 0` test:
+  divisors of `M` summing to `σ(Mq) − 2Mq`), plus a sanity example `945 = 135·7`.
+- Classical and elementary. These are building blocks for a Lean version of the family search, not a new result.
+
+**Failed, and why:**
+- First family version: infinite loops. (i) With a region prefix (`U > R`), the family failed
+  every time and the parent's exponent loop never ended; fixed by going through the exponents of `q`
+  inside the family. (ii) `U ≥ 2` made the `q`-loop endless; fixed by failing fast.
+- The `a` loop capped at 5000 missed `3^4·5^3·19^3·31` (it needs `a ≈ 7.8k`); fixed by choosing `a`
+  analytically by interval intersection.
+- An unsound clause `r − N ∈ P` in the exponent test was caught on re-reading the proof and removed. The exponent
+  test with a full `Pstruct` of `M q^e` was too slow for large `e`; it was replaced by the digit DFS.
+- Finding the holes bit by bit cost 55 s at ω = 4; with `bit_length` it is 0.1 s.
+
+**Next step (in order):**
+1. ω = 5 in Lean with families. Bottleneck: 235k families, each needing the interval certificate of
+   `P(M)` (thousands of sorted divisors), which is far too much for `decide +kernel` (≈ 25k simple
+   calls/min, 3 GB data limit for `lean` now). It would need a *multiplicative* interval lemma that
+   avoids sorting the divisors. Sketch: if `SS(S₁) ⊇ [c, T₁−c]` and `SS(S₂)` has consecutive gaps
+   `≤ T₁ − 2c + 1`, then `SS(S₁ ∪ S₂) ⊇ [c, T₁+T₂−c]`, applied prime by prime (`div(A p^e) = ⋃ p^i div A`).
+   The middle gap `(σ−M, M)` of deficient `A` is the obstacle. Write that out on paper first.
+2. ω = 6 (would be new): only with a much faster engine. Options: (a) the multiplicative lemma
+   above also makes Python ≈ 10× faster (no sorting); (b) a resumable run split by the exponent of 3
+   (`3^1` ≈ 3.3M nodes ≈ 35 min), spread over several sessions, with a checkpoint file. Even then it
+   would be evidence only, not Lean-checked; label it that way.
+3. Honest assessment: everything proved so far is classical. The only route to something new is
+   ω = 6, and it is not close.
+
+## Daily summary (2026-11-09, session 11)
+
+- **Approaches tried:** collapsing the last-prime loop into "family" nodes, with an exact
+  description of the subset sums of the divisors (bitset + interval + symmetry), in Python; the
+  general last-prime lemmas in Lean.
+- **What failed and why:** pure-Python ω = 6 (≥ 10^8 nodes estimated, divisor sorting dominates; no
+  C/numpy here); several infinite loops and one unsound clause in early versions (fixed, see above).
+- **Advances:** ω = 5 checked by computer (Python, not Lean) in 2.5 min. It confirms Liddy–Riedl (classical).
+  New Lean module `OddWeirdLastPrime.lean` (general lemmas, no sorry). No new mathematical result.
+- **Quota consumed:** one `lean-research` session (exact tokens from PGAL's accounting); ≈ 1 h of
+  CPU on Python runs (one 25-min ω = 6 measurement); 3 Lean compilations + 1 full `lake build`
+  (20 s, everything else cached); arXiv API queried once; no money spent.
