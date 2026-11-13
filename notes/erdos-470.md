@@ -277,3 +277,67 @@ at once ("family" node):
 - **Quota consumed:** one `lean-research` session (exact tokens from PGAL's accounting); ≈ 1 h of
   CPU on Python runs (one 25-min ω = 6 measurement); 3 Lean compilations + 1 full `lake build`
   (20 s, everything else cached); arXiv API queried once; no money spent.
+
+## Session 13 (2026-11-13): faster family search, resumable ω = 6 run
+
+**Lost work, noted:** the session 12 notes (in PGAL's progress file) describe a faster
+`odd_weird_family.py` with a checkpoint at `/tmp/pgal-sesion/omega6.ck`, but neither is in this
+branch: the script was the session 11 version, and `/tmp/pgal-sesion` only kept `progreso.md`. So the
+session 12 PR was apparently not merged, and checkpoints outside the repo do not survive. I redid the
+speed-up independently. **The ω = 6 checkpoint now lives in the repo:** `notes/data/omega6.ck`.
+
+**Done (Python only; no Lean changes):** `scripts/odd_weird_family.py`
+- `Pstruct0` (90 % of the time): (1) chain condition at C speed: `max(map(sub, rest, accumulate(...)))`
+  (same condition `d ≤ S − 2c + 1`); (2) divisors of the prefix `f[:-1]` cached and only the last prime
+  power multiplied in; (3) after the interval `[c, sp−c]` is known, bitset updates only for divisors
+  `< c`, and the bits in `[c, C)` are set directly. This is exact: `sp − c ≥ C`, and a hole `x < c` can only be
+  filled by sums of divisors `≤ x`.
+- Checks: ω = 4 and ω = 5 give identical node/family/prime/exponent counts (447944 nodes); 20000 random
+  factorisations give a `Pstruct0` identical to the session 11 version (8793 non-trivial).
+  ω = 5: 130 s → 66 s on this machine.
+- Resumable: `odd_weird_family.py K CKFILE` appends every subtree of depth ≤ 3 decided True (the key is
+  `repr((f, un, ud, j, q0))`) and skips it on restart. These lines are facts, independent of the code version
+  (modulo bugs), so speed-ups do not invalidate the file.
+- Helper worker: `START3=E odd_weird_family.py K CKFILE` starts the top-level exponent loop of 3 at `E`.
+  It writes to the same file but **never records the root** (its root answer is not a proof); the main
+  run reloads the file at depth ≤ 1 before doing a node itself. Tested on ω = 5: helper `START3=2`,
+  then the main run finishes True from the shared checkpoint (4979 nodes, 0.3 s).
+
+**ω = 6 run (evidence only, not Lean):** main run (3^1) plus helper (`START3=2`) on the two cores, until about 02:47 UTC.
+Status at the end of the session: see "ω = 6 status" below.
+
+**Failed / pitfalls:** the first helper version would have written the root as True (unsound); caught
+before running it on ω = 6. `ps`/`pkill` are missing here: kill via `/proc/*/cmdline`.
+
+### ω = 6 status (end of session 13, 02:45 UTC)
+
+- Run time: ≈ 25 min on one core with the session-11 code, then 74 min on 2 cores. Checkpoint
+  `notes/data/omega6.ck`: 3208 lines, 200 KB.
+- **3^1 done** (exact node `([(3, 1)], 4, 3, 5, 5)`: no odd weird number `3·m` with ω = 6;
+  evidence, not Lean). About 25 min. Exponent of 5 up to 19.
+- 3^2: all (3^2, 5^b) for b ≤ 22 done, still running (5^23 and beyond, and then 7, 11, … as the second prime).
+- 3^3: b ≤ 20 done (helper).
+- Rate ≈ 2.7k nodes/s per core. Each 3^a takes ≈ 30–60 min on one core, and the exponent of 5 grows with `a`.
+  The exponent of 3 went up to 21 at ω = 5, so the whole run is likely **≥ 10–20 core-hours**, i.e. several sessions.
+
+**Next step (in order):**
+1. Resume, unchanged: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` (it
+   continues in 3^2) and helper `START3=4 timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck`
+   (3^3 is left to the main run). Stop both before the cutoff, and **the checkpoint must go into the PR**
+   (outside the repo it is lost). With more cores: one helper per exponent of 3.
+2. If 3^a keeps getting slower: the multiplicative interval lemma (session 11/12 sketch) to avoid sorting
+   divisors. `Pstruct0` is still about 70 % of the time (bitset phase 1 plus `max(map(...))` over every divisor).
+3. Honest assessment, unchanged: everything proved so far is classical. ω = 6 would be new (Liddy–Riedl give
+   ω ≥ 6), but only as computer evidence; a Lean version is not in sight.
+
+## Daily summary (2026-11-13, session 13)
+
+- **Approaches tried:** re-implementing the speed-up of the family search (session 12 had been lost);
+  a resumable ω = 6 run with the checkpoint inside the repo and two workers sharing it.
+- **What failed and why:** session 12's work was not in the branch (unmerged PR / `/tmp` not
+  persistent), so a session was lost; I redid it. The first helper version would have recorded an
+  unproved root (caught before use). The main run duplicated the helper's work in 3^2 until it reloaded at depth ≤ 2.
+- **Advances:** ω = 5 in 66 s (2×), with identical counts. ω = 6: 3^1 done; 3^2 and 3^3 well advanced. No new
+  theorem, and no Lean changes (`lake build` OK, 7366 jobs; no sorry/axioms).
+- **Quota consumed:** one `lean-research` session (tokens per PGAL's accounting); ≈ 2.8 h of CPU (2 cores,
+  Python); 1 `lake build` (cached); no external APIs; no money spent.

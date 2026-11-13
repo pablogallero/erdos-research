@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Erdős #470: check that no odd weird number has exactly K distinct prime factors.
 
-Usage: python3 scripts/odd_weird_family.py K      (K = 5: ~2-4 min; prints "K True {...}")
+Usage: python3 scripts/odd_weird_family.py K [CKFILE]   (K = 5: ~1.5 min; prints "K True {...}")
+(with CKFILE: resumable; True subtrees of depth <= 3 are recorded there and skipped on restart)
 
 Same search as `chk` in ErdosResearch/OddWeirdFourCore.lean (sorted odd primes p_1 < ... < p_K,
 exponents either exact or a region "x >= e"; prune when the stride-2 bound shows every completion
@@ -20,8 +21,10 @@ A non-deficient prefix (fewer than K primes) is covered by the result for smalle
 splits the exponent further; True at the top is a proof (modulo bugs) for omega = K, given the
 result for omega < K. isprime is Miller-Rabin; a composite wrongly accepted only adds work.
 """ 
-import sys, time
+import sys, time, os
 from math import gcd
+from itertools import accumulate
+from operator import sub
 sys.setrecursionlimit(100000)
 def isprime(n):
     if n<2: return False
@@ -41,10 +44,20 @@ def sig(p,e): return (p**(e+1)-1)//(p-1)
 C=1<<15
 WIN=10**4
 st={"n":0,"fam":0,"qchk":0,"star":0,"fail":[]}
+DC={}
 def divisors(f):
-    ds=[1]
-    for p,e in f:
-        ds=[d*p**i for d in ds for i in range(e+1)]
+    """sorted divisors of prod p^e; the divisors of the prefix f[:-1] are cached (shared by many
+    families), so only the last prime power is multiplied in."""
+    if not f: return [1]
+    key=tuple(f[:-1])
+    base=DC.get(key)
+    if base is None:
+        base=divisors(f[:-1])
+        if len(DC)>2000: DC.clear()
+        DC[key]=base
+    p,e=f[-1]; ds=list(base)
+    for i in range(1,e+1):
+        pi=p**i; ds+=[d*pi for d in base]
     ds.sort(); return ds
 PC={}
 def Pstruct(f,M,sigma):
@@ -58,19 +71,32 @@ def Pstruct0(f,M,sigma):
     """P = subset sums of proper divisors of M. Returns (B, c, sp): B = exact bits of P below C;
     if c is None then sp < 2C (P known exactly via symmetry); else P ⊇ [c, sp-c] with c <= C."""
     ds=divisors(f)[:-1]; sp=sigma-M
-    B=1; mask=(1<<C)-1; T=0; c=None
-    for d in ds:
-        if c is None and T+d>=2*C:
+    B=1; mask=(1<<C)-1; T=0; c=None; n=len(ds)
+    i=0
+    while i<n:
+        d=ds[i]
+        if T+d>=2*C:
             # SS so far exact: bits below C, symmetric about T/2 with T<2C
             m=(1<<(T//2+1))-1
             holes=(~B)&m
-            c=holes.bit_length(); lo,hi=c,T-c
-            if hi-lo<0: return None
-        if c is not None:
-            if d>hi-lo+1: return None
-            hi+=d
-        if d<C: B|=(B<<d)&mask
-        T+=d
+            c=holes.bit_length()
+            if T-2*c<0: return None
+            break
+        B|=(B<<d)&mask
+        T+=d; i+=1
+    if c is not None:
+        # chain condition for the remaining divisors (same as the old loop, at C speed):
+        # interval [c, S-c] with S = sum of the divisors so far extends by d iff d <= S-2c+1
+        rest=ds[i:]
+        S=accumulate(rest,initial=T)
+        if rest and max(map(sub,rest,S))>1-2*c: return None
+        # bits below C stay exact: [c, C) lies inside the interval [c, sp-c] (sp-c >= C since
+        # sp >= 2C, c <= C), and a hole x < c can only be filled by sums of divisors <= x < c
+        for d in rest:
+            if d>=c: break
+            B|=(B<<d)&mask
+        if c<C: B|=mask^((1<<c)-1)
+        T+=sum(rest)
     assert T==sp
     if c is not None and c>C: return None
     return (B,c,sp)
@@ -163,6 +189,17 @@ def family(f,M,sigma,un,ud,q0):
         q+=2
 
 def search(f,M,sigma,un,ud,j,q0):
+    if len(f)<=CKDEPTH and CK is not None:
+        key=repr((f,un,ud,j,q0))
+        if key not in DONE and len(f)<=2:  # another worker may have finished it meanwhile
+            DONE.update(l.strip() for l in open(sys.argv[2]) if l.strip())
+        if key in DONE: st["skip"]+=1; return True
+        r=search1(f,M,sigma,un,ud,j,q0)
+        if r and (f or START3==1):  # a helper's root answer is not a proof: never record it
+            DONE.add(key); CK.write(key+"\n"); CK.flush()
+        return r
+    return search1(f,M,sigma,un,ud,j,q0)
+def search1(f,M,sigma,un,ud,j,q0):
     st["n"]+=1
     if st["n"]%200000==0: print("progress", st["n"], st["fam"], round(time.time()-t), f, file=sys.stderr, flush=True)
     if sigma>=2*M: return True
@@ -174,7 +211,7 @@ def search(f,M,sigma,un,ud,j,q0):
         for i in range(j): a*=q+2*i; b*=q+2*i-1
         if a<2*b: return True
         if isprime(q):
-            e=1
+            e=START3 if (j==k and q==3) else 1
             while True:
                 s=sig(q,e); pe=q**e
                 an,ad=un*q,ud*(q-1); g=gcd(an,ad)
@@ -184,8 +221,16 @@ def search(f,M,sigma,un,ud,j,q0):
                     return False
                 e+=1
         q+=2
-t=time.time()
 k=int(sys.argv[1]); t=time.time()
+# optional checkpoint: python3 odd_weird_family.py K CKFILE  -- every subtree of depth <= CKDEPTH
+# decided True is appended to CKFILE (one repr per line) and skipped when the run is restarted.
+# START3=E (environment, helper worker only): begin the top-level exponent loop of 3 at E. Its
+# top-level answer means nothing; it only fills the shared CKFILE with True subtrees.
+CKDEPTH=3; DONE=set(); CK=None; st["skip"]=0; START3=int(os.environ.get("START3","1"))
+if len(sys.argv)>2:
+    if os.path.exists(sys.argv[2]):
+        DONE=set(l.strip() for l in open(sys.argv[2]) if l.strip())
+    CK=open(sys.argv[2],"a")
 ok=search([],1,1,1,1,k,3)
 print(k,ok,{x:y for x,y in st.items() if x!="fail"},round(time.time()-t,1))
 for x in st["fail"][:20]: print(x)
