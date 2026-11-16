@@ -60,8 +60,24 @@ of the commit on main + the path `comparator.json`.
   **public** (the reusable workflow checks out `github.repository` at the commit). If the repo is
   private, the preflight job will fail for that reason alone, and making it public is Pablo's decision.
 
+## Session 17 (2026-11-16): the package reached main, but the Lean CI was red
+
+- PR #15 was merged: main = `8c7c6f491454db561ef14d1a31079f4231db338e` (v4.35.0, Challenge/Solution,
+  comparator.json, formalization.yaml, preflight). Checked through the public GitHub API, since
+  `gh` is not installed here.
+- On that commit, **Palomar preflight = success** (run 43959047011, mode full).
+- **Lean = failure**, with 0 jobs (run 43959044110; the same happened on pgal/task-98). Cause:
+  `.github/workflows/lean.yml` was invalid YAML. The step name
+  `Check Lean source requirements (Palomar: module header, line limits)` contains `": "` inside
+  an unquoted scalar, so GitHub could not parse the file. (That is why the run shows up under the
+  file path and not under the name "Lean".) Fix: quote the name. Checked with `yaml.safe_load`.
+  Locally, `check-lean-sources.py` OK and `lake build` OK (9066 jobs). The Lean is unchanged.
+- Lesson: validate workflow YAML (`python3 -c "import yaml; yaml.safe_load(open(F))"`) before
+  handing over a PR.
+
 ## Still to do
 
-1. Watch the PR's CI (Lean + Palomar preflight). Fix any failure from its report.
-2. After the merge with green CI: tell Pablo the full SHA of the merge commit on main and the path
-   `comparator.json`.
+1. Merge this fix and check that "Lean" and "Palomar preflight" are both green on the new main
+   commit (API: `/repos/pablogallero/erdos-research/actions/runs?per_page=6`).
+2. Then tell Pablo the full SHA of that main commit and the path `comparator.json` (repo root).
+   Do **not** report 8c7c6f49: its Lean CI is red.

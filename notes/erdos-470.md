@@ -369,3 +369,29 @@ with the main run plus a helper `START3=4`, both under `timeout` from 14:47 to a
 - **Advances:** Palomar package complete locally (build + comparator OK). ω = 6: 3^2 and 3^3 finished; 3^4 up to 5^15.
 - **Quota consumed:** one session; ≈ 2.1 h of CPU (2 cores, Python, 64 min); 3 `lake build`s + 1 `lake comparator`
   (no Mathlib compilation); GitHub/zbMATH/schema API reads only; no money spent.
+
+## Session 17 (2026-11-16): Lean CI fix, then ω = 6 resumed
+
+First, the Lean CI on main was red because `lean.yml` was invalid YAML (details in `notes/palomar.md`).
+Fixed by quoting one step name. No mathematical change to #470.
+
+**ω = 6 run (evidence only, not Lean):** resumed from `notes/data/omega6.ck` (5503 lines) with the main run
+(in 3^4) plus a helper `START3=5`, both under `timeout 4800`, from 21:41 to 23:01 UTC.
+- Checkpoint now 6359 lines. 3^4: every (3^4, 5^b) with b ≤ 23 is done, and the main run was inside 5^24.
+  3^5: (3^5, 5^b) with b ≤ 4 is done, and the helper was inside 5^5.
+- Still holds as computer evidence: no odd weird number with ω = 6 and v_3 ∈ {1, 2, 3}.
+  3^4 is not finished yet: the bound on b is still being reached.
+
+**Next step (in order):**
+1. Resume with the same two commands: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck`
+   and helper `START3=5 timeout T python3 …`. The checkpoint must go into the PR.
+2. Unchanged: the multiplicative interval lemma to speed up `Pstruct0`. Everything proved so far is classical.
+
+## Daily summary (2026-11-16, session 17)
+
+- **Approaches tried:** checked the CI of the Palomar package now on main; resumed the ω = 6 family search.
+- **What failed and why:** the Lean workflow on main (8c7c6f49) failed with 0 jobs. An unquoted `": "` in a
+  step name made the YAML invalid. Fixed. The Palomar preflight on that commit was already green.
+- **Advances:** the CI fix; ω = 6 checkpoint 5503 → 6359 lines (3^4 up to 5^23, 3^5 up to 5^4).
+- **Quota consumed:** one session; ≈ 2.7 h of CPU (2 cores, Python, 80 min); 1 `lake build` (cached);
+  GitHub API reads only; no money spent.
