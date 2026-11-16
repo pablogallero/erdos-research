@@ -1,4 +1,8 @@
-import ErdosResearch.OddWeirdFourChunks
+module
+
+public import ErdosResearch.OddWeirdFourChunks
+
+@[expose] public section
 
 /-!
 # Erdős Problem 470: an odd number with at most four distinct prime factors is not weird
@@ -18,6 +22,7 @@ factors. New only as a formalisation.
 namespace Erdos470Research
 
 open ArithmeticFunction
+open scoped ArithmeticFunction.sigma
 
 set_option maxRecDepth 100000 in
 theorem certs_ok : panCerts.all certOK = true := by decide +kernel
@@ -26,12 +31,12 @@ lemma good_R0 : Good 1 R0 := good_certs panCerts certs_ok
 
 lemma ppow_fsOf_sort {n : ℕ} (hn : n ≠ 0) :
     ppow (fsOf (n.primeFactors.sort (· ≤ ·)) n.factorization) = n := by
-  have hnd := (n.primeFactors.sort_sorted_lt).nodup
+  have hnd := (Finset.sortedLT_sort n.primeFactors).pairwise.nodup
   have h1 : ppow (fsOf (n.primeFactors.sort (· ≤ ·)) n.factorization) =
       ((n.primeFactors.sort (· ≤ ·)).map fun p => p ^ n.factorization p).prod := by
     simp [ppow, fsOf, Function.comp_def]
   rw [h1, ← List.prod_toFinset _ hnd, Finset.sort_toFinset]
-  conv_rhs => rw [← Nat.factorization_prod_pow_eq_self hn]
+  conv_rhs => rw [← Nat.prod_factorization_pow_eq_self hn]
   rw [Finsupp.prod, Nat.support_factorization]
 
 /-- An odd abundant number with exactly four distinct prime factors is pseudoperfect. -/
@@ -53,7 +58,7 @@ theorem pseudoperfect_of_odd_of_abundant_of_card_primeFactors_eq_four {n : ℕ} 
     exact Nat.one_le_iff_ne_zero.mpr (Finsupp.mem_support_iff.mp
       (by rwa [Nat.support_factorization]))
   have key := sound_top 1 1 ps n.factorization good_R0 (dvd_refl 1) one_pos (by simp) le_rfl
-    rfl (by simp [ps, h]) (Finset.sort_sorted_lt _) hmem (by simp)
+    rfl (by simp [ps, h]) ((Finset.sortedLT_sort _).pairwise) hmem (by simp)
   rw [one_mul, ppow_fsOf_sort hn0] at key
   rcases key with hσ | hps
   · exact absurd (abundant_iff_sigma.mp hab) (by omega)

@@ -1,4 +1,8 @@
-import ErdosResearch.UnitaryPerfect
+module
+
+public import ErdosResearch.UnitaryPerfect
+
+@[expose] public section
 
 /-!
 # Erdős Problem 1052: unitary perfect numbers with four odd prime factors
@@ -38,7 +42,7 @@ open Finset
 /-- The prime-power factors `p ^ v_p(n)` of `n ≠ 0`, sorted: a strictly increasing list of
 pairwise coprime numbers `> 1`, of length `ω(n)`, with product `n` and `∏ (1 + y) = σ*(n)`. -/
 lemma exists_sorted_factors {n : ℕ} (hn : n ≠ 0) :
-    ∃ l : List ℕ, l.Sorted (· < ·) ∧ l.length = n.primeFactors.card ∧ (∀ y ∈ l, 1 < y) ∧
+    ∃ l : List ℕ, l.Pairwise (· < ·) ∧ l.length = n.primeFactors.card ∧ (∀ y ∈ l, 1 < y) ∧
       l.Pairwise Nat.Coprime ∧ l.prod = n ∧ (l.map (1 + ·)).prod = usigma n := by
   set f : ℕ → ℕ := fun p => p ^ n.factorization p with hf
   have hinj : Set.InjOn f n.primeFactors := by
@@ -52,14 +56,14 @@ lemma exists_sorted_factors {n : ℕ} (hn : n ≠ 0) :
       rwa [hpq] at this
     exact (Nat.prime_dvd_prime_iff_eq hp' hq').1 (hp'.dvd_of_dvd_pow hdvd)
   set s := n.primeFactors.image f with hs
-  refine ⟨s.sort (· ≤ ·), s.sort_sorted_lt, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨s.sort (· ≤ ·), (Finset.sortedLT_sort s).pairwise, ?_, ?_, ?_, ?_, ?_⟩
   · rw [length_sort, card_image_of_injOn hinj]
   · intro y hy
     obtain ⟨p, hp, rfl⟩ := mem_image.1 ((mem_sort _).1 hy)
     have hp' := Nat.prime_of_mem_primeFactors hp
     exact Nat.one_lt_pow (hp'.factorization_pos_of_dvd hn (Nat.dvd_of_mem_primeFactors hp)).ne'
       hp'.one_lt
-  · refine (s.sort_sorted_lt).imp_of_mem ?_
+  · refine (Finset.sortedLT_sort s).pairwise.imp_of_mem ?_
     intro x y hx hy hxy
     obtain ⟨p, hp, rfl⟩ := mem_image.1 ((mem_sort _).1 hx)
     obtain ⟨q, hq, rfl⟩ := mem_image.1 ((mem_sort _).1 hy)
@@ -67,13 +71,13 @@ lemma exists_sorted_factors {n : ℕ} (hn : n ≠ 0) :
     exact Nat.coprime_pow_primes _ _ (Nat.prime_of_mem_primeFactors hp)
       (Nat.prime_of_mem_primeFactors hq) hpq
   · have : (s.sort (· ≤ ·)).prod = ∏ y ∈ s, y := by
-      rw [Finset.prod_eq_multiset_prod, Multiset.map_id', ← Finset.sort_eq (· ≤ ·) s,
+      rw [Finset.prod_eq_multiset_prod, Multiset.map_id', ← Finset.sort_eq s (· ≤ ·),
         Multiset.prod_coe]
     rw [this, prod_image hinj]
-    conv_rhs => rw [← Nat.factorization_prod_pow_eq_self hn]
+    conv_rhs => rw [← Nat.prod_factorization_pow_eq_self hn]
     rfl
   · have : ((s.sort (· ≤ ·)).map (1 + ·)).prod = ∏ y ∈ s, (1 + y) := by
-      rw [Finset.prod_eq_multiset_prod, ← Finset.sort_eq (· ≤ ·) s, Multiset.map_coe,
+      rw [Finset.prod_eq_multiset_prod, ← Finset.sort_eq s (· ≤ ·), Multiset.map_coe,
         Multiset.prod_coe]
     rw [this, prod_image hinj, Nat.multiplicative_factorization usigma
       (fun _ _ h => usigma_mul h) usigma_one hn]
@@ -983,7 +987,7 @@ theorem eq_87360_of_isUnitaryPerfect_of_card_primeFactors_eq_five {n : ℕ}
   rw [hcard] at hlen
   rcases l with _ | ⟨y1, _ | ⟨y2, _ | ⟨y3, _ | ⟨y4, _ | ⟨y5, _ | ⟨y6, l⟩⟩⟩⟩⟩⟩ <;>
     simp only [List.length_cons, List.length_nil] at hlen <;> try omega
-  simp only [List.Sorted, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [List.Pairwise, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, List.Pairwise.nil, and_true] at hsort hcop
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hgt
   simp only [List.prod_cons, List.prod_nil, List.map_cons, List.map_nil, mul_one] at hprod hsig

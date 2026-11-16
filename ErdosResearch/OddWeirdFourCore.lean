@@ -1,4 +1,8 @@
-import ErdosResearch.OddWeirdThree
+module
+
+public import ErdosResearch.OddWeirdThree
+
+@[expose] public section
 
 /-!
 # Erdős Problem 470: a sound checker for "multiple of a pseudoperfect base, or deficient"
@@ -25,6 +29,7 @@ checked pieces (each `decide +kernel` gets its own kernel cache).
 namespace Erdos470Research
 
 open ArithmeticFunction
+open scoped ArithmeticFunction.sigma
 
 /-! ## Definitions -/
 
@@ -187,15 +192,15 @@ lemma ppow_pos : ∀ (r : List (ℕ × ℕ)), (∀ pe ∈ r, 0 < pe.1) → 0 < p
 
 /-! ## Certificates -/
 
-lemma decB_sorted : ∀ (l : List ℕ), decB l = true → l.Sorted (· > ·)
+lemma decB_sorted : ∀ (l : List ℕ), decB l = true → l.Pairwise (· > ·)
   | [], _ => by simp
   | [_], _ => by simp
   | a :: b :: l, h => by
     simp only [decB, Bool.and_eq_true, decide_eq_true_eq] at h
     have ih := decB_sorted (b :: l) h.2
-    rw [List.sorted_cons]
+    rw [List.pairwise_cons]
     have ih' := ih
-    rw [List.sorted_cons] at ih'
+    rw [List.pairwise_cons] at ih'
     refine ⟨fun c hc => ?_, ih⟩
     · rcases List.mem_cons.mp hc with rfl | hc
       · exact h.1
@@ -289,7 +294,7 @@ number `n` is deficient or pseudoperfect. -/
 def Sound (rs : Facts) (A B j q e : ℕ) : Prop :=
   ∀ (N M : ℕ) (ps : List ℕ) (ex : ℕ → ℕ), Good N rs → N ∣ M → 0 < M →
     σ 1 M * B ≤ A * M → 3 ≤ q → q % 2 = 1 →
-    ps.length = j → ps.Sorted (· < ·) →
+    ps.length = j → ps.Pairwise (· < ·) →
     (∀ p ∈ ps, p.Prime ∧ q ≤ p ∧ p % 2 = 1 ∧ ¬ p ∣ M ∧ 1 ≤ ex p) →
     (e ≠ 0 → ps.head? = some q ∧ e ≤ ex q) →
     σ 1 (M * ppow (fsOf ps ex)) < 2 * (M * ppow (fsOf ps ex)) ∨
@@ -315,12 +320,12 @@ lemma coprime_M_ppow {M : ℕ} : ∀ (ps : List ℕ) (ex : ℕ → ℕ), (∀ p 
     exact Nat.Coprime.pow_right _ ((Nat.Prime.coprime_iff_not_dvd hp.1).2 hp.2).symm
 
 /-- `σ(R) ∏ (p - 1) ≤ R ∏ p` for `R = ∏ p^{ex p}` over sorted primes. -/
-lemma sigma_ppow_fsOf_le : ∀ (ps : List ℕ) (ex : ℕ → ℕ), ps.Sorted (· < ·) →
+lemma sigma_ppow_fsOf_le : ∀ (ps : List ℕ) (ex : ℕ → ℕ), ps.Pairwise (· < ·) →
     (∀ p ∈ ps, p.Prime) →
     σ 1 (ppow (fsOf ps ex)) * (ps.map (· - 1)).prod ≤ ppow (fsOf ps ex) * ps.prod
   | [], _, _, _ => by simp [ppow, fsOf]
   | p :: ps, ex, hs, hp => by
-    rw [List.sorted_cons] at hs
+    rw [List.pairwise_cons] at hs
     have hp0 := hp p (by simp)
     have hcop : Nat.Coprime (p ^ ex p) (ppow (fsOf ps ex)) := coprime_ppow hp0 _ fun pe hpe => by
       obtain ⟨r, hr, rfl⟩ := List.mem_map.mp hpe
@@ -336,12 +341,12 @@ lemma sigma_ppow_fsOf_le : ∀ (ps : List ℕ) (ex : ℕ → ℕ), ps.Sorted (·
       _ = p ^ ex p * ppow (fsOf ps ex) * (p * ps.prod) := by ring
 
 /-- Stride-2 bound: sorted odd `p ≥ L` give `∏ p · ascP (L-1) ≤ ∏ (p-1) · ascP L`. -/
-lemma prod_mul_ascP_le : ∀ (ps : List ℕ) (L : ℕ), ps.Sorted (· < ·) → (∀ p ∈ ps, p % 2 = 1) →
+lemma prod_mul_ascP_le : ∀ (ps : List ℕ) (L : ℕ), ps.Pairwise (· < ·) → (∀ p ∈ ps, p % 2 = 1) →
     (∀ p ∈ ps, L ≤ p) → 1 ≤ L →
     ps.prod * ascP (L - 1) ps.length ≤ (ps.map (· - 1)).prod * ascP L ps.length
   | [], _, _, _, _, _ => by simp [ascP]
   | p :: ps, L, hs, ho, hL, h1 => by
-    rw [List.sorted_cons] at hs
+    rw [List.pairwise_cons] at hs
     have hpL := hL p (by simp)
     have ih := prod_mul_ascP_le ps (L + 2) hs.2 (fun r hr => ho r (by simp [hr]))
       (fun r hr => by
@@ -436,7 +441,7 @@ lemma sound_loop {rs : Facts} {A B j q : ℕ}
     · exact absurd hp.1 (not_prime_of_skipB hskip)
     · exact hs1 N M _ ex hg hN hM hσ hq3 hqo hlen hs hps fun _ => ⟨rfl, hp.2.2.2.2⟩
   · have hs' := hs
-    rw [List.sorted_cons] at hs'
+    rw [List.pairwise_cons] at hs'
     refine h.2 N M _ ex hg hN hM hσ (by omega) (by omega) hlen hs ?_ (by simp)
     intro r hr
     have hr' := hps r hr
@@ -459,7 +464,7 @@ lemma sound_exp {rs : Facts} {A B j q e : ℕ}
     | cons p ps' => simp at hhead; exact ⟨ps', by rw [hhead]⟩
   have hq := hps q (by simp)
   have hs' := hs
-  rw [List.sorted_cons] at hs'
+  rw [List.pairwise_cons] at hs'
   set x := ex q
   have hn : M * ppow (fsOf (q :: ps') ex) = (M * q ^ x) * ppow (fsOf ps' ex) := by
     rw [ppow_fsOf_cons]; ring

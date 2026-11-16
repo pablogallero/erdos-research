@@ -1,0 +1,94 @@
+version: v0.4
+
+project:
+  name: "Unitary perfect numbers with few prime factors and odd weird numbers with at most four prime factors"
+  description: |
+    Lean 4 / Mathlib formalisation of three classical results related to Erdős Problems 1052
+    (unitary perfect numbers) and 470 (odd weird numbers).
+    (1) For every k there are only finitely many unitary perfect numbers with exactly k distinct
+    prime factors. (2) A number with at most seven distinct prime factors is unitary perfect iff
+    it is 6, 60, 90 or 87360. (3) An odd number with at most four distinct prime factors is not
+    weird (it is deficient or pseudoperfect).
+    The statements use Mathlib only; unitary perfection is spelled out inline as in
+    formal-conjectures. The results are known (Subbarao–Warren 1966, Wall 1975/1988, Goto 2007,
+    Liddy–Riedl 2018); only the formalisation is new. Results (2) and (3) use kernel-checked
+    reflective searches (`decide +kernel`) with proved soundness lemmas.
+  authors:
+    - "Pablo Gallero"
+  responsible_maintainers:
+    - "Pablo Gallero"
+  license: Apache-2.0
+
+classification:
+  arxiv: [math.NT]
+  msc2020: [11A25]
+
+sources:
+  - title: "Unitary perfect numbers"
+    type: paper
+    authors: ["M. V. Subbarao", "L. J. Warren"]
+    identifier: "Can. Math. Bull. 9 (1966) 147–153, Zbl 0139.26901"
+    relationship: background
+    note: "Defines unitary perfect numbers and finds the first four. Existence checked on zbMATH; contents not read."
+  - title: "The fifth unitary perfect number"
+    type: paper
+    authors: ["C. R. Wall"]
+    identifier: "Can. Math. Bull. 18 (1975) 115–122, Zbl 0312.10004"
+    relationship: background
+    note: "Finds the fifth unitary perfect number. Known from the zbMATH review only."
+  - title: "C. R. Wall (1988), Zbl 0657.10003 (exact title not confirmed): a unitary perfect number above the fifth has at least nine distinct odd prime factors"
+    type: paper
+    authors: ["C. R. Wall"]
+    identifier: "Zbl 0657.10003"
+    relationship: independently-proves
+    note: >-
+      Result (2) is a consequence of Wall's theorem together with Wall 1975. The Lean proof is an
+      independent computer-checked search, not a formalisation of Wall's argument. Known from the
+      zbMATH review by P. Hagis jun.; the paper itself was not read and its exact title is not
+      confirmed (the zbMATH metadata is hidden).
+  - title: "Upper bounds for unitary perfect numbers and unitary harmonic numbers"
+    type: paper
+    authors: ["T. Goto"]
+    identifier: "Rocky Mountain J. Math. 37 (2007) 1557–1576, Zbl 1141.11006"
+    relationship: independently-proves
+    note: >-
+      Goto proves N < 2^(2^k) for a unitary perfect number with k distinct prime factors, which
+      implies result (1). The Lean proof of (1) is independent (an induction on sorted prime-power
+      factors with a rational target). Known from the zbMATH review; the paper was not read.
+  - title: "An algorithm to determine all odd primitive abundant numbers with d prime divisors"
+    type: other
+    authors: ["S. Liddy", "J. Riedl"]
+    identifier: "Honors Research Projects 728, University of Akron (2018)"
+    relationship: independently-proves
+    note: >-
+      Shows that an odd weird number has at least six distinct prime factors, which implies
+      result (3). Cited from erdosproblems.com and formal-conjectures; not read. The Lean proof
+      is an independent search over odd primitive abundant numbers with explicit
+      pseudoperfectness certificates.
+  - title: "Erdős Problems 1052 and 470"
+    type: web discussion
+    identifier: "https://www.erdosproblems.com/1052, https://www.erdosproblems.com/470"
+    relationship: background
+    note: "Statements of the open problems; both remain open. This submission does not solve either."
+
+related_formalizations:
+  - id: "google-deepmind/formal-conjectures: FormalConjectures/ErdosProblems/1052.lean and 470.lean"
+    relationship: other
+    note: >-
+      The Challenge uses the same definitions of unitary perfect number (spelled out inline) and of
+      weird number (Mathlib's Nat.Weird). It does not depend on formal-conjectures.
+
+automation:
+  methods:
+    - method: autonomous
+      notes: >-
+        Produced by PGAL, an autonomous research agent of Pablo Gallero built on Anthropic Claude
+        models (Claude Agent SDK), over several sessions in November 2026. The agent chose the
+        results, wrote the Lean proofs and the Python generators in scripts/, and recorded its
+        process in notes/ (erdos-1052.md, erdos-470.md, palomar.md).
+
+review:
+  status: unchecked
+  notes: >-
+    No human mathematical review before submission. Mechanical checks: lake build, and
+    lake comparator (Lean kernel and NanoDa) run locally without the sandbox.

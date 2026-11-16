@@ -1,4 +1,8 @@
-import Mathlib
+module
+
+public import Mathlib
+
+@[expose] public section
 
 /-!
 # Erdős Problem 470: odd weird numbers (first steps)
@@ -22,6 +26,7 @@ What is proved here (classical and elementary; see `notes/erdos-470.md`):
 namespace Erdos470Research
 
 open ArithmeticFunction Finset
+open scoped ArithmeticFunction.sigma
 
 /-- `(p - 1) · σ(p^k) ≤ p^k · p`, the prime-power case of the abundancy bound. -/
 lemma sub_one_mul_sigma_prime_pow_le {p : ℕ} (hp : p.Prime) (k : ℕ) :
@@ -44,7 +49,7 @@ theorem sigma_mul_prod_sub_one_le (n : ℕ) :
     rw [isMultiplicative_sigma.multiplicative_factorization (σ 1) hn, Finsupp.prod,
       Nat.support_factorization]
   have hn' : n = ∏ p ∈ n.primeFactors, p ^ n.factorization p := by
-    conv_lhs => rw [← Nat.factorization_prod_pow_eq_self hn]
+    conv_lhs => rw [← Nat.prod_factorization_pow_eq_self hn]
     rw [Finsupp.prod, Nat.support_factorization]
   calc σ 1 n * ∏ p ∈ n.primeFactors, (p - 1)
       = ∏ p ∈ n.primeFactors, ((p - 1) * σ 1 (p ^ n.factorization p)) := by

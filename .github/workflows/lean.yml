@@ -16,4 +16,6 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+      # Palomar source rules (module header, <= 10,000 lines) and no sorry/native_decide/axiom.
+      - run: python3 scripts/check-lean-sources.py
       - uses: leanprover/lean-action@24581d74d674803a25a81b10b059c5c0cdd344c6  # v1.6.2

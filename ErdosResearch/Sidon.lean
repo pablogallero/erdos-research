@@ -1,4 +1,8 @@
-import Mathlib.Data.Finset.Basic
+module
+
+public import Mathlib.Data.Finset.Basic
+
+@[expose] public section
 
 /-!
 # Sidon sets

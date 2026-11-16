@@ -1,4 +1,8 @@
-import ErdosResearch.UnitaryPerfectFinite
+module
+
+public import ErdosResearch.UnitaryPerfectFinite
+
+@[expose] public section
 
 /-!
 # Erdős #1052: an explicit bound for unitary perfect numbers with `k` prime factors
@@ -56,12 +60,12 @@ lemma lt_two_pow_mul {y a b : ℕ} (l : List ℕ) (hy : 0 < y) (ha : 0 < a)
   exact_mod_cast key'
 
 /-- The explicit bound on sorted lists with target `b / a`. -/
-theorem mul_prod_le : ∀ (l : List ℕ) (a b : ℕ), l.Sorted (· < ·) → (∀ y ∈ l, 0 < y) → 0 < a →
+theorem mul_prod_le : ∀ (l : List ℕ) (a b : ℕ), l.Pairwise (· < ·) → (∀ y ∈ l, 0 < y) → 0 < a →
     (a : ℚ) * (l.map ff).prod = b →
     a * (l.map (1 + ·)).prod ≤ (2 ^ l.length * a) ^ (2 ^ l.length)
   | [], a, _, _, _, _, _ => by simp
   | y :: l, a, b, hs, hpos, ha, h => by
-    rw [List.sorted_cons] at hs
+    rw [List.pairwise_cons] at hs
     have hy : 0 < y := hpos y (by simp)
     have hpos' : ∀ z ∈ l, 0 < z := fun z hz => hpos z (by simp [hz])
     rw [List.map_cons, List.prod_cons] at h
