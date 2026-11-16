@@ -1,4 +1,8 @@
-import ErdosResearch.UnitaryPerfectFiveOdd
+module
+
+public import ErdosResearch.UnitaryPerfectFiveOdd
+
+@[expose] public section
 
 /-!
 # Erdős Problem 1052: no unitary perfect number has exactly six odd prime factors
@@ -39,12 +43,12 @@ lemma ascProd2_pos : ∀ (L r : ℕ), 1 ≤ L → 0 < ascProd2 L r
     simp only [ascProd2]; exact Nat.mul_pos (by omega) (ascProd2_pos _ r (by omega))
 
 /-- Sorted odd entries `≥ L`: `∏ (1 + y) · L(L+2)⋯ ≤ ∏ y · (L+1)(L+3)⋯`. -/
-lemma prod2_succ_mul_le : ∀ (ys : List ℕ) (L : ℕ), ys.Sorted (· < ·) → (∀ y ∈ ys, y % 2 = 1) →
+lemma prod2_succ_mul_le : ∀ (ys : List ℕ) (L : ℕ), ys.Pairwise (· < ·) → (∀ y ∈ ys, y % 2 = 1) →
     (∀ y ∈ ys, L ≤ y) →
     (ys.map (1 + ·)).prod * ascProd2 L ys.length ≤ ys.prod * ascProd2 (L + 1) ys.length
   | [], _, _, _, _ => by simp [ascProd2]
   | y :: ys, L, hs, ho, hL => by
-    rw [List.sorted_cons] at hs
+    rw [List.pairwise_cons] at hs
     have hy : L ≤ y := hL y (by simp)
     have hoy : y % 2 = 1 := ho y (by simp)
     have ih := prod2_succ_mul_le ys (L + 2) hs.2 (fun z hz => ho z (by simp [hz])) fun z hz => by
@@ -223,7 +227,7 @@ def fchk : ℕ → ℕ → ℕ → ℕ → ℕ → List ℕ → ℕ → Bool
 /-- Soundness of `fchk`. -/
 theorem fchk_sound : ∀ (fuel P Q M L : ℕ) (pre : List ℕ) (r : ℕ),
     fchk fuel P Q M L pre r = true → 2 ≤ L →
-    ∀ (ys : List ℕ) (a : ℕ), ys.length = r → ys.Sorted (· < ·) → (∀ y ∈ ys, L ≤ y) →
+    ∀ (ys : List ℕ) (a : ℕ), ys.length = r → ys.Pairwise (· < ·) → (∀ y ∈ ys, L ≤ y) →
       (∀ y ∈ ys, y % 2 = 1) → (∀ y ∈ ys, ∀ p ∈ pre, Nat.Coprime y p) →
       ys.Pairwise Nat.Coprime → L ≤ 2 ^ a → M ≤ 2 ^ a →
       Q * (1 + 2 ^ a) * (ys.map (1 + ·)).prod ≠ 2 * P * 2 ^ a * ys.prod
@@ -287,7 +291,7 @@ theorem fchk_sound : ∀ (fuel P Q M L : ℕ) (pre : List ℕ) (r : ℕ),
     obtain ⟨hbr, hrest⟩ := h
     have hne : ys ≠ [] := by rintro rfl; simp at hlen
     obtain ⟨y, ys', rfl⟩ : ∃ y ys', ys = y :: ys' := List.exists_cons_of_ne_nil hne
-    have hs' := List.sorted_cons.1 hs
+    have hs' := List.pairwise_cons.1 hs
     have hyL : L ≤ y := hL y (by simp)
     have hyo : y % 2 = 1 := hodd y (by simp)
     -- The generic step: everything is `≥ L + 1`.

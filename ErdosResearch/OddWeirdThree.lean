@@ -1,5 +1,9 @@
-import Mathlib
-import ErdosResearch.OddWeird
+module
+
+public import Mathlib
+public import ErdosResearch.OddWeird
+
+@[expose] public section
 
 /-!
 # Erdős Problem 470: no odd weird number with three distinct prime factors
@@ -24,6 +28,7 @@ of one of the eight primitive abundant numbers (so `n` is a multiple of it), or 
 namespace Erdos470Research
 
 open ArithmeticFunction Finset
+open scoped ArithmeticFunction.sigma
 
 /-- A positive multiple of a pseudoperfect number is pseudoperfect: scale the subset. -/
 theorem _root_.Nat.Pseudoperfect.of_dvd {m n : ℕ} (hm : m.Pseudoperfect) (h : m ∣ n)
@@ -272,7 +277,7 @@ theorem pseudoperfect_of_odd_of_abundant_of_card_primeFactors_eq_three {n : ℕ}
   set b := n.factorization q
   set c := n.factorization r
   have hn_eq : n = p ^ a * q ^ b * r ^ c := by
-    conv_lhs => rw [← Nat.factorization_prod_pow_eq_self hn0]
+    conv_lhs => rw [← Nat.prod_factorization_pow_eq_self hn0]
     rw [Finsupp.prod, Nat.support_factorization, hs,
       Finset.prod_insert (by simp; omega), Finset.prod_insert (by simp; omega),
       Finset.prod_singleton, mul_assoc]

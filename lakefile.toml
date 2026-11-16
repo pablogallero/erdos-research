@@ -1,11 +1,21 @@
 name = "ErdosResearch"
-defaultTargets = ["ErdosResearch"]
+defaultTargets = ["ErdosResearch", "Challenge", "Solution"]
 
-# Same toolchain as PGAL's image (lean-toolchain) and the Mathlib tag built for it.
+# Lean v4.35.0 and the matching Mathlib tag (Palomar requires >= v4.35.0-rc2).
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.24.0"
+rev = "v4.35.0"
 
 [[lean_lib]]
 name = "ErdosResearch"
+
+# Palomar package: statements only (Mathlib imports only).
+[[lean_lib]]
+name = "Challenge"
+roots = ["Challenge"]
+
+# Palomar package: proofs of the Challenge statements, with the same names and types.
+[[lean_lib]]
+name = "Solution"
+roots = ["Solution"]

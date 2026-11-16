@@ -1,4 +1,8 @@
-import ErdosResearch.UnitaryPerfectFourOdd
+module
+
+public import ErdosResearch.UnitaryPerfectFourOdd
+
+@[expose] public section
 
 /-!
 # Erdős #1052: finitely many unitary perfect numbers with a fixed number of prime factors
@@ -24,7 +28,7 @@ def ff (y : ℕ) : ℚ := 1 + 1 / (y : ℚ)
 
 /-- Sorted lists of positive integers of length `m` with `∏ (1 + 1/y) = t`. -/
 def GoodList (m : ℕ) (t : ℚ) : Set (List ℕ) :=
-  {l | l.length = m ∧ l.Sorted (· < ·) ∧ (∀ y ∈ l, 0 < y) ∧ (l.map ff).prod = t}
+  {l | l.length = m ∧ l.Pairwise (· < ·) ∧ (∀ y ∈ l, 0 < y) ∧ (l.map ff).prod = t}
 
 lemma ff_pos (y : ℕ) : 0 < ff y := by
   unfold ff; positivity
@@ -110,7 +114,7 @@ theorem goodList_finite : ∀ (m : ℕ) (t : ℚ), (GoodList m t).Finite
     obtain _ | ⟨y, l'⟩ := l
     · simp at hl
     simp only [List.length_cons, Nat.add_right_cancel_iff] at hl
-    rw [List.sorted_cons] at hs
+    rw [List.pairwise_cons] at hs
     rw [List.map_cons, List.prod_cons] at hprod
     have hy : 0 < y := hpos y (by simp)
     have hpos' : ∀ b ∈ l', 0 < b := fun b hb => hpos b (by simp [hb])

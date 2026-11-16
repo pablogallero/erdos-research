@@ -10,3 +10,5 @@ what was tried, what failed and why, and the next step. Plain language; Lean goe
   session 10: ω ≤ 4 in Lean; session 11: ω = 5 checked in Python with last-prime families,
   general last-prime lemmas in Lean; session 13: faster search and a resumable ω = 6 run, checkpoint in
   `data/omega6.ck`).
+- `palomar.md`: the Palomar package (Lean v4.35.0, module system, Challenge/Solution, comparator.json,
+  formalization.yaml, preflight CI); sessions 14–16.

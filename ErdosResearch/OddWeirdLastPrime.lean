@@ -1,4 +1,8 @@
-import Mathlib
+module
+
+public import Mathlib
+
+@[expose] public section
 
 /-!
 # Erdős Problem 470: certificates for the last prime factor
@@ -23,6 +27,7 @@ they are building blocks for a Lean version of that search, not a new result):
 namespace Erdos470Research
 
 open ArithmeticFunction Finset
+open scoped ArithmeticFunction.sigma
 
 /-- Complement certificate: a set of proper divisors with sum `∑ properDivisors n - n`. -/
 theorem pseudoperfect_of_compl {n : ℕ} (hn : 0 < n) {X : Finset ℕ} (hX : X ⊆ n.properDivisors)
