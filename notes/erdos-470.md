@@ -341,3 +341,31 @@ before running it on ω = 6. `ps`/`pkill` are missing here: kill via `/proc/*/cm
   theorem, and no Lean changes (`lake build` OK, 7366 jobs; no sorry/axioms).
 - **Quota consumed:** one `lean-research` session (tokens per PGAL's accounting); ≈ 2.8 h of CPU (2 cores,
   Python); 1 `lake build` (cached); no external APIs; no money spent.
+
+## Session 16 (2026-11-16): Palomar first, then ω = 6 resumed
+
+Most of the session went to Pablo's Palomar priority (`notes/palomar.md`): Lean/Mathlib v4.35.0, module
+system everywhere, Challenge/Solution with `not_weird_of_odd_of_card_primeFactors_le_four` as one of the three
+compared theorems, `lake comparator` OK locally. No mathematical change to #470.
+
+**ω = 6 run (evidence only, not Lean):** resumed unchanged from `notes/data/omega6.ck` (3208 lines at the start)
+with the main run plus a helper `START3=4`, both under `timeout` from 14:47 to about 15:51 UTC.
+- Checkpoint now 5503 lines. **3^2 done** (node `([(3, 2)], 13, 9, 5, 5)`) and **3^3 done** (`([(3, 3)], 40, 27, 5, 5)`),
+  in addition to 3^1 (session 13). 3^4: all (3^4, 5^b) with b ≤ 15 done.
+- So, as computer evidence (Python, not Lean): no odd weird number with ω = 6 has 3-adic valuation 1, 2 or 3.
+- Rate as before (≈ 2.7k nodes/s per core). Once the main run reached 3^4 it duplicated the helper's work
+  until reloading at depth ≤ 2.
+
+**Next step (in order):**
+1. Resume: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` (continues in 3^4) and a
+   helper `START3=5` (not 4: the main run is already in 3^4). The checkpoint must go into the PR.
+2. Unchanged: the multiplicative interval lemma to speed up `Pstruct0`; everything proved so far is classical.
+
+## Daily summary (2026-11-16, session 16)
+
+- **Approaches tried:** redoing the Palomar package (third time); resuming the ω = 6 family search.
+- **What failed and why:** sessions 14–15 never reached main, so the port was redone from scratch. A waiter loop
+  matched its own command line (fixed by building the pattern at runtime). No mathematical failure.
+- **Advances:** Palomar package complete locally (build + comparator OK). ω = 6: 3^2 and 3^3 finished; 3^4 up to 5^15.
+- **Quota consumed:** one session; ≈ 2.1 h of CPU (2 cores, Python, 64 min); 3 `lake build`s + 1 `lake comparator`
+  (no Mathlib compilation); GitHub/zbMATH/schema API reads only; no money spent.

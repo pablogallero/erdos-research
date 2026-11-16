@@ -1,14 +1,16 @@
-import ErdosResearch.Sidon
-import ErdosResearch.UnitaryPerfect
-import ErdosResearch.UnitaryPerfectFourOdd
-import ErdosResearch.UnitaryPerfectFiveOdd
-import ErdosResearch.UnitaryPerfectSixOdd
-import ErdosResearch.UnitaryPerfectFinite
-import ErdosResearch.UnitaryPerfectBound
-import ErdosResearch.OddWeird
-import ErdosResearch.OddWeirdThree
-import ErdosResearch.OddWeirdFourData
-import ErdosResearch.OddWeirdFourCore
-import ErdosResearch.OddWeirdFourChunks
-import ErdosResearch.OddWeirdFour
-import ErdosResearch.OddWeirdLastPrime
+module
+
+public import ErdosResearch.Sidon
+public import ErdosResearch.UnitaryPerfect
+public import ErdosResearch.UnitaryPerfectFourOdd
+public import ErdosResearch.UnitaryPerfectFiveOdd
+public import ErdosResearch.UnitaryPerfectSixOdd
+public import ErdosResearch.UnitaryPerfectFinite
+public import ErdosResearch.UnitaryPerfectBound
+public import ErdosResearch.OddWeird
+public import ErdosResearch.OddWeirdThree
+public import ErdosResearch.OddWeirdFourData
+public import ErdosResearch.OddWeirdFourCore
+public import ErdosResearch.OddWeirdFourChunks
+public import ErdosResearch.OddWeirdFour
+public import ErdosResearch.OddWeirdLastPrime

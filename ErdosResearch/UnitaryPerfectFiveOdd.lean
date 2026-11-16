@@ -1,4 +1,8 @@
-import ErdosResearch.UnitaryPerfectFourOdd
+module
+
+public import ErdosResearch.UnitaryPerfectFourOdd
+
+@[expose] public section
 
 /-!
 # Erdős Problem 1052: no unitary perfect number has exactly five odd prime factors
@@ -69,11 +73,11 @@ def upnCheck : ℕ → ℕ → ℕ → ℕ → List ℕ → ℕ → Bool
       upnCheck fuel P Q (L + 1) pre (r + 1)
 
 /-- Sorted lists with entries `≥ L`: `∏ (1 + y) · L⋯(L+r-1) ≤ ∏ y · (L+1)⋯(L+r)`. -/
-lemma prod_succ_mul_le : ∀ (ys : List ℕ) (L : ℕ), ys.Sorted (· < ·) → (∀ y ∈ ys, L ≤ y) →
+lemma prod_succ_mul_le : ∀ (ys : List ℕ) (L : ℕ), ys.Pairwise (· < ·) → (∀ y ∈ ys, L ≤ y) →
     (ys.map (1 + ·)).prod * ascProd L ys.length ≤ ys.prod * ascProd (L + 1) ys.length
   | [], _, _, _ => by simp [ascProd]
   | y :: ys, L, hs, hL => by
-    rw [List.sorted_cons] at hs
+    rw [List.pairwise_cons] at hs
     have hy : L ≤ y := hL y (by simp)
     have ih := prod_succ_mul_le ys (L + 1) hs.2 fun z hz => by have := hs.1 z hz; omega
     simp only [List.map_cons, List.prod_cons, List.length_cons, ascProd]
@@ -102,7 +106,7 @@ lemma prod_pos_of_one_le : ∀ (ys : List ℕ), (∀ y ∈ ys, 1 ≤ y) → 0 < 
 /-- Soundness of `upnCheck`. -/
 theorem upnCheck_sound : ∀ (fuel P Q L : ℕ) (pre : List ℕ) (r : ℕ),
     upnCheck fuel P Q L pre r = true → 1 ≤ L →
-    ∀ ys : List ℕ, ys.length = r → ys.Sorted (· < ·) → (∀ y ∈ ys, L ≤ y) →
+    ∀ ys : List ℕ, ys.length = r → ys.Pairwise (· < ·) → (∀ y ∈ ys, L ≤ y) →
       (∀ y ∈ ys, ∀ p ∈ pre, Nat.Coprime y p) → ys.Pairwise Nat.Coprime →
       Q * (ys.map (1 + ·)).prod ≠ 2 * P * ys.prod
   | _, P, Q, _, _, 0, h, _, ys, hlen, _, _, _, _ => by
@@ -164,7 +168,7 @@ theorem upnCheck_sound : ∀ (fuel P Q L : ℕ) (pre : List ℕ) (r : ℕ),
     rw [if_neg hb, Bool.and_eq_true, Bool.or_eq_true] at h
     obtain ⟨hy, hrest⟩ := h
     obtain ⟨y, ys', rfl⟩ : ∃ y ys', ys = y :: ys' := List.exists_cons_of_ne_nil hne
-    rw [List.sorted_cons] at hs
+    rw [List.pairwise_cons] at hs
     by_cases hyL : y = L
     · subst hyL
       rcases hy with hy | hy
@@ -180,7 +184,7 @@ theorem upnCheck_sound : ∀ (fuel P Q L : ℕ) (pre : List ℕ) (r : ℕ),
         · simp only [List.map_cons, List.prod_cons] at heq
           linarith [heq]
     · refine upnCheck_sound fuel P Q (L + 1) pre (r + 1) hrest (by omega) (y :: ys') hlen
-        (List.sorted_cons.2 hs) ?_ hpre hcop heq
+        (List.pairwise_cons.2 hs) ?_ hpre hcop heq
       intro z hz
       rcases List.mem_cons.1 hz with rfl | hz
       · have := hL z (by simp); omega

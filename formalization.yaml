@@ -1,0 +1,149 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
+version: "v0.4"
+
+project:
+  name: "Unitary perfect numbers and odd weird numbers with few prime factors (Erdős Problems 1052 and 470)"
+  description: >-
+    Lean 4 / Mathlib formalisation of three known partial results on two open Erdős problems.
+    (1) The unitary perfect numbers with at most seven distinct prime factors are exactly
+    6, 60, 90 and 87360. (2) For every k there are only finitely many unitary perfect numbers
+    with exactly k distinct prime factors. (3) No odd number with at most four distinct prime
+    factors is weird. The case analyses for (1) and (3) are checked by kernel reflection
+    (decide +kernel) with soundness proofs; there is no native_decide.
+  authors:
+    - "Pablo Gallero"
+  license: "Apache-2.0"
+  responsible_maintainers:
+    - "Pablo Gallero"
+
+classification:
+  arxiv: ["math.NT"]
+  msc2020: ["11A25", "03B35"]
+
+sources:
+  - title: "Erdős Problem #1052 (unitary perfect numbers)"
+    type: "web post"
+    location: "https://www.erdosproblems.com/1052"
+    relationship: background
+    note: "Statement of the open problem: are there only finitely many unitary perfect numbers?"
+  - title: "Erdős Problem #470 (odd weird numbers)"
+    type: "web post"
+    location: "https://www.erdosproblems.com/470"
+    relationship: background
+    note: "Statement of the open problem: does an odd weird number exist?"
+  - title: "Unitary perfect numbers"
+    authors:
+      - "M. V. Subbarao"
+      - "L. J. Warren"
+    id: "Zbl 0139.26901"
+    type: "article"
+    location: "Canad. Math. Bull. 9 (1966) 147-153"
+    relationship: background
+    note: "Introduces unitary perfect numbers and lists the first four."
+  - title: "Wall (1988), Zbl 0657.10003: a unitary perfect number other than the five known ones has at least nine odd prime factors"
+    authors:
+      - "Charles R. Wall"
+    id: "Zbl 0657.10003"
+    type: "article"
+    relationship: independently-proves
+    note: >-
+      The classification for at most seven distinct prime factors (at most six odd ones) is a
+      special case of this result, proved here independently by a verified search. The zbMATH
+      metadata of this entry is hidden; the attribution and content come from its zbMATH review.
+  - title: "Upper bounds for unitary perfect numbers and unitary harmonic numbers"
+    authors:
+      - "Takeshi Goto"
+    id: "Zbl 1141.11006"
+    type: "article"
+    location: "Rocky Mountain J. Math. 37 (2007) 1557-1576"
+    relationship: independently-proves
+    note: >-
+      Goto proves N < 2^(2^k) for a unitary perfect number with k distinct prime factors, which
+      implies finiteness for fixed k. The formalisation proves finiteness and the weaker bound
+      N <= 2^(k 2^k) (ErdosResearch.Erdos1052.le_two_pow_of_isUnitaryPerfect, not compared).
+  - title: "An algorithm to determine all odd primitive abundant numbers with d prime divisors"
+    authors:
+      - "Liddy"
+      - "Riedl"
+    type: "other"
+    location: "Honors Research Projects 728, University of Akron (2018)"
+    relationship: independently-proves
+    note: >-
+      Cited by erdosproblems.com for: an odd weird number has at least six distinct prime factors.
+      The formalisation proves the weaker statement for at most four. Not read by the formaliser.
+
+related_formalizations:
+  - id: "https://github.com/google-deepmind/formal-conjectures"
+    relationship: other
+    note: >-
+      The definitions properUnitaryDivisors and IsUnitaryPerfect are copied from
+      FormalConjectures/ErdosProblems/1052.lean. Weirdness is Mathlib's Nat.Weird.
+
+status:
+  scope: >-
+    Formalised: (1) for n with at most 7 distinct prime factors, n is unitary perfect iff
+    n is 6, 60, 90 or 87360; (2) for each k, the set of unitary perfect numbers with exactly k
+    distinct prime factors is finite; (3) an odd n with at most 4 distinct prime factors is not
+    weird. Not formalised: Erdős Problems 1052 and 470 themselves (both open), Wall's bound of
+    nine odd prime factors, Goto's bound N < 2^(2^k), and Liddy-Riedl's bound of six prime
+    factors for odd weird numbers. All three results are known; only the formalisation is new.
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms: []
+
+automation:
+  methods:
+    - method: "autonomous"
+      models: ["Claude Opus 5.5 (claude-opus-5-5)"]
+      framework: "PGAL (Pablo Gallero's autonomous assistant, built on the Claude Agent SDK)"
+      tool_setup: >-
+        PGAL chose the problems, the proof strategy and the search algorithms, wrote all Lean
+        code, the generator scripts (scripts/) and the notes (notes/), and checked everything
+        with lake build and lake comparator. It worked in sessions on branches; changes reached
+        main only through pull requests with green Lean CI.
+      cost:
+        wall_time: "about 16 agent sessions, 2026-11-05 to 2026-11-16"
+        spend_usd: "not tracked"
+        hardware: "PGAL container (2 CPU cores, 8 GB) and GitHub Actions"
+      prompting_notes: >-
+        Standing goal from Pablo: attempt an open Erdős prize problem or obtain a new partial
+        result, with Lean as the final checker; later, package the proved results for Palomar.
+  spend_usd: "not tracked"
+  notes: >-
+    The mathematics, Lean code and metadata were produced autonomously by PGAL. Pablo Gallero
+    set the goals and merges the pull requests; he did not review the proofs separately.
+
+fidelity:
+  divergences: >-
+    The compared statements are special cases of the cited results (fewer prime factors than
+    Wall and Liddy-Riedl; finiteness instead of Goto's explicit bound). Otherwise none known.
+    The number of distinct prime factors is written n.primeFactors.card.
+
+review:
+  status: "unchecked"
+  reviewers:
+    - "none"
+  notes: "No independent mathematical or statement review has been performed."
+
+alignment:
+  namespace: "ErdosResearch"
+  statements:
+    - source: "Wall (1988), special case: at most six odd prime factors"
+      lean: "ErdosResearch.Palomar.isUnitaryPerfect_iff_of_card_primeFactors_le_seven"
+      module: "Challenge"
+      status: "proved"
+      note: "Proof: ErdosResearch.Erdos1052.isUnitaryPerfect_of_card_primeFactors_le_seven_iff."
+    - source: "Goto (2007), consequence: finitely many unitary perfect numbers with k distinct prime factors"
+      lean: "ErdosResearch.Palomar.finite_isUnitaryPerfect_of_card_primeFactors_eq"
+      module: "Challenge"
+      status: "proved"
+      note: "Proof: ErdosResearch.Erdos1052.finite_isUnitaryPerfect_card_primeFactors_eq."
+    - source: "Liddy-Riedl (2018), special case: at most four distinct prime factors"
+      lean: "ErdosResearch.Palomar.not_weird_of_odd_of_card_primeFactors_le_four"
+      module: "Challenge"
+      status: "proved"
+      note: "Proof: Erdos470Research.not_weird_of_odd_of_card_primeFactors_le_four."
+
+acknowledgements: >-
+  Mathlib; google-deepmind/formal-conjectures for the statement of Erdős Problem 1052;
+  erdosproblems.com; the Palomar template.

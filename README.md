@@ -7,11 +7,15 @@ is checked by the compiler, not by trust.
 
 - `ErdosResearch/`: definitions, statements and proofs.
 - `notes/`: what was tried, what failed and what is next, in plain language.
-- Toolchain `leanprover/lean4:v4.24.0` and Mathlib `v4.24.0`, the same as PGAL's image.
-  Change them together with PGAL's `Dockerfile`, never alone.
+- Toolchain `leanprover/lean4:v4.35.0` and Mathlib `v4.35.0` (PGAL's image ships this toolchain;
+  Palomar requires at least v4.35.0-rc2). Every `.lean` file uses Lean's module system.
+- Palomar package (prepared, not submitted): `Challenge.lean` (statements only, Mathlib imports
+  only), `Solution.lean` (the same declarations, proved), `comparator.json` and
+  `formalization.yaml`. Details in `notes/palomar.md`.
 
-CI (`.github/workflows/lean.yml`) builds the project from scratch on every PR. PGAL only
-merges when it is green.
+CI (`.github/workflows/lean.yml`) checks the Lean source rules and builds the project from scratch
+on every PR. PGAL only merges when it is green. `.github/workflows/palomar-preflight.yml` runs
+Palomar's mechanical preflight (predictive only; it registers nothing).
 
 ```bash
 lake exe cache get   # Mathlib's prebuilt cache

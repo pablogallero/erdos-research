@@ -1,1 +1,3 @@
 .lake/
+# `.lake` may be a symlink (PGAL image); `.lake/` does not match a symlink.
+.lake

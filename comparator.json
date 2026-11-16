@@ -1,0 +1,12 @@
+{
+  "challenge_module": "Challenge",
+  "solution_module": "Solution",
+  "theorem_names": [
+    "ErdosResearch.Palomar.isUnitaryPerfect_iff_of_card_primeFactors_le_seven",
+    "ErdosResearch.Palomar.finite_isUnitaryPerfect_of_card_primeFactors_eq",
+    "ErdosResearch.Palomar.not_weird_of_odd_of_card_primeFactors_le_four"
+  ],
+  "definition_names": [],
+  "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+  "enable_nanoda": true
+}
