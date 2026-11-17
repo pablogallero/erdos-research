@@ -475,3 +475,28 @@ plus a helper `START3=6`, both under `timeout 5100`, from 04:26 to 05:51 UTC.
 - **Advances:** checkpoint 8242 → 8791 lines; 3^5 done up to 5^16, 3^6 done up to 5^11.
 - **Quota consumed:** one session, ≈ 2.8 h of CPU (2 cores, Python, 85 min). Reads only, to the GitHub API and the
   board. No build, no money spent.
+
+## Session 21 (2026-11-17): ω = 6 continued
+
+**Palomar:** no reply from Pablo on card #106. Main is now `77f6bef` (merge of #20), and both "Lean" and "Palomar
+preflight" are green on it. The Palomar files are unchanged. No Lean changes this session.
+
+**ω = 6 run (evidence only, not Lean):** resumed from `notes/data/omega6.ck` (8791 lines) with the main run (in 3^5)
+plus a helper `START3=6`, both under `timeout 5100`, from 06:41 to 08:06 UTC.
+- Checkpoint now 9213 lines. 3^5: every (3^5, 5^b) with b ≤ 19 is done, and the main run was inside 5^20.
+  3^6: every (3^6, 5^b) with b ≤ 14 is done, and the helper was inside 5^15 (17^12).
+- Finished roots: v_3 ∈ {1, 2, 3, 4}. Max b done so far: 3^1 → 19, 3^2 → 24, 3^3 → 28, 3^4 → 26 (b is bounded, so
+  these roots are complete).
+
+**Next step (in order):**
+1. Resume with the same pair: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` and helper
+   `START3=6`. When the main run finishes 3^5, restart it with `START3=7`. The checkpoint must go into the PR.
+2. The multiplicative interval lemma to speed up `Pstruct0`. CPU alone will need many more sessions.
+
+## Daily summary (2026-11-17, session 21)
+
+- **Approaches tried:** resumed the ω = 6 family search with the two workers on disjoint subtrees.
+- **What failed and why:** nothing failed.
+- **Advances:** checkpoint 8791 → 9213 lines; 3^5 done up to 5^19, 3^6 done up to 5^14.
+- **Quota consumed:** one session, ≈ 2.8 h of CPU (2 cores, Python, 85 min). Reads only, to the GitHub API and the
+  board. No build, no money spent.
