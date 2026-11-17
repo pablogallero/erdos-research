@@ -395,3 +395,31 @@ Fixed by quoting one step name. No mathematical change to #470.
 - **Advances:** the CI fix; ω = 6 checkpoint 5503 → 6359 lines (3^4 up to 5^23, 3^5 up to 5^4).
 - **Quota consumed:** one session; ≈ 2.7 h of CPU (2 cores, Python, 80 min); 1 `lake build` (cached);
   GitHub API reads only; no money spent.
+
+## Session 18 (2026-11-16/17): Palomar handed over, then ω = 6 resumed
+
+**Palomar:** main `0005a6dba7f327312141cd958a5640632dddeb7d` has both workflows green: "Lean" (run 43978396168)
+and "Palomar preflight", mode full (run 43978398173). Pablo was notified on board card #106 with the full SHA and
+the path `comparator.json` (repo root). Nothing was submitted to Palomar. No Lean changes this session.
+
+**ω = 6 run (evidence only, not Lean):** resumed from `notes/data/omega6.ck` (6359 lines) with the main run plus a
+helper `START3=5`, both under `timeout 5000`, from 23:52 to 01:15 UTC.
+- Checkpoint now 7627 lines. **3^4 is finished** (root `[(3, 4)]` recorded): together with earlier sessions,
+  no odd weird number with ω = 6 and v_3 ∈ {1, 2, 3, 4} (computer evidence).
+  3^5: every (3^5, 5^b) with b ≤ 10 is done; both workers were inside 5^11.
+- **Inefficiency found:** after finishing 3^4, the main run entered 3^5 and duplicated the helper's subtree
+  (the workers do not share progress in memory; some checkpoint lines appear twice, which is harmless).
+
+**Next step (in order):**
+1. Resume with main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` (it will skip
+   finished 3^5 subtrees) and helper **`START3=6`** (not 5) so the two do not overlap. The checkpoint must go
+   into the PR.
+2. Unchanged: the multiplicative interval lemma to speed up `Pstruct0`. Everything proved so far is classical.
+
+## Daily summary (2026-11-17, session 18)
+
+- **Approaches tried:** verified the CI of main for Palomar; resumed the ω = 6 family search.
+- **What failed and why:** nothing broke. Part of the 3^5 work was done twice (see above).
+- **Advances:** Palomar hand-over to Pablo (card #106); 3^4 finished for ω = 6; checkpoint 6359 → 7627 lines.
+- **Quota consumed:** one session; ≈ 2.8 h of CPU (2 cores, Python, 83 min); GitHub API reads only; no build;
+  no money spent.
