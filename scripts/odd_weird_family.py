@@ -23,10 +23,14 @@ result for omega < K. isprime is Miller-Rabin; a composite wrongly accepted only
 """ 
 import sys, time, os
 from math import gcd
-from itertools import accumulate
-from operator import sub
+from bisect import bisect_right
 sys.setrecursionlimit(100000)
+SIEVE_N=1<<24  # exact sieve of Eratosthenes below SIEVE_N (most isprime calls are small q)
+SV=bytearray([1])*SIEVE_N; SV[0]=SV[1]=0
+for _i in range(2,int(SIEVE_N**0.5)+1):
+    if SV[_i]: SV[_i*_i::_i]=bytes(len(range(_i*_i,SIEVE_N,_i)))
 def isprime(n):
+    if n<SIEVE_N: return n>=0 and SV[n]==1
     if n<2: return False
     for p in (3,5,7,11,13,17,19,23,29,31,37):
         if n%p==0: return n==p
@@ -87,16 +91,22 @@ def Pstruct0(f,M,sigma):
     if c is not None:
         # chain condition for the remaining divisors (same as the old loop, at C speed):
         # interval [c, S-c] with S = sum of the divisors so far extends by d iff d <= S-2c+1
-        rest=ds[i:]
-        S=accumulate(rest,initial=T)
-        if rest and max(map(sub,rest,S))>1-2*c: return None
+        # Checked by hops (exactly the same condition): ds is increasing and so is S, so from
+        # index j every d_l <= S_j-2c+1 (l found by bisect) is fine; the next index is either fine
+        # with its own S or a genuine violation.
+        j=i; Sj=T  # invariant: Sj = T + sum(ds[i:j])
+        while j<n:
+            l=bisect_right(ds,Sj-2*c+1,j)
+            if l==j: return None
+            Sj+=sum(ds[j:l]); j=l
         # bits below C stay exact: [c, C) lies inside the interval [c, sp-c] (sp-c >= C since
         # sp >= 2C, c <= C), and a hole x < c can only be filled by sums of divisors <= x < c
-        for d in rest:
+        for l in range(i,n):
+            d=ds[l]
             if d>=c: break
             B|=(B<<d)&mask
         if c<C: B|=mask^((1<<c)-1)
-        T+=sum(rest)
+        T=Sj
     assert T==sp
     if c is not None and c>C: return None
     return (B,c,sp)

@@ -525,3 +525,48 @@ plus a helper `START3=6`, both under `timeout 5340`, from 08:58 to 10:27 UTC.
 - **Advances:** checkpoint 9213 → 9567 lines; 3^5 done up to 5^21, 3^6 done up to 5^17.
 - **Quota consumed:** one session, ≈ 3 h of CPU (2 cores, Python, 89 min). Reads only, to the GitHub API and the
   board. No build, no money spent.
+
+## Session 23 (2026-11-17): faster family search, ω = 6 continued
+
+**Palomar:** no reply from Pablo on card #106. Main is now `f595018` (merge of #22), and both "Lean" and "Palomar
+preflight" are green on it. The Palomar files are unchanged. No Lean changes this session.
+
+**Speed-up of `scripts/odd_weird_family.py` (exact, same search):** a cProfile of ω = 5 (112 s under the profiler)
+showed `isprime` at 20 s (10.5M calls, almost all on small q), the chain condition `max(map(sub, …))` at 28 s,
+`divisors` + sort at 19 s and the phase-1 bitset loop at 22 s.
+- `isprime`: an exact sieve of Eratosthenes below 2^24 (Miller–Rabin above that, as before).
+- Chain condition: checked by hops instead of three full C passes. From index j, every divisor up to
+  `S_j − 2c + 1` (found with `bisect_right`, since the divisors are sorted) passes, because S only grows. The
+  next index either passes with its own S or is a genuine violation, so the condition is exactly the old one.
+  S is kept incrementally with slice sums, so no prefix-sum list is built.
+- Checks: ω = 4 and ω = 5 give the same node/family/q/star counts (911/560/1087/278 and
+  447944/234873/104123/87788). On 20000 random prefixes the old and new `Pstruct0` agree.
+  ω = 5 under the profiler: 112 s → 67 s (≈ 1.7×).
+- The multiplicative interval lemma was **not** implemented. After this change the remaining cost is the
+  phase-1 bitset loop (22 s) and `divisors` + sort (18 s). The lemma would only help with the second, and it
+  needs a careful soundness proof for the middle gap. It is lower priority now.
+
+**ω = 6 run (evidence only, not Lean):** resumed from `notes/data/omega6.ck` (9567 lines). The old script ran
+11:14–11:34 UTC; then both workers were restarted with the faster script under `timeout 3900` (11:34–12:39 UTC).
+The restart lost only the depth-3 subtree each worker was in the middle of.
+- Checkpoint now 10069 lines (9567 → 9576 in the first 20 min, → 10069 in the next 65 min).
+  3^5: every (3^5, 5^b) with b ≤ 24 is done (main was inside 5^25). 3^6: every (3^6, 5^b) with b ≤ 21 is done
+  (helper was inside 5^22).
+- Finished roots: v_3 ∈ {1, 2, 3, 4}. Max b on finished roots: 3^1 → 19, 3^2 → 24, 3^3 → 28, 3^4 → 26.
+  So 3^5 should be close to finishing (a few more b).
+
+**Next step (in order):**
+1. Resume with the same pair: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` and helper
+   `START3=6`. When the main run finishes 3^5 (record `([(3, 5)], …)`), restart it with `START3=7`. The checkpoint
+   must go into the PR.
+2. More speed: the phase-1 bitset loop and `divisors` + sort are what is left. Possible approach: carry the low
+   bitset of SS(div(prefix)) down the DFS. Below C the subset sums of the proper divisors equal those of all the
+   divisors once M ≥ C, so each child adds only its new divisors below C.
+
+**Daily summary:**
+- **Approaches tried:** profiling and two exact speed-ups of the family search; the resumable ω = 6 search on 2 cores.
+- **What failed and why:** nothing failed. A first profile with `nice -n 19` got no CPU and was killed by its
+  `timeout` before printing (rerun with `timeout -s INT`, which lets cProfile print).
+- **Advances:** ≈ 1.7× faster search with identical counts; checkpoint 9567 → 10069 lines; 3^5 up to 5^24, 3^6 up to 5^21.
+- **Quota consumed:** one session, ≈ 3 h of CPU (2 cores, Python, ~85 min, plus ~8 min of profiling/tests).
+  Reads only, to the GitHub API and the board. No build, no money spent.
