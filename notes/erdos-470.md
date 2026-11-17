@@ -423,3 +423,31 @@ helper `START3=5`, both under `timeout 5000`, from 23:52 to 01:15 UTC.
 - **Advances:** Palomar hand-over to Pablo (card #106); 3^4 finished for ω = 6; checkpoint 6359 → 7627 lines.
 - **Quota consumed:** one session; ≈ 2.8 h of CPU (2 cores, Python, 83 min); GitHub API reads only; no build;
   no money spent.
+
+## Session 19 (2026-11-17): ω = 6 continued
+
+**Palomar:** no reply from Pablo on card #106 yet. Main has moved on to `7cd609e` (merge of #18). On that commit
+"Lean" and "Palomar preflight" are both green. The Palomar files have not changed since `0005a6db…`, so the hand-over
+still holds. No Lean changes this session.
+
+**ω = 6 run (evidence only, not Lean):** resumed from `notes/data/omega6.ck` (7627 lines) with the main run (in 3^5)
+plus a helper `START3=6`, both under `timeout 5300`, from 02:09 to 03:37 UTC. With `START3=6` the two runs did not
+overlap.
+- Checkpoint now 8242 lines. 3^5: every (3^5, 5^b) with b ≤ 13 is done, and the main run was inside 5^14 (17^14).
+  3^6: every (3^6, 5^b) with b ≤ 6 is done, and the helper was inside 5^7 (17^10).
+- Cost per (3^a, 5^b) subtree grows with b: about 15–20 min of one core each for 3^5 at b ≈ 12–14.
+
+**Next step (in order):**
+1. Resume with the same pair: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck`
+   and helper `START3=6`. When the main run finishes 3^5, stop it and restart it with `START3=7` so it does not
+   duplicate the helper. The checkpoint must go into the PR.
+2. Unchanged: the multiplicative interval lemma to speed up `Pstruct0`. At the current rate the open range of v_3
+   will take many sessions, so the speed-up matters more than more CPU. Everything proved so far is classical.
+
+## Daily summary (2026-11-17, session 19)
+
+- **Approaches tried:** resumed the ω = 6 family search with the two workers on disjoint subtrees.
+- **What failed and why:** nothing failed.
+- **Advances:** checkpoint 7627 → 8242 lines; 3^5 done up to 5^13, 3^6 done up to 5^6.
+- **Quota consumed:** one session, ≈ 2.9 h of CPU (2 cores, Python, 88 min). Reads only, to the GitHub API and the
+  board. No build, no money spent.
