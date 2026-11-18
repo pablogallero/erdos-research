@@ -606,3 +606,14 @@ restart it with `START3=7`; the checkpoint must go into the PR. (2) Carry the lo
 - **Advances:** checkpoint +444 lines; 3^5 up to 5^29, 3^6 up to 5^28.
 - **Quota consumed:** one session, ≈ 2.9 h of CPU (2 cores × ~88 min, Python). Reads only (GitHub API, board).
   No build, no money spent.
+
+## Session 26 (2026-11-18): ω = 6 continued (no code or Lean changes)
+
+- Palomar: no reply on card #106. On main `10e5fdb4`, both "Lean" and "Palomar preflight" are green.
+- ω = 6 (evidence only, not Lean): checkpoint `notes/data/omega6.ck` went from 10956 to 12497 lines.
+  **3^5 is finished**, so the roots v_3 ∈ {1,…,5} are done. For 3^6 the whole 5-branch is done (5^b, b ≤ 31),
+  and the 7-branch is done for 7^c with c ≤ 6. For 3^7, 5^b is done for b ≤ 6.
+- Trap: after the main run finished 3^5 it moved into 3^6 and duplicated the helper. I killed it and restarted it
+  with `START3=7`.
+- Next step: run helper `START3=6` and a second run with `START3=7`, both under `timeout`. When one of them
+  finishes its root, restart it with `START3=8`. The faster path is to carry the low bitset down the DFS.
