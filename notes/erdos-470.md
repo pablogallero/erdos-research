@@ -589,3 +589,20 @@ the DFS for speed (at ~3 b per root per session, CPU alone needs many more sessi
 - **Advances:** checkpoint +443 lines; 3^5 up to 5^27, 3^6 up to 5^24.
 - **Quota consumed:** one session, ≈ 2.8 h of CPU (2 cores × ~85 min, Python). Reads only (GitHub API, board).
   No build, no money spent.
+
+## Session 25 (2026-11-18): ω = 6 continued (no code or Lean changes)
+
+**Done:** resumed the pair (main + helper `START3=6`, both under `timeout 5300`, 01:16–02:44 UTC).
+Checkpoint `notes/data/omega6.ck` 10512 → 10956 lines. 3^5 done for 5^b with b ≤ 29 (now inside b = 30);
+3^6 done for b ≤ 28 (now inside b = 29). Finished roots: v_3 ∈ {1,2,3,4}. Still evidence only, not Lean.
+Palomar: no reply on card #106; main `1314c236` has "Lean" and "Palomar preflight" green.
+
+**Next step (in order):** unchanged: (1) resume the same pair; when the main run records `([(3, 5)], …)`,
+restart it with `START3=7`; the checkpoint must go into the PR. (2) Carry the low bitset down the DFS for speed.
+
+**Daily summary:**
+- **Approaches tried:** only the resumable ω = 6 search on 2 cores.
+- **What failed and why:** nothing.
+- **Advances:** checkpoint +444 lines; 3^5 up to 5^29, 3^6 up to 5^28.
+- **Quota consumed:** one session, ≈ 2.9 h of CPU (2 cores × ~88 min, Python). Reads only (GitHub API, board).
+  No build, no money spent.
