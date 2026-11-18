@@ -610,10 +610,23 @@ restart it with `START3=7`; the checkpoint must go into the PR. (2) Carry the lo
 ## Session 26 (2026-11-18): ω = 6 continued (no code or Lean changes)
 
 - Palomar: no reply on card #106. On main `10e5fdb4`, both "Lean" and "Palomar preflight" are green.
-- ω = 6 (evidence only, not Lean): checkpoint `notes/data/omega6.ck` went from 10956 to 12497 lines.
+- ω = 6 (evidence only, not Lean): checkpoint `notes/data/omega6.ck` went from 10956 to 12497 lines (11689 after removing duplicates).
   **3^5 is finished**, so the roots v_3 ∈ {1,…,5} are done. For 3^6 the whole 5-branch is done (5^b, b ≤ 31),
   and the 7-branch is done for 7^c with c ≤ 6. For 3^7, 5^b is done for b ≤ 6.
 - Trap: after the main run finished 3^5 it moved into 3^6 and duplicated the helper. I killed it and restarted it
   with `START3=7`.
+- **Checkpoint format (review of this PR).** `notes/data/omega6.ck` is written by `scripts/odd_weird_family.py 6 CKFILE`
+  (function `search`). Each line is `repr((f, un, ud, j, q0))` of a subtree of depth ≤ 3 that the search decided True
+  (no odd weird number in it): `f` = prefix [(prime, exponent)], `un/ud` = the reduced upper bound on σ(n)/n used for
+  the rest, `j` = primes still to place, `q0` = smallest allowed next prime. The loader reads it into a set and skips
+  those subtrees. The same prefix `f` appears with two different `un/ud` on purpose: `search1` calls each prefix twice,
+  once with the region bound q/(q−1) (“exponent ≥ e”) and once with the exact ratio σ(q^e)/q^e. These are different
+  subproblems, not contradictory results. **Duplicates:** 811 lines were exact repeats, written when two workers
+  (main run + `START3` helper) finished the same subtree concurrently (the overlap trap noted in sessions 18 and 26).
+  They were removed in this session (12500 → 11689 lines, same set of keys, every line parses with `ast.literal_eval`).
+  Order is first occurrence; the loader does not depend on order.
+- **Reliability.** This is evidence only, not a proof: no Lean check. The checkpoint only skips work; the claim
+  “no odd weird number with ω = 6” needs a single run without `START3` to finish with `6 True` against this file.
+  Sound only as far as the script is (ω = 4 agrees with Lean; ω = 5 agrees with Liddy–Riedl).
 - Next step: run helper `START3=6` and a second run with `START3=7`, both under `timeout`. When one of them
   finishes its root, restart it with `START3=8`. The faster path is to carry the low bitset down the DFS.
