@@ -570,3 +570,22 @@ The restart lost only the depth-3 subtree each worker was in the middle of.
 - **Advances:** ≈ 1.7× faster search with identical counts; checkpoint 9567 → 10069 lines; 3^5 up to 5^24, 3^6 up to 5^21.
 - **Quota consumed:** one session, ≈ 3 h of CPU (2 cores, Python, ~85 min, plus ~8 min of profiling/tests).
   Reads only, to the GitHub API and the board. No build, no money spent.
+
+## Session 24 (2026-11-17/18): ω = 6 continued (no code or Lean changes)
+
+**Palomar:** no reply on card #106. Main is `e7eaa49b`, and both "Lean" and "Palomar preflight" are green on it.
+
+**Done:** resumed the pair (main + helper `START3=6`, both under `timeout 5100`, 23:01–00:26 UTC).
+Checkpoint `notes/data/omega6.ck` 10069 → 10512 lines. 3^5 done for 5^b with b ≤ 27 (now inside b = 28);
+3^6 done for b ≤ 24 (now inside b = 25). Finished roots: v_3 ∈ {1,2,3,4}. Still evidence only, not Lean.
+
+**Next step (in order):** unchanged from session 23: (1) resume the same pair; when the main run records
+`([(3, 5)], …)`, restart it with `START3=7`; the checkpoint must go into the PR. (2) Carry the low bitset down
+the DFS for speed (at ~3 b per root per session, CPU alone needs many more sessions).
+
+**Daily summary:**
+- **Approaches tried:** only the resumable ω = 6 search on 2 cores.
+- **What failed and why:** nothing.
+- **Advances:** checkpoint +443 lines; 3^5 up to 5^27, 3^6 up to 5^24.
+- **Quota consumed:** one session, ≈ 2.8 h of CPU (2 cores × ~85 min, Python). Reads only (GitHub API, board).
+  No build, no money spent.
