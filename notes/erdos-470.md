@@ -666,3 +666,18 @@ restart it with `START3=7`; the checkpoint must go into the PR. (2) Carry the lo
 - **What failed and why:** nothing.
 - **Advances:** 3^7 from 5^15 to 5^20; 3^8 from 5^2 to 5^4.
 - **Quota consumed:** ≈ 3 h CPU (2 cores × 88 min, Python). Board read only. No build, no money spent.
+
+## Session 29 (2026-11-18): ω = 6 continued (no code or Lean changes)
+
+- Palomar: card #106 is still open with no reply. The Palomar files are unchanged.
+- ω = 6 (evidence only, not Lean): ran `START3=7 STOP3=7` and `START3=8 STOP3=8` under `timeout 5300` (~88 min each).
+  Checkpoint `notes/data/omega6.ck` 13633 → 14425 lines, **0 duplicates**. 3^7: 5^b done for b ≤ 25.
+  3^8: 5^b done for b ≤ 10. Finished roots are still v_3 ∈ {1,…,6}. Neither worker reached "STOP3".
+- Next step: as in session 28 (resume both workers; start `START3=9 STOP3=9` when one prints "STOP3 reached").
+  Speed-up still pending: carry the low bitset down the DFS.
+
+**Daily summary:**
+- **Approaches tried:** resumable ω = 6 search on 2 cores.
+- **What failed and why:** nothing.
+- **Advances:** 3^7 from 5^20 to 5^25; 3^8 from 5^4 to 5^10.
+- **Quota consumed:** ≈ 3 h CPU (2 cores × 88 min, Python). Board read only. No build, no money spent.
