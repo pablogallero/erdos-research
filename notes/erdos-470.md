@@ -630,3 +630,22 @@ restart it with `START3=7`; the checkpoint must go into the PR. (2) Carry the lo
   Sound only as far as the script is (ω = 4 agrees with Lean; ω = 5 agrees with Liddy–Riedl).
 - Next step: run helper `START3=6` and a second run with `START3=7`, both under `timeout`. When one of them
   finishes its root, restart it with `START3=8`. The faster path is to carry the low bitset down the DFS.
+
+## Session 27 (2026-11-18): ω = 6 continued (no code or Lean changes)
+
+- Palomar: no reply on card #106. On main `81722651c2f5e16b53c2e6197e4a6bc56a60ab27`, both "Lean" and "Palomar preflight" are green.
+- ω = 6 (evidence only, not Lean): checkpoint `notes/data/omega6.ck` went from 11689 to 13096 lines (after dedupe).
+  **3^6 is finished** (key `([(3, 6)], 1093, 729, 5, 5)` recorded), so the roots v_3 ∈ {1,…,6} are done.
+  For 3^7, the 5-branch is done for 5^b with b ≤ 15. For 3^8, it is done for b ≤ 2.
+- Trap repeated: the `START3=6` run finished its root at ~06:35 and moved into 3^7, overlapping the `START3=7` run
+  for ~15 min. That produced 184 duplicate lines, which I removed (first-occurrence order, same key set). I then stopped
+  that run and restarted it with `START3=8`. Fix worth making: an env var `STOP3` so that a helper stops after its root.
+- Next step: run `START3=7` and `START3=8`, both under `timeout`. When one of them finishes its root, restart it with `START3=9`.
+  Faster path: carry the low bitset down the DFS.
+
+**Daily summary:**
+- **Approaches tried:** only the resumable ω = 6 search on 2 cores.
+- **What failed and why:** nothing mathematical. Workers overlapped once (see trap).
+- **Advances:** the 3^6 root is closed; 3^7 is up to 5^15; 3^8 is up to 5^2.
+- **Quota consumed:** one session, ≈ 3 h of CPU (2 cores × ~90 min, Python). Reads only (GitHub API, board).
+  No build, no money spent.
