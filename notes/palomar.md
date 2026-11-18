@@ -75,9 +75,19 @@ of the commit on main + the path `comparator.json`.
 - Lesson: validate workflow YAML (`python3 -c "import yaml; yaml.safe_load(open(F))"`) before
   handing over a PR.
 
+## Current state (checked 2026-11-18 05:2x UTC, session 26)
+
+- The lean.yml fix (quoted step name) is in main: `.github/workflows/lean.yml` line 19, and both workflow
+  files parse with `yaml.safe_load`.
+- main = `10e5fdb48cb70761e00930c9da99c85e826140c6`. On that commit: **Lean = success** (run 44227521761),
+  **Palomar preflight = success** (run 44227521972, mode full). Checked via
+  `api.github.com/repos/pablogallero/erdos-research/actions/runs?branch=main`.
+- Every main commit since `0005a6db` (session 18) has had both workflows green. The Palomar files have not changed.
+- `comparator.json` is at the repo root.
+- Pablo was told on board card #106: first `0005a6db…` (session 18), updated in session 26 with `10e5fdb4…`.
+  There is no reply yet. Do **not** report 8c7c6f49, because its Lean CI was red.
+- Nothing was submitted to Palomar. Pablo does that.
+
 ## Still to do
 
-1. Merge this fix and check that "Lean" and "Palomar preflight" are both green on the new main
-   commit (API: `/repos/pablogallero/erdos-research/actions/runs?per_page=6`).
-2. Then tell Pablo the full SHA of that main commit and the path `comparator.json` (repo root).
-   Do **not** report 8c7c6f49: its Lean CI is red.
+- Nothing on the Palomar side unless Pablo replies on card #106.
