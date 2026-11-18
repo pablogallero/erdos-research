@@ -649,3 +649,20 @@ restart it with `START3=7`; the checkpoint must go into the PR. (2) Carry the lo
 - **Advances:** the 3^6 root is closed; 3^7 is up to 5^15; 3^8 is up to 5^2.
 - **Quota consumed:** one session, ≈ 3 h of CPU (2 cores × ~90 min, Python). Reads only (GitHub API, board).
   No build, no money spent.
+
+## Session 28 (2026-11-18): ω = 6 continued, `STOP3` added (no Lean changes)
+
+- `scripts/odd_weird_family.py`: new optional env var `STOP3=E`. A worker stops (exit 0, root never recorded) once
+  the root exponent 3^E is finished, so helpers no longer drift into the next root. Search logic unchanged; ω = 4
+  still gives 911 nodes and True. Test: `STOP3=1` on ω = 4 stops after 3^1 as expected.
+- ω = 6 (evidence only, not Lean): ran `START3=7 STOP3=7` and `START3=8 STOP3=8` for ~88 min each.
+  Checkpoint `notes/data/omega6.ck` 13096 → 13633 lines, **0 duplicates** (thanks to STOP3).
+  3^7: 5-branch done for 5^b with b ≤ 20. 3^8: done for b ≤ 4. Finished roots still v_3 ∈ {1,…,6}.
+- Next step: resume with `START3=7 STOP3=7` and `START3=8 STOP3=8` under `timeout`. When one exits with
+  "STOP3 reached", start `START3=9 STOP3=9`. Speed-up still pending: carry the low bitset down the DFS.
+
+**Daily summary:**
+- **Approaches tried:** resumable ω = 6 search on 2 cores, plus a small tooling fix (STOP3).
+- **What failed and why:** nothing.
+- **Advances:** 3^7 from 5^15 to 5^20; 3^8 from 5^2 to 5^4.
+- **Quota consumed:** ≈ 3 h CPU (2 cores × 88 min, Python). Board read only. No build, no money spent.
