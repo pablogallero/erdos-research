@@ -230,13 +230,16 @@ def search1(f,M,sigma,un,ud,j,q0):
                 if not search(f+[(q,e)],M*pe,sigma*s,bn//g,bd//g,j-1,q+2):
                     return False
                 e+=1
+                if STOP3 and j==k and q==3 and e>STOP3:  # helper root finished: stop, do not enter 3^(STOP3+1)
+                    print("STOP3 reached: 3^%d done"%STOP3, st, flush=True); raise SystemExit(0)
         q+=2
 k=int(sys.argv[1]); t=time.time()
 # optional checkpoint: python3 odd_weird_family.py K CKFILE  -- every subtree of depth <= CKDEPTH
 # decided True is appended to CKFILE (one repr per line) and skipped when the run is restarted.
 # START3=E (environment, helper worker only): begin the top-level exponent loop of 3 at E. Its
 # top-level answer means nothing; it only fills the shared CKFILE with True subtrees.
-CKDEPTH=3; DONE=set(); CK=None; st["skip"]=0; START3=int(os.environ.get("START3","1"))
+# STOP3=E (environment, optional): stop after the root exponent 3^E is finished (avoids overlap between workers).
+CKDEPTH=3; DONE=set(); CK=None; st["skip"]=0; START3=int(os.environ.get("START3","1")); STOP3=int(os.environ.get("STOP3","0"))
 if len(sys.argv)>2:
     if os.path.exists(sys.argv[2]):
         DONE=set(l.strip() for l in open(sys.argv[2]) if l.strip())
