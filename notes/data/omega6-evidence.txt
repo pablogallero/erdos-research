@@ -1,0 +1,64 @@
+Evidence for notes/data/omega6.ck.gz and for the C/GMP port (session 31 follow-up 2, 2026-11-19 UTC).
+Plain text so that it can be reviewed in the diff. Regenerate with the commands shown.
+
+1. Canonical checkpoint
+   Only notes/data/omega6.ck.gz is tracked. notes/data/omega6.ck is deleted from the repo in this change
+   (git rm) and is gitignored, so there is a single canonical checkpoint. The previous plain checkpoint
+   stays in git history: `git show 5598d477e19fc7067487c291b436b87b9ddf0b1f:notes/data/omega6.ck`.
+
+2. Integrity of omega6.ck.gz
+   gzip -t notes/data/omega6.ck.gz                       -> OK
+   sha256 of omega6.ck.gz                                -> 6cb4668249a68022d708fe071e8ac2041879798718784da54b3f70b40aa51bdb
+   sha256 of `zcat omega6.ck.gz` (decompressed)          -> 17119dff600c3c7575607d202a65d2fdf70e921744b25767ac37842892ba6a73
+   lines of the decompressed file                        -> 17599
+   duplicate lines (`sort | uniq -d | wc -l`)            -> 0
+
+3. Superset of the previous checkpoint (no line lost)
+   previous = notes/data/omega6.ck at commit 5598d477 (main before this change)
+   sha256 of previous                                    -> 7527520069132c9ba405940dcdd0f243d72740e3aa1ae8cd6c8131c55b58f2f4
+   lines of previous                                     -> 14425
+   `head -n 14425 <decompressed> | cmp - previous`       -> identical (the previous file is an exact byte prefix)
+   `comm -23 sorted(previous) sorted(new) | wc -l`       -> 0     (no previous line missing)
+   `comm -13 sorted(previous) sorted(new) | wc -l`       -> 3174  (new lines: 768 in 3^7, 1105 in 3^8, 1301 in 3^9)
+   Re-check:
+     git show 5598d477:notes/data/omega6.ck > /tmp/old.ck; zcat notes/data/omega6.ck.gz > /tmp/new.ck
+     head -n 14425 /tmp/new.ck | cmp - /tmp/old.ck && echo prefix-identical
+
+4. Backup before resuming omega = 6
+   The checkpoint is append-only (one line per subtree decided True; a run never rewrites or deletes lines).
+   Backup before any run = the committed file (git history, item 1) plus a local copy made at the start of
+   every session (this session: /tmp/pgal-sesion/bk/omega6.ck.HEAD and omega6.ck.gz.s31, not persistent).
+   Item 3 shows that no line of the backup was lost when session 31 resumed omega = 6 with the C binary.
+
+5. C vs Python validation: real output of `sh scripts/validate-owf.sh` on this working tree
+   Files validated (sha256):
+     scripts/odd_weird_family.py  e3a281ee14a5409805df4973db3163442dce12dce7ae8cd6d481087253a928d5
+     scripts/odd_weird_family.c   b0841f9cd6edf78862cde026f5429200b7c6d6db3a0f5e87194856c49469031a
+     scripts/validate-owf.sh      c19547ce39180c53296dbd5169c7340ff16b13be4431e08ea358741a275743f5
+   Run on 2026-11-19 01:17 UTC (gcc + libgmp in the PGAL image), exit code 0:
+--- begin output ---
+K=4 python: 4 True {'n': 911, 'fam': 560, 'qchk': 1087, 'star': 278, 'skip': 0}
+K=4 C (PSLOW=auto): same counters, same failures, byte-identical checkpoint (591 lines)
+K=4 C (PSLOW=1): same counters, same failures, byte-identical checkpoint (591 lines)
+K=4 C (PSLOW=2): same counters, same failures, byte-identical checkpoint (591 lines)
+K=5 python: 5 True {'n': 447944, 'fam': 234873, 'qchk': 104123, 'star': 87788, 'skip': 0}
+K=5 C (PSLOW=auto): same counters, same failures, byte-identical checkpoint (11382 lines)
+K=5 C (PSLOW=1): same counters, same failures, byte-identical checkpoint (11382 lines)
+K=5 C (PSLOW=2): same counters, same failures, byte-identical checkpoint (11382 lines)
+cross-resume Python->C: cut at 3145 lines, C finished True, same key set
+cross-resume C->Python: cut at 1862 lines, Python finished True, same key set
+ALL OK
+
+real	3m0.833s
+user	1m47.830s
+sys	0m2.579s
+--- end output ---
+   (The CI only runs `lake build`; anyone can re-run this script locally with gcc and libgmp installed.)
+
+6. ROOTTEST runs (estimate of the remaining roots 3^E; see notes/erdos-470.md, session 31 follow-up 2)
+   Binary built from the .c above (gcc -O2), one core each, 2026-11-19 01:17-02:38 UTC:
+   ROOTTEST=45  -> "ROOTTEST 3^45 False {'n': 7066159, 'fam': 3010948, 'qchk': 866280, 'star': 868376, 'skip': 0, 'nfail': 0} 789"
+   ROOTTEST=50  -> no result; killed at 20.6M nodes (80 min), last prefix [(3, 50), (5, 8), (19, 5), (97, 6), (9281, 2)]
+   ROOTTEST=60  -> no result; killed at 16.6M nodes; its 83 progress lines (n, fam, prefix with 3^E) are identical
+                   to the first 83 of ROOTTEST=50. ROOTTEST=45 differs from ROOTTEST=50 from the 14th line (2.8M nodes).
+   ROOTTEST=8   -> False, 853 nodes;  ROOTTEST=20 -> False, 1723 nodes.

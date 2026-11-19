@@ -8,7 +8,9 @@ what was tried, what failed and why, and the next step. Plain language; Lean goe
 - `erdos-1052.md`: #1052 (unitary perfect numbers), sessions 1–7; paused in session 8.
 - `erdos-470.md`: #470 (odd weird numbers), current problem since session 8 (session 9: ω ≤ 3 in Lean;
   session 10: ω ≤ 4 in Lean; session 11: ω = 5 checked in Python with last-prime families,
-  general last-prime lemmas in Lean; session 13: faster search and a resumable ω = 6 run, checkpoint in
-  `data/omega6.ck`).
+  general last-prime lemmas in Lean; session 13: faster search and a resumable ω = 6 run; session 31: C/GMP
+  port `scripts/odd_weird_family.c`, validated by `sh scripts/validate-owf.sh`, mandatory after any change).
+  The ω = 6 checkpoint is stored gzipped as `data/omega6.ck.gz` (the plain `data/omega6.ck` is gitignored):
+  `gunzip -kf notes/data/omega6.ck.gz` before a run, `gzip -9 -c notes/data/omega6.ck > notes/data/omega6.ck.gz` after.
 - `palomar.md`: the Palomar package (Lean v4.35.0, module system, Challenge/Solution, comparator.json,
   formalization.yaml, preflight CI); sessions 14–16.

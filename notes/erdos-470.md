@@ -6,6 +6,12 @@ numbers? The $10 is for (i) (Guy B2). Lean: `FormalConjectures/ErdosProblems/470
 Mathlib's `Nat.Weird` (abundant ∧ ¬ pseudoperfect). Both parts are still `sorry` there, as are the
 variants `odd_weird_10_pow_21` (Fang) and the Liddy–Riedl variant.
 
+**ω = 6 checkpoint location (since session 31):** the repo stores only **`notes/data/omega6.ck.gz`**; the plain
+`notes/data/omega6.ck` is no longer tracked (it is gitignored). Every older session below that says
+`notes/data/omega6.ck` means the decompressed file: run `gunzip -kf notes/data/omega6.ck.gz` before resuming and
+`gzip -9 -c notes/data/omega6.ck > notes/data/omega6.ck.gz` afterwards. Before running the C binary after any change
+to the search code, `sh scripts/validate-owf.sh` must print `ALL OK`.
+
 ## Why switch from #1052 (decision of 2026-11-08, session 8)
 
 Session 7 concluded that something new on #1052 needs ≥ 9 odd primes (Wall 1988 covers ≤ 8), which
@@ -681,3 +687,85 @@ restart it with `START3=7`; the checkpoint must go into the PR. (2) Carry the lo
 - **What failed and why:** nothing.
 - **Advances:** 3^7 from 5^20 to 5^25; 3^8 from 5^4 to 5^10.
 - **Quota consumed:** ≈ 3 h CPU (2 cores × 88 min, Python). Board read only. No build, no money spent.
+
+## Session 31 (2026-11-18/19): C/GMP port of the family search; ω = 6 continued with it (no Lean changes)
+
+Task from Pablo (mail "Erdos"): port `odd_weird_family.py` to C/GMP with the same checkpoint, validate on ω = 4/5,
+continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate how many roots 3^E are left.
+(Session 30 had done a port, but it never reached the repo; this one was written again from scratch.)
+
+- **New `scripts/odd_weird_family.c`** (build: `sh scripts/build-odd-weird-family.sh /tmp/owf`, i.e.
+  `gcc -O2 -o /tmp/owf scripts/odd_weird_family.c -lgmp`; the binary is not committed). It is a line-by-line port:
+  same node order, counters, failure list, START3/STOP3, and the same checkpoint keys (Python repr), so both
+  versions share `notes/data/omega6.ck`. Hot spot (sorted divisors + `Pstruct0`) runs in `unsigned __int128`
+  when σ < 2^126, in fixed 256-bit integers when σ < 2^254 (primes < 2^64), and in mpz otherwise; the bitset
+  shift-or only touches words that can change (exact: bits above T+d are zero, bits ≥ c are set afterwards).
+  The divisor list of (q, e) is (q, e−1)'s list merged with base·q^e (incremental).
+- **Validation:** ω = 4 identical counters (911 nodes). ω = 5 identical counters
+  (447944 / 234873 / 104123 / 87788) and a **byte-identical checkpoint** with Python, on all three paths
+  (auto, `PSLOW=1` = mpz only, `PSLOW=2` = w256). Cross-resume Python→C and C→Python (cut after 12 s / 6 s)
+  finish True with the same key set as a full run. ω = 6 (3^8 slice, 1.5M nodes, 590k families): auto and
+  mpz-only give identical counters and checkpoint; in a 90 s run, Python's new keys are an exact prefix of C's.
+  **Reproducible check (mandatory after any change to either version):** `sh scripts/validate-owf.sh` builds the C
+  binary in a temp dir and, for K = 4 and 5, compares Python vs C (auto, `PSLOW=1`, `PSLOW=2`) result line,
+  counters, failure list and checkpoint bytes, then does both cross-resumes (timeout-cut run finished by the other
+  version, same key set as a full run). Exits non-zero on any mismatch. Last run: `ALL OK` in 1 min 46 s.
+- **Speed:** ω = 5 in 5.2 s CPU vs 36 s Python (≈ 7×). In ω = 6 / 3^8 (σ often > 2^126) the w256 path took a
+  500k-node slice from 12.2 s to 7.6 s CPU; overall ≈ 4–5× Python there.
+- **Bitset carried down the DFS (optional): not done.** Session 30 measured only ≈ 8 % for it, and the sorted
+  merge would have to be redone and revalidated; the 256-bit path was the better use of the time.
+- **ω = 6 (evidence only):** C workers `START3=7 STOP3=7` (→ **3^7 finished**), then `START3=8 STOP3=8` and
+  `START3=9 STOP3=9`. Finished roots: v_3 ∈ {1,…,7}. See progreso for the 5^b reached.
+- **Estimate of the remaining roots.** The top-level loop over v_3 = E stops at the first E whose *region*
+  subtree (`search([(3,E)], …, un/ud = 3/2, j = 5, q0 = 5)`) is True. `ROOTTEST=E` runs just that call.
+  Calibration on ω = 5: False for E ≤ 22 in ≤ 4k nodes, True at 23 (18k nodes), exactly where the real run closes.
+  ω = 6: **False (rigorous, deterministic) for E = 8, 12, 16, 20, 25, 30, 35, 36, 37, 38, 40** (≤ 1.5M nodes,
+  ≤ 2 min each); E = 45 and 50 are still running after 2.2M nodes / 4 min without failing (inconclusive).
+  So the loop goes past E = 40 unless one of the untested E ≤ 39 is True (on ω = 5 the pattern was monotone).
+  Estimate (rough): what is established is only a **lower bound**: the loop does not close at E = 40 (rigorous),
+  so **at least ≈ 33 roots remain after 3^7** (unless an untested E ≤ 39 closes, which the monotone ω = 5 pattern
+  makes unlikely). There is **no measured upper bound**: E = 45 and 50 are unresolved, and E ≈ 41–50 (≈ 33–42 roots)
+  is an extrapolation, not a measurement; the closing exponent could be higher. Per root the C version needs very
+  roughly 2–3 core-hours (3^8/3^9 advance ≈ 8–9 values of b per 35 min per worker; b goes to ≈ 26–31 and later
+  b are heavier; large E not measured), so the order of magnitude is **≈ 100 core-hours, possibly more**. The first
+  thing to tighten it is to let `ROOTTEST=45` / `ROOTTEST=50` finish.
+- **Checkpoint format change:** `omega6.ck` grew past 1 MB (17599 lines, 0 duplicates; 3^8 done for 5^b with b ≤ 25,
+  3^9 for b ≤ 18 at the stop), so the repo now stores **`notes/data/omega6.ck.gz`** (gzip -9) and ignores the plain
+  file. Before running: `gunzip -kf notes/data/omega6.ck.gz`; after: `gzip -9 -c notes/data/omega6.ck > notes/data/omega6.ck.gz`.
+  The plain file is deleted from the repo in this change (`git rm notes/data/omega6.ck`, done in follow-up 2; the
+  earlier `git rm --cached` did not survive into the PR), so only the `.gz` is tracked.
+  **Integrity check of the `.gz` (done on 2026-11-19):** `gzip -t` OK; it decompresses to 17599 lines with 0
+  duplicate lines; every one of the 14425 lines of the previously tracked `omega6.ck` is present, plus 3174 new
+  lines (keys from 3^7 to its end and from 3^8 / 3^9). Commands: `zcat … | sort | uniq -d | wc -l` → 0;
+  `comm -23 old new` → 0; `comm -13 old new` → 3174.
+
+### Session 31 follow-up 2 (review, 2026-11-19)
+
+- **Single canonical checkpoint:** `notes/data/omega6.ck` is now deleted in the diff (`git rm`); only
+  `notes/data/omega6.ck.gz` is tracked. The old plain file stays in git history (commit 5598d477).
+- **Verifiable evidence:** new plain-text `notes/data/omega6-evidence.txt` with the sha256 of the `.gz` and of its
+  decompressed content, the line count (17599), 0 duplicates, the proof that the previous checkpoint (14425 lines,
+  sha256 given) is an exact byte prefix of the new one (+3174 lines: 768 in 3^7, 1105 in 3^8, 1301 in 3^9), the
+  backup procedure, and the real output of `sh scripts/validate-owf.sh` (`ALL OK`, exit 0) together with the
+  sha256 of the validated `.py`, `.c` and script.
+- **Backup:** the checkpoint is append-only. The backup before a run is the committed file plus a session-local
+  copy. The prefix check above shows that no line was lost when session 31 resumed ω = 6 with C.
+- **ROOTTEST (C, one core each, region subtree of root 3^E):**
+  - E = 45: **False** after 7,066,159 nodes (789 s). The loop does not close at 45 (rigorous for this algorithm).
+  - E = 50: no failure after 20.6M nodes (80 min, at 5^8); stopped at 02:38 UTC for lack of time, inconclusive.
+  - E = 60: visits **exactly the same nodes** as E = 50: all 83 progress lines (every 200k nodes, up to 16.6M nodes)
+    have identical node and family counts and prefixes. Stopped at 16.6M nodes. E = 45 diverges from E = 50 at 2.8M nodes.
+  - Observation (not proved): from some E on, the region subtree no longer depends on E. So either it is True for
+    all large E (the loop closes at the first such E, plausibly between 46 and 50), or it is False for all of them,
+    and then the top-level loop over v_3 never closes and the search does not terminate for ω = 6.
+- **Estimate of the remaining roots, with its margin:**
+  - Lower bound: the loop does not close at any tested E ≤ 45, so it runs over 3^8 … 3^46 at least, i.e.
+    **≥ 39 roots after 3^7**. This is rigorous for the tested E; an untested E in 41–44 could still close, but the
+    monotone ω = 5 pattern makes that unlikely.
+  - Upper bound: **not available**. If E = 50 turns out True, the loop closes at some E ≤ 50, so there are **39–43
+    roots** (central ≈ 41). If E = 50 is False, the same-tree observation suggests that no larger E closes either, and
+    then the number of roots is unbounded (the method would need a different stopping argument).
+  - Cost: the region subtree alone of a large root takes > 70 min of one C core. With the earlier 2–3 core-hours per
+    root, that gives **≥ ≈ 80–120 C core-hours** if the loop closes by E = 50, and no bound otherwise.
+- **Next step for the estimate:** let `ROOTTEST=50` finish (several core-hours, under `timeout`, across sessions if
+  needed; it has no checkpoint of its own). Its answer decides between "39–43 roots" and "the loop does not terminate".
