@@ -681,3 +681,42 @@ restart it with `START3=7`; the checkpoint must go into the PR. (2) Carry the lo
 - **What failed and why:** nothing.
 - **Advances:** 3^7 from 5^20 to 5^25; 3^8 from 5^4 to 5^10.
 - **Quota consumed:** ≈ 3 h CPU (2 cores × 88 min, Python). Board read only. No build, no money spent.
+
+## Session 31 (2026-11-18/19): C/GMP port of the family search; ω = 6 continued with it (no Lean changes)
+
+Task from Pablo (mail "Erdos"): port `odd_weird_family.py` to C/GMP with the same checkpoint, validate on ω = 4/5,
+continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate how many roots 3^E are left.
+(Session 30 had done a port, but it never reached the repo; this one was written again from scratch.)
+
+- **New `scripts/odd_weird_family.c`** (build: `sh scripts/build-odd-weird-family.sh /tmp/owf`, i.e.
+  `gcc -O2 -o /tmp/owf scripts/odd_weird_family.c -lgmp`; the binary is not committed). It is a line-by-line port:
+  same node order, counters, failure list, START3/STOP3, and the same checkpoint keys (Python repr), so both
+  versions share `notes/data/omega6.ck`. Hot spot (sorted divisors + `Pstruct0`) runs in `unsigned __int128`
+  when σ < 2^126, in fixed 256-bit integers when σ < 2^254 (primes < 2^64), and in mpz otherwise; the bitset
+  shift-or only touches words that can change (exact: bits above T+d are zero, bits ≥ c are set afterwards).
+  The divisor list of (q, e) is (q, e−1)'s list merged with base·q^e (incremental).
+- **Validation:** ω = 4 identical counters (911 nodes). ω = 5 identical counters
+  (447944 / 234873 / 104123 / 87788) and a **byte-identical checkpoint** with Python, on all three paths
+  (auto, `PSLOW=1` = mpz only, `PSLOW=2` = w256). Cross-resume Python→C and C→Python (cut after 12 s / 6 s)
+  finish True with the same key set as a full run. ω = 6 (3^8 slice, 1.5M nodes, 590k families): auto and
+  mpz-only give identical counters and checkpoint; in a 90 s run, Python's new keys are an exact prefix of C's.
+- **Speed:** ω = 5 in 5.2 s CPU vs 36 s Python (≈ 7×). In ω = 6 / 3^8 (σ often > 2^126) the w256 path took a
+  500k-node slice from 12.2 s to 7.6 s CPU; overall ≈ 4–5× Python there.
+- **Bitset carried down the DFS (optional): not done.** Session 30 measured only ≈ 8 % for it, and the sorted
+  merge would have to be redone and revalidated; the 256-bit path was the better use of the time.
+- **ω = 6 (evidence only):** C workers `START3=7 STOP3=7` (→ **3^7 finished**), then `START3=8 STOP3=8` and
+  `START3=9 STOP3=9`. Finished roots: v_3 ∈ {1,…,7}. See progreso for the 5^b reached.
+- **Estimate of the remaining roots.** The top-level loop over v_3 = E stops at the first E whose *region*
+  subtree (`search([(3,E)], …, un/ud = 3/2, j = 5, q0 = 5)`) is True. `ROOTTEST=E` runs just that call.
+  Calibration on ω = 5: False for E ≤ 22 in ≤ 4k nodes, True at 23 (18k nodes), exactly where the real run closes.
+  ω = 6: **False (rigorous, deterministic) for E = 8, 12, 16, 20, 25, 30, 35, 36, 37, 38, 40** (≤ 1.5M nodes,
+  ≤ 2 min each); E = 45 and 50 are still running after 2.2M nodes / 4 min without failing (inconclusive).
+  So the loop goes past E = 40 unless one of the untested E ≤ 39 is True (on ω = 5 the pattern was monotone).
+  Estimate: the closing exponent is **E ≈ 41–50**, so **≈ 33–42 roots remain after 3^7** (3^8 and 3^9 partly done),
+  central value ≈ 38. Per root, the C version needs ≈ 2–3 core-hours (3^8/3^9 advance ≈ 8–9 values of b per
+  35 min per worker, with b up to ≈ 26–31 per root and later b heavier), i.e. **≈ 70–130 core-hours**, about
+  25–45 sessions with 2 cores × 1.5 h. Main uncertainty: the per-root cost for large E (ROOTTEST suggests the
+  subtrees look similar, but this is not measured), and whether 3^45 / 3^50 close.
+- **Checkpoint format change:** `omega6.ck` grew past 1 MB (17599 lines, 0 duplicates; 3^8 done for 5^b with b ≤ 25,
+  3^9 for b ≤ 18 at the stop), so the repo now stores **`notes/data/omega6.ck.gz`** (gzip -9) and ignores the plain
+  file. Before running: `gunzip -kf notes/data/omega6.ck.gz`; after: `gzip -9 -c notes/data/omega6.ck > notes/data/omega6.ck.gz`.

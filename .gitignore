@@ -1,3 +1,4 @@
 .lake/
 # `.lake` may be a symlink (PGAL image); `.lake/` does not match a symlink.
 .lake
+notes/data/omega6.ck
