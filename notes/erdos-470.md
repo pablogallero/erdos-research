@@ -805,3 +805,17 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   file is an exact byte prefix of the new one, and both end in a newline.
 - **Next:** resume `ROOTTEST=50` (it picks up from its checkpoint) and `START3=10 STOP3=10`. When 3^10 finishes, start 11.
   ROOTTEST=50 advances only about 1 b of 5 per 90 min, so it may need several sessions. Consider giving it both cores.
+
+### Session 34 (2026-11-19, 07:45–09:15 UTC): 3^10 and ROOTTEST=50 continued (no code or Lean changes)
+
+- C binary from `scripts/odd_weird_family.c` with sha256 b0841f9c… (validated version), so no re-validation.
+- `START3=10 STOP3=10`, 90 min, ~31.6M nodes, no failure: depth-2 subtrees of 3^10 now done for 5^b with b ≤ 25
+  (log reached 5^26). 3^10 is not finished yet. Roots v_3 ∈ {1..9} remain the finished ones.
+- ROOTTEST=50 (resumed), 90 min, ~8.2M nodes, no failure: depth-2 subtrees done for 5^b with b ≤ 12 (now at 5^13, 19^7).
+  Still inconclusive.
+- Checkpoints: `omega6.ck.gz` 20893 → 21595 lines; `roottest50.ck.gz` 723 → 884 lines. 0 duplicates in both, each
+  old file is an exact byte prefix of the new one, and both end in a newline.
+  sha256 (decompressed): omega6 2c523c15…, roottest50 57663962….
+- Failed: nothing. Pace is the limit (3^10: ~10 b of 5 per 90 min; ROOTTEST=50: ~2 b per 90 min).
+- **Next:** resume both runs exactly as before (`ROOTTEST=50` on rt50.ck; `START3=10 STOP3=10` on omega6.ck; when 3^10
+  prints "STOP3 reached", start 11). Speed work (profile w256 path; bitset carry) is still the way to shorten this.
