@@ -732,8 +732,40 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - **Checkpoint format change:** `omega6.ck` grew past 1 MB (17599 lines, 0 duplicates; 3^8 done for 5^b with b ≤ 25,
   3^9 for b ≤ 18 at the stop), so the repo now stores **`notes/data/omega6.ck.gz`** (gzip -9) and ignores the plain
   file. Before running: `gunzip -kf notes/data/omega6.ck.gz`; after: `gzip -9 -c notes/data/omega6.ck > notes/data/omega6.ck.gz`.
-  The plain file was removed from the index (`git rm --cached`), so only the `.gz` is tracked.
+  The plain file is deleted from the repo in this change (`git rm notes/data/omega6.ck`, done in follow-up 2; the
+  earlier `git rm --cached` did not survive into the PR), so only the `.gz` is tracked.
   **Integrity check of the `.gz` (done on 2026-11-19):** `gzip -t` OK; it decompresses to 17599 lines with 0
   duplicate lines; every one of the 14425 lines of the previously tracked `omega6.ck` is present, plus 3174 new
   lines (keys from 3^7 to its end and from 3^8 / 3^9). Commands: `zcat … | sort | uniq -d | wc -l` → 0;
   `comm -23 old new` → 0; `comm -13 old new` → 3174.
+
+### Session 31 follow-up 2 (review, 2026-11-19)
+
+- **Single canonical checkpoint:** `notes/data/omega6.ck` is now deleted in the diff (`git rm`); only
+  `notes/data/omega6.ck.gz` is tracked. The old plain file stays in git history (commit 5598d477).
+- **Verifiable evidence:** new plain-text `notes/data/omega6-evidence.txt` with the sha256 of the `.gz` and of its
+  decompressed content, the line count (17599), 0 duplicates, the proof that the previous checkpoint (14425 lines,
+  sha256 given) is an exact byte prefix of the new one (+3174 lines: 768 in 3^7, 1105 in 3^8, 1301 in 3^9), the
+  backup procedure, and the real output of `sh scripts/validate-owf.sh` (`ALL OK`, exit 0) together with the
+  sha256 of the validated `.py`, `.c` and script.
+- **Backup:** the checkpoint is append-only. The backup before a run is the committed file plus a session-local
+  copy. The prefix check above shows that no line was lost when session 31 resumed ω = 6 with C.
+- **ROOTTEST (C, one core each, region subtree of root 3^E):**
+  - E = 45: **False** after 7,066,159 nodes (789 s). The loop does not close at 45 (rigorous for this algorithm).
+  - E = 50: no failure after 20.6M nodes (80 min, at 5^8); stopped at 02:38 UTC for lack of time, inconclusive.
+  - E = 60: visits **exactly the same nodes** as E = 50: all 83 progress lines (every 200k nodes, up to 16.6M nodes)
+    have identical node and family counts and prefixes. Stopped at 16.6M nodes. E = 45 diverges from E = 50 at 2.8M nodes.
+  - Observation (not proved): from some E on, the region subtree no longer depends on E. So either it is True for
+    all large E (the loop closes at the first such E, plausibly between 46 and 50), or it is False for all of them,
+    and then the top-level loop over v_3 never closes and the search does not terminate for ω = 6.
+- **Estimate of the remaining roots, with its margin:**
+  - Lower bound: the loop does not close at any tested E ≤ 45, so it runs over 3^8 … 3^46 at least, i.e.
+    **≥ 39 roots after 3^7**. This is rigorous for the tested E; an untested E in 41–44 could still close, but the
+    monotone ω = 5 pattern makes that unlikely.
+  - Upper bound: **not available**. If E = 50 turns out True, the loop closes at some E ≤ 50, so there are **39–43
+    roots** (central ≈ 41). If E = 50 is False, the same-tree observation suggests that no larger E closes either, and
+    then the number of roots is unbounded (the method would need a different stopping argument).
+  - Cost: the region subtree alone of a large root takes > 70 min of one C core. With the earlier 2–3 core-hours per
+    root, that gives **≥ ≈ 80–120 C core-hours** if the loop closes by E = 50, and no bound otherwise.
+- **Next step for the estimate:** let `ROOTTEST=50` finish (several core-hours, under `timeout`, across sessions if
+  needed; it has no checkpoint of its own). Its answer decides between "39–43 roots" and "the loop does not terminate".
