@@ -12,5 +12,6 @@ what was tried, what failed and why, and the next step. Plain language; Lean goe
   port `scripts/odd_weird_family.c`, validated by `sh scripts/validate-owf.sh`, mandatory after any change).
   The ω = 6 checkpoint is stored gzipped as `data/omega6.ck.gz` (the plain `data/omega6.ck` is gitignored):
   `gunzip -kf notes/data/omega6.ck.gz` before a run, `gzip -9 -c notes/data/omega6.ck > notes/data/omega6.ck.gz` after.
+  `data/roottest50.ck.gz` (session 32): resumable checkpoint of `ROOTTEST=50` (region subtree of root 3^50), same format.
 - `palomar.md`: the Palomar package (Lean v4.35.0, module system, Challenge/Solution, comparator.json,
   formalization.yaml, preflight CI); sessions 14–16.

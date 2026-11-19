@@ -769,3 +769,27 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
     root, that gives **≥ ≈ 80–120 C core-hours** if the loop closes by E = 50, and no bound otherwise.
 - **Next step for the estimate:** let `ROOTTEST=50` finish (several core-hours, under `timeout`, across sessions if
   needed; it has no checkpoint of its own). Its answer decides between "39–43 roots" and "the loop does not terminate".
+
+### Session 32 (2026-11-19): 3^8 finished; ROOTTEST=50 made resumable (no code or Lean changes)
+
+- C binary built from `scripts/odd_weird_family.c` with sha256 b0841f9c… (the version that `validate-owf.sh`
+  validated), so no re-validation was needed.
+- **3^8 finished** (`START3=8 STOP3=8`, about 36 min, 19.96M nodes, `nfail 0`). Roots v_3 ∈ {1..8} are done.
+  Then `START3=9 STOP3=9` ran until the end of the session.
+- **ROOTTEST is now resumable:** given a CKFILE, `ROOTTEST=E /tmp/owf 6 CKFILE` records the True subtrees at depth
+  1–3. Their keys (prefix `[(3,E), …]`, ratio 3/2 at depth 1) are exactly the keys that the main search builds for
+  the region subtree of root 3^E. So they are sound facts, and the main search could reuse them. They are kept
+  apart in `notes/data/roottest50.ck.gz` so that the ω = 6 evidence stays separate. Merging them into
+  `omega6.ck` later is valid. Nothing is recorded at depth 0 under ROOTTEST: it calls `search` with L = 1, and a
+  True result at L = 1 is the region answer for 3^50, which is a valid fact.
+- ROOTTEST=50 ran 5200 s this session (22.4M nodes, no failure) and reached `[(3,50),(5,9),(17,8),…]`; it is still
+  inconclusive. Its checkpoint `roottest50.ck.gz` has 569 lines (0 duplicates), so the next session resumes it
+  instead of starting from scratch (session 31 lost 80 min of the same work).
+- 3^9 (about 28 min this session): depth-2 subtrees done for 5^b with b ≤ 22 (it was b ≤ 18).
+- Checkpoint `omega6.ck.gz`: 17599 → 18825 lines, 0 duplicates, and the old file is an exact byte prefix. Every line
+  is complete (the workers were killed by PID; the file is flushed after each line).
+- Lost: one core sat idle for about 22 min after 3^8 finished (around 03:44) until I noticed at 04:06. Check more
+  often than every 25 min, or chain `START3=E+1` automatically.
+- **Next:** (1) keep going with ROOTTEST=50 (resumes) on one core and `START3=9 STOP3=9` on the other. When 3^9
+  finishes, start 10. (2) If ROOTTEST=50 turns out False, stop the ω = 6 loop: it does not terminate by this
+  method (see session 31 follow-up 2).
