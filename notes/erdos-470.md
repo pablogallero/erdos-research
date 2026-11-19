@@ -6,6 +6,12 @@ numbers? The $10 is for (i) (Guy B2). Lean: `FormalConjectures/ErdosProblems/470
 Mathlib's `Nat.Weird` (abundant ∧ ¬ pseudoperfect). Both parts are still `sorry` there, as are the
 variants `odd_weird_10_pow_21` (Fang) and the Liddy–Riedl variant.
 
+**ω = 6 checkpoint location (since session 31):** the repo stores only **`notes/data/omega6.ck.gz`**; the plain
+`notes/data/omega6.ck` is no longer tracked (it is gitignored). Every older session below that says
+`notes/data/omega6.ck` means the decompressed file: run `gunzip -kf notes/data/omega6.ck.gz` before resuming and
+`gzip -9 -c notes/data/omega6.ck > notes/data/omega6.ck.gz` afterwards. Before running the C binary after any change
+to the search code, `sh scripts/validate-owf.sh` must print `ALL OK`.
+
 ## Why switch from #1052 (decision of 2026-11-08, session 8)
 
 Session 7 concluded that something new on #1052 needs ≥ 9 odd primes (Wall 1988 covers ≤ 8), which
@@ -700,6 +706,10 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   (auto, `PSLOW=1` = mpz only, `PSLOW=2` = w256). Cross-resume Python→C and C→Python (cut after 12 s / 6 s)
   finish True with the same key set as a full run. ω = 6 (3^8 slice, 1.5M nodes, 590k families): auto and
   mpz-only give identical counters and checkpoint; in a 90 s run, Python's new keys are an exact prefix of C's.
+  **Reproducible check (mandatory after any change to either version):** `sh scripts/validate-owf.sh` builds the C
+  binary in a temp dir and, for K = 4 and 5, compares Python vs C (auto, `PSLOW=1`, `PSLOW=2`) result line,
+  counters, failure list and checkpoint bytes, then does both cross-resumes (timeout-cut run finished by the other
+  version, same key set as a full run). Exits non-zero on any mismatch. Last run: `ALL OK` in 1 min 46 s.
 - **Speed:** ω = 5 in 5.2 s CPU vs 36 s Python (≈ 7×). In ω = 6 / 3^8 (σ often > 2^126) the w256 path took a
   500k-node slice from 12.2 s to 7.6 s CPU; overall ≈ 4–5× Python there.
 - **Bitset carried down the DFS (optional): not done.** Session 30 measured only ≈ 8 % for it, and the sorted
@@ -712,11 +722,18 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   ω = 6: **False (rigorous, deterministic) for E = 8, 12, 16, 20, 25, 30, 35, 36, 37, 38, 40** (≤ 1.5M nodes,
   ≤ 2 min each); E = 45 and 50 are still running after 2.2M nodes / 4 min without failing (inconclusive).
   So the loop goes past E = 40 unless one of the untested E ≤ 39 is True (on ω = 5 the pattern was monotone).
-  Estimate: the closing exponent is **E ≈ 41–50**, so **≈ 33–42 roots remain after 3^7** (3^8 and 3^9 partly done),
-  central value ≈ 38. Per root, the C version needs ≈ 2–3 core-hours (3^8/3^9 advance ≈ 8–9 values of b per
-  35 min per worker, with b up to ≈ 26–31 per root and later b heavier), i.e. **≈ 70–130 core-hours**, about
-  25–45 sessions with 2 cores × 1.5 h. Main uncertainty: the per-root cost for large E (ROOTTEST suggests the
-  subtrees look similar, but this is not measured), and whether 3^45 / 3^50 close.
+  Estimate (rough): what is established is only a **lower bound**: the loop does not close at E = 40 (rigorous),
+  so **at least ≈ 33 roots remain after 3^7** (unless an untested E ≤ 39 closes, which the monotone ω = 5 pattern
+  makes unlikely). There is **no measured upper bound**: E = 45 and 50 are unresolved, and E ≈ 41–50 (≈ 33–42 roots)
+  is an extrapolation, not a measurement; the closing exponent could be higher. Per root the C version needs very
+  roughly 2–3 core-hours (3^8/3^9 advance ≈ 8–9 values of b per 35 min per worker; b goes to ≈ 26–31 and later
+  b are heavier; large E not measured), so the order of magnitude is **≈ 100 core-hours, possibly more**. The first
+  thing to tighten it is to let `ROOTTEST=45` / `ROOTTEST=50` finish.
 - **Checkpoint format change:** `omega6.ck` grew past 1 MB (17599 lines, 0 duplicates; 3^8 done for 5^b with b ≤ 25,
   3^9 for b ≤ 18 at the stop), so the repo now stores **`notes/data/omega6.ck.gz`** (gzip -9) and ignores the plain
   file. Before running: `gunzip -kf notes/data/omega6.ck.gz`; after: `gzip -9 -c notes/data/omega6.ck > notes/data/omega6.ck.gz`.
+  The plain file was removed from the index (`git rm --cached`), so only the `.gz` is tracked.
+  **Integrity check of the `.gz` (done on 2026-11-19):** `gzip -t` OK; it decompresses to 17599 lines with 0
+  duplicate lines; every one of the 14425 lines of the previously tracked `omega6.ck` is present, plus 3174 new
+  lines (keys from 3^7 to its end and from 3^8 / 3^9). Commands: `zcat … | sort | uniq -d | wc -l` → 0;
+  `comm -23 old new` → 0; `comm -13 old new` → 3174.
