@@ -793,3 +793,15 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - **Next:** (1) keep going with ROOTTEST=50 (resumes) on one core and `START3=9 STOP3=9` on the other. When 3^9
   finishes, start 10. (2) If ROOTTEST=50 turns out False, stop the ω = 6 loop: it does not terminate by this
   method (see session 31 follow-up 2).
+
+### Session 33 (2026-11-19, 05:25–06:55 UTC): 3^9 finished; ROOTTEST=50 continued (no code or Lean changes)
+
+- C binary from `scripts/odd_weird_family.c` with sha256 b0841f9c… (validated version), so no re-validation.
+- **3^9 finished** (`START3=9 STOP3=9`, ~40 min this session, 19.35M nodes, `nfail 0`). Roots v_3 ∈ {1..9} are done.
+  Then `START3=10 STOP3=10` ran ~50 min: depth-2 subtrees done for 5^b with b ≤ 15 (the log reached 5^16).
+- ROOTTEST=50 (resumed from its checkpoint) ran 90 min, about 9.6M more nodes with no failure, and reached
+  `[(3,50),(5,11),(17,14),…]`. Still inconclusive. Its checkpoint grew from 569 to 723 lines.
+- Checkpoints: `omega6.ck.gz` 18825 → 20893 lines; `roottest50.ck.gz` 569 → 723 lines. 0 duplicates in both, each old
+  file is an exact byte prefix of the new one, and both end in a newline.
+- **Next:** resume `ROOTTEST=50` (it picks up from its checkpoint) and `START3=10 STOP3=10`. When 3^10 finishes, start 11.
+  ROOTTEST=50 advances only about 1 b of 5 per 90 min, so it may need several sessions. Consider giving it both cores.
