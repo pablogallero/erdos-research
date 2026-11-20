@@ -862,3 +862,15 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   sha256 (decompressed): omega6 05d3cf63…, roottest50 0d3792b7….
 - Failed: nothing. Pace is still the limit (3^11 is a slow root: ~3 sessions so far).
 - **Next:** resume `ROOTTEST=50` on rt50.ck and `START3=11 STOP3=11` on omega6.ck; when 3^11 finishes, start 12.
+
+### Session 38 (2026-11-19/20, 23:00–00:38 UTC): 3^11 finished, 3^12 started, ROOTTEST=50 continued (no code or Lean changes)
+
+- C binary with sha256 b0841f9c… (validated version); ω = 4 build smoke test: 911 nodes, True. Board empty.
+- **3^11 finished** (`STOP3 reached`, 11.35M nodes in this run, nfail 0), so the roots v_3 ∈ {1..11} are done. About 10 idle
+  core-minutes were lost before I saw it. `START3=12 STOP3=12` then ran for 37 min (~35M nodes, no failure). The log reached
+  5^13, so subtrees are done for b ≤ 12 according to the log.
+- ROOTTEST=50 (resumed), 98 min, ~4.4M nodes, no failure. The log reached (5,19),(17,13), so 5^b is done for b ≤ 18. Still
+  inconclusive.
+- Checkpoints: `omega6.ck.gz` 24613 → 26318 lines; `roottest50.ck.gz` 1251 → 1329 lines. 0 duplicates, the old files are exact
+  byte prefixes, and snapshots were taken with `head -n N`. sha256 (decompressed): omega6 a29c302f…, roottest50 9bb3cfe2….
+- **Next:** resume `ROOTTEST=50` and `START3=12 STOP3=12`, and check every 10 min so that 3^13 starts as soon as 3^12 finishes.
