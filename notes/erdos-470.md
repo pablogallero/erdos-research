@@ -910,3 +910,14 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   byte prefixes, and both end with a newline. sha256 (decompressed): omega6 bdb5cc56…, roottest50 c21d72eb….
 - Failed: nothing. Pace is the only limit (~16 b per session on a fresh root, ~1 b per session on ROOTTEST=50).
 - **Next:** resume `ROOTTEST=50` and `START3=13 STOP3=13`; check every 10 min and start `START3=14 STOP3=14` when 3^13 finishes.
+
+### Session 42 (2026-11-20, 08:15–09:45 UTC): 3^13 and ROOTTEST=50 continued (no code or Lean changes)
+
+- C binary with sha256 b0841f9c… (validated version); ω = 4 build smoke test: 911 nodes, True. Board empty.
+- `START3=13 STOP3=13`, 89 min, ~25.6M progress count, no failure. The log reached (5,23), so 5^b is done for b ≤ 22. 3^13 not
+  finished; finished roots still v_3 ∈ {1..12}.
+- ROOTTEST=50 (resumed), 89 min, ~2.0M nodes, no failure. The log is still at (5,22) (now (17,15)). Still inconclusive.
+- Checkpoints: `omega6.ck.gz` 29220 → 29762 lines; `roottest50.ck.gz` 1548 → 1555 lines. 0 duplicates, the old files are exact
+  byte prefixes, and both end with a newline. sha256 (decompressed): omega6 8bb6dcbc…, roottest50 0087d5ee….
+- Failed: nothing. ROOTTEST=50 is now very slow inside 5^22 (7 keys in a session).
+- **Next:** resume both runs as before; start `START3=14 STOP3=14` when 3^13 finishes.
