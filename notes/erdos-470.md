@@ -997,3 +997,15 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Failed: nothing.
 - **Next:** resume `START3=15 STOP3=15` and `START3=16 STOP3=16`; when one prints "STOP3 reached", start the next free exponent (17).
   ROOTTEST=50 stays parked unless it gets profiled.
+
+### Session 49 (2026-11-21, 10:25–11:56 UTC): 3^15 and 3^16 continued (no code or Lean changes)
+
+- C binary with sha256 b0841f9c… (validated version); ω = 4 build smoke test: 911 nodes, True. Board empty.
+- `START3=15 STOP3=15`, 89 min, no failure: log at (5,21), so 5^b is done for b ≤ 20. Not finished.
+- `START3=16 STOP3=16`, 89 min, no failure: log at (5,22), so 5^b is done for b ≤ 21. Not finished.
+- Finished roots still v_3 ∈ {1..14}. ROOTTEST=50 stays parked (`roottest50.ck.gz` unchanged, 1710 lines).
+- Checkpoint: `omega6.ck.gz` 35844 → 36729 lines (748 KB). 0 duplicates, the old file is an exact byte prefix, and it ends
+  with a newline. sha256 (decompressed): 41ad8d0d….
+- Failed: nothing. Only slow progress (≈ 6 b per root per session).
+- **Next:** split the checkpoint before it reaches 1 MB (freeze `omega6.ck.gz`, put new lines in `omega6-2.ck.gz`, run on
+  `zcat a b > plain`). Then resume `START3=15 STOP3=15` and `START3=16 STOP3=16`, and start 17 when one prints "STOP3 reached".
