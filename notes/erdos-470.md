@@ -982,3 +982,18 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Assessment: ROOTTEST=50 has stalled in 5^24 (≈ 4 keys in 3 sessions). With one core it may take many more sessions to finish.
   Consider giving both cores to 3^14/3^15, or profiling ROOTTEST in 5^24, before spending more CPU on it.
 - **Next:** resume `START3=14 STOP3=14` (b ≥ 29 left) and `ROOTTEST=50`; start `START3=15 STOP3=15` when 3^14 finishes.
+
+### Session 48 (2026-11-21, 08:09–09:40 UTC): 3^14 finished; 3^15 and 3^16 started (no code or Lean changes)
+
+- C binary with sha256 b0841f9c… (validated version); ω = 4 build smoke test: 911 nodes, True. Board empty.
+- **Decision:** ROOTTEST=50 was NOT resumed. It had stalled in 5^24 (≈ 4 keys in 3 sessions), so its core went to roots that
+  make real progress. Its checkpoint `roottest50.ck.gz` is unchanged (1710 lines).
+- `START3=14 STOP3=14`: **3^14 finished** at 08:29 (`n` 3908304 in this last stretch, nfail 0), so the roots v_3 ∈ {1..14} are done.
+- `START3=15 STOP3=15`, 90 min, no failure: log at (5,16),(17,8), so 5^b is done for b ≤ 15.
+- `START3=16 STOP3=16` (started 08:29), 70 min, no failure: log at (5,15),(17,8), so 5^b is done for b ≤ 14.
+- Checkpoint: `omega6.ck.gz` 33015 → 35844 lines (725 KB). 0 duplicates, the old file is an exact byte prefix, and it ends with a
+  newline. sha256 (decompressed): fd263be6…. **About 3–4 sessions left before 1 MB:** split it (e.g. `omega6.ck.gz` frozen plus
+  `omega6-2.ck.gz` for new lines, concatenated with `zcat a b > plain` before running) at the start of the next session or the one after.
+- Failed: nothing.
+- **Next:** resume `START3=15 STOP3=15` and `START3=16 STOP3=16`; when one prints "STOP3 reached", start the next free exponent (17).
+  ROOTTEST=50 stays parked unless it gets profiled.
