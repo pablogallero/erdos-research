@@ -1,0 +1,99 @@
+# Cluster-side objects for the ω = 6 search (notes/omega6-job.md). PREPARED, NOT APPLIED:
+# needs Pablo's approval (it changes the platform-infra cluster: a cluster-scoped PriorityClass,
+# a ResourceQuota and RBAC). Fill ${OWF_NAMESPACE} and ${OWF_SESSION_SA} (the ServiceAccount the
+# research sessions use), e.g. with
+#   OWF_NAMESPACE=... OWF_SESSION_SA=... sh scripts/owf-queue.sh render-quota | kubectl apply -f -
+#
+# Hard cap: at most 2 pods of PriorityClass owf-compute in the namespace (the node has 2 cores / 12 GB).
+# A third pod is rejected by the API server even if two sessions race in scripts/owf-queue.sh.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: owf-compute
+value: 0
+globalDefault: false
+preemptionPolicy: Never
+description: "Erdős #470 ω = 6 search Jobs (capped at 2 pods by ResourceQuota owf-compute)."
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: owf-compute
+  namespace: ${OWF_NAMESPACE}
+spec:
+  hard:
+    pods: "2"
+    requests.cpu: "2"
+    limits.cpu: "2"
+    limits.memory: 4Gi
+  scopeSelector:
+    matchExpressions:
+      - scopeName: PriorityClass
+        operator: In
+        values: ["owf-compute"]
+---
+# What a research session may do: read Jobs/pods/logs, create and delete the search Jobs and the
+# short-lived export pod, read the quota, and hold the launch lock (a ConfigMap). No pods/exec.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: owf-session
+  namespace: ${OWF_NAMESPACE}
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["resourcequotas"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["owf-launch-lock"]
+    verbs: ["get", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: owf-session
+  namespace: ${OWF_NAMESPACE}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: owf-session
+subjects:
+  - kind: ServiceAccount
+    name: ${OWF_SESSION_SA}
+    namespace: ${OWF_NAMESPACE}
+---
+# Read-only access to this one PriorityClass, so that launch-next can check that the cap is in place.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: owf-session-priorityclass
+rules:
+  - apiGroups: ["scheduling.k8s.io"]
+    resources: ["priorityclasses"]
+    resourceNames: ["owf-compute"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: owf-session-priorityclass
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: owf-session-priorityclass
+subjects:
+  - kind: ServiceAccount
+    name: ${OWF_SESSION_SA}
+    namespace: ${OWF_NAMESPACE}

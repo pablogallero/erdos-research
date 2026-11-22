@@ -1,0 +1,49 @@
+# One Job per root 3^E of the ω = 6 search. Template: scripts/owf-queue.sh fills ${...} and creates it.
+# Do not apply by hand while the queue is in use (it counts Jobs to keep at most 2 running).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: owf-root-${ROOT}            # deterministic: a second launch of the same root fails with AlreadyExists
+  namespace: ${OWF_NAMESPACE}
+  labels:
+    app: owf
+    owf-root: "${ROOT}"
+spec:
+  backoffLimit: 10                  # restarts after crashes; each restart resumes from the checkpoint
+  # no activeDeadlineSeconds (a root takes hours) and no ttlSecondsAfterFinished (the queue reads finished Jobs)
+  template:
+    metadata:
+      labels:
+        app: owf
+        owf-root: "${ROOT}"
+    spec:
+      restartPolicy: OnFailure
+      priorityClassName: owf-compute  # the ResourceQuota owf-compute (quota.yaml) caps these pods at 2
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: owf
+          image: ${OWF_IMAGE}
+          args: ["run", "${ROOT}"]
+          env:
+            - name: OWF_DATA
+              value: /data
+          resources:
+            # owf is single-threaded; measured peak RSS ≈ 31–37 MB with the full checkpoint (notes/omega6-job.md)
+            requests:
+              cpu: 500m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+              subPath: ${OWF_SUBPATH}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ${OWF_PVC}
