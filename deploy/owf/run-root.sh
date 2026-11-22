@@ -7,6 +7,10 @@
 #                       Exit != 0 = crash or unexpected output: the Job restarts the container
 #                       (restartPolicy OnFailure) and owf resumes from the checkpoint.
 #   run-root.sh export  read-only dump of the progress for `scripts/owf-queue.sh export`.
+#   run-root.sh worker  long-running queue worker (one per StatefulSet pod, at most 2): claims the next
+#                       root under flock, runs it, records the outcome, takes the next one. No Kubernetes
+#                       API needed: claims and outcomes live in the volume (claims.txt, omega6-roots.txt).
+#                       Stops taking roots after a FOUND, CLOSED or ERROR outcome until a person looks.
 #
 # Volume layout ($OWF_DATA, default /data):
 #   omega6.ck          plain checkpoint shared by all roots (append-only; one line per subtree decided True)
@@ -67,7 +71,7 @@ run() {
   mkfifo "$FIFO" || die "mkfifo failed" 65
   tee -a "$LOG" < "$FIFO" >&2 &
   TEE=$!
-  START3=$E STOP3=$E "$OWF" "$K" "$CK" > "$OUT" 2> "$FIFO"
+  START3=$E STOP3=$E nice -n 19 "$OWF" "$K" "$CK" > "$OUT" 2> "$FIFO"
   rc=$?
   wait "$TEE"
   rm -f "$FIFO"
@@ -97,6 +101,44 @@ run() {
   exit 0
 }
 
+worker() {
+  # Queue worker (pgal deploy/owf.yaml: StatefulSet owf, 2 replicas). OWF_WORKER is the pod name, stable
+  # across restarts, so a restarted worker resumes its own unfinished root first.
+  ME=${OWF_WORKER:-$(hostname)}
+  FIRST=${OWF_FIRST:-15}
+  MAXFAIL=${OWF_MAXFAIL:-5}
+  CLAIMS=$DATA/claims.txt
+  seed
+  while :; do
+    if awk '$2 == "FOUND" || $2 == "CLOSED" || $2 == "ERROR" { f = 1 } END { exit !f }' "$ROOTS"; then
+      echo "run-root: queue stopped (FOUND/CLOSED/ERROR in $ROOTS); waiting for a person" >&2
+      sleep 3600; continue
+    fi
+    E=$( (
+      flock 9 || exit 65
+      touch "$CLAIMS"
+      for e in $(awk -v me="$ME" '$2 == me { print $1 }' "$CLAIMS"); do
+        awk -v e="$e" '$1 == e { f = 1 } END { exit !f }' "$ROOTS" || { echo "$e"; exit 0; }
+      done
+      e=$FIRST
+      while awk -v e="$e" '$1 == e { f = 1 } END { exit !f }' "$ROOTS" "$CLAIMS"; do e=$((e + 1)); done
+      echo "$e $ME" >> "$CLAIMS"
+      echo "$e"
+    ) 9>>"$LOCK" ) || die "claiming a root failed" 65
+    fails=0
+    while :; do
+      ( run "$E" ) && break
+      fails=$((fails + 1))
+      if [ "$fails" -ge "$MAXFAIL" ]; then
+        record "$E" ERROR "owf failed $fails times in a row; see logs/root-$E.log"
+        break
+      fi
+      echo "run-root: root 3^$E failed ($fails/$MAXFAIL); retrying in 60 s from the checkpoint" >&2
+      sleep 60
+    done
+  done
+}
+
 export_dump() {
   # Read-only. Prints the frozen-prefix hash, the roots file and the tail (complete lines only) as gzip+base64.
   [ -s "$CK" ] || die "no checkpoint at $CK" 66
@@ -117,5 +159,6 @@ export_dump() {
 case "${1:-}" in
   run) run "${2:-${OWF_ROOT:-}}" ;;
   export) export_dump ;;
-  *) die "usage: run-root.sh run E | run-root.sh export" ;;
+  worker) worker ;;
+  *) die "usage: run-root.sh run E | run-root.sh export | run-root.sh worker" ;;
 esac
