@@ -14,3 +14,4 @@ public import ErdosResearch.OddWeirdFourCore
 public import ErdosResearch.OddWeirdFourChunks
 public import ErdosResearch.OddWeirdFour
 public import ErdosResearch.OddWeirdLastPrime
+public import ErdosResearch.SubsetSumChain
