@@ -1062,3 +1062,34 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - **Next:** if #143 is answered, only `scripts/owf-queue.sh status | export | launch-next`. Otherwise: (1) the
   bitset-base half in Lean (a decidable check that a short list is complete, `decide +kernel`), then the multiplicative
   interval lemma.
+
+## Session 53 (2026-11-22, 04:26–~05:10 UTC): interval gluing lemma in Lean (no search run)
+
+- Board: card #143 (deploy the ω = 6 Job) still open with no answer, so by the standing rule no queue command and no `owf`.
+- New `ErdosResearch/SubsetSumGlue.lean` (imported from the root; no sorry; standard axioms). It is the additive core of
+  the *multiplicative interval lemma* (session 11 sketch), written for `SS(s)` = subset sums of a finset `s`:
+  - `glue`: `A ⊇ [c, T − c]`, `0 ∈ B`, and after every `x < U` an element `b ∈ B`, `b ≤ U`, `b ≤ x + (T − 2c) + 1`
+    ⇒ `A + B ⊇ [c, T + U − c]` (take the largest `b ≤ m − c`, capped at `U`);
+  - `subsetSums_union` (disjoint ⇒ `SS s₁ + SS s₂ ⊆ SS (s₁ ∪ s₂)`), `subsetSums_image_mul` (`k·SS s ⊆ SS (k·s)`);
+  - `glue_subsetSums` / `glue_subsetSums_complete`: the interval step `SS(s₁ ∪ s₂) ⊇ [c, T + U − c]`;
+  - `divisors_mul_prime`: `div(n p) = div n ∪ p·div n`, disjoint, for a prime `p ∤ n`.
+- Elementary and classical; a building block, not a new result. **Still open (paper first):** the middle gap
+  `(σ(A) − A, A)` of a deficient `A`, i.e. how to choose `c` so that `p·div A` has gaps `≤ T − 2c + 1` once the bitset
+  base is small. First idea (checked below, it only reaches abundant `A`): with `s₁ = div A` (interval `[c, σ(A) − c]`) and `s₂ = p·div A`, the gaps of
+  `SS(s₂)` are `p·(gaps of SS(div A))`; the large gaps of `SS(div A)` sit only below `c` and above `σ(A) − c`
+  (symmetry), so the condition reduces to `p·c ≲ σ(A) − 2c`, i.e. it holds for primes `p < (σ(A) − 2c)/c`.
+- Checks: full `lake build` OK (9068 jobs, 0 warnings); `#print axioms` = propext/choice/Quot.sound;
+  `scripts/check-lean-sources.py` OK.
+- **Numerical check of the sketch (throwaway Python, not the ω = 6 search):** odd `A < 6000`, primes `3 ≤ p < 60`, `p ∤ A`.
+  With `c = c(A)` the smallest `c` such that `SS(div A) ⊇ [c, σ(A) − c]`, and `g` the largest gap of `SS(div A)`, the glue
+  condition `p·g ≤ σ(A) − 2c + 1` held in 125 cases, and in **exactly** those 125 cases `SS(div(Ap)) ⊇ [c, σ(A)(1+p) − c]`
+  was true (0 unsound, as the lemma guarantees; also 0 missed in this range). **But** a base interval with `2c ≤ σ(A)` exists
+  only for 10 values of `A` (945, 1575, 2205, 2835, 3465, 4095, 4725, 5355, 5775, 5985), all abundant. For the *deficient*
+  prefixes the search actually handles, `SS(div A)` has no centred interval at all (the middle gap), so the first glue step
+  never starts there. This confirms that the middle gap is the real obstacle, not the gluing.
+- Failed: the first full-build call hung for 30 min on a stray `cat` reading stdin (my mistake; killed, then the build ran in ~25 s
+  because everything else was cached). Lean compiled on the first try; one unused hypothesis (`U ∈ B`) was removed.
+- **Next:** if #143 is answered, only `scripts/owf-queue.sh status | export | launch-next`. Otherwise: (1) a glue variant for
+  a deficient `A`, with two intervals (`[c, A' ]` and its mirror `[σ − A', σ − c]`) plus the gap between them, i.e. what
+  `Pstruct0` stores (bitset + interval + symmetry). Check numerically first how it propagates through `p·div A`. (2) Only then
+  formalise the prime step with `glue_subsetSums` + `subsetSums_image_mul` + `divisors_mul_prime`.
