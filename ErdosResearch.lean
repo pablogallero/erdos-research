@@ -17,3 +17,5 @@ public import ErdosResearch.OddWeirdLastPrime
 public import ErdosResearch.SubsetSumChain
 public import ErdosResearch.SubsetSumGlue
 public import ErdosResearch.SubsetSumPrimeStep
+public import ErdosResearch.SubsetSumPrimePow
+public import ErdosResearch.SubsetSumCert
