@@ -19,3 +19,5 @@ public import ErdosResearch.SubsetSumGlue
 public import ErdosResearch.SubsetSumPrimeStep
 public import ErdosResearch.SubsetSumPrimePow
 public import ErdosResearch.SubsetSumCert
+public import ErdosResearch.SubsetSumRaise
+public import ErdosResearch.SubsetSumSteps
