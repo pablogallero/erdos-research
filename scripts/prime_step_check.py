@@ -1,5 +1,6 @@
 # Session 54 (notes/erdos-470.md): numerical check of the Lean prime step (SubsetSumPrimeStep.lean).
-# Usage: python3 scripts/prime_step_check.py N P  (odd deficient M < N, primes 3 <= p < P). Not the omega=6 search.
+# Usage: python3 scripts/prime_step_check.py N P [E]  (odd deficient M < N, primes 3 <= p < P, exponents 1..E;
+# E > 1 checks the prime-power step of SubsetSumPrimePow.lean, session 55). Not the omega=6 search.
 import sys
 def fac(n):
     f={};d=2
@@ -25,7 +26,8 @@ def info(M):
     # max gap: largest run of zeros +1
     g=max(len(r) for r in bits[:s+1].split('1'))+1
     return s,bits,c,g
-N=int(sys.argv[1]); P=int(sys.argv[2])
+N=int(sys.argv[1]); P=int(sys.argv[2]); E=int(sys.argv[3]) if len(sys.argv)>3 else 1
+pp=ppbad=0
 defi=cent=ok=bad=missed=0
 primes=[p for p in range(3,P) if isprime(p)]
 for M in range(3,N,2):
@@ -37,8 +39,15 @@ for M in range(3,N,2):
     for p in primes:
         if M%p==0: continue
         cond = p*g+2*c<=s+1 and M+2*c<=(p+1)*s+1
-        s2,b2,_,_=info(M*p)
-        truth='0' not in b2[c:s2-c+1]
-        if cond: ok+=1; bad+=(not truth)
-        elif truth: missed+=1
+        for e in range(1,E+1):
+            s2,b2,_,_=info(M*p**e)
+            truth='0' not in b2[c:s2-c+1]
+            gtruth=max(len(r) for r in b2[:s2+1].split('1'))+1<=g
+            if e==1:
+                if cond: ok+=1; bad+=(not truth)
+                elif truth: missed+=1
+            if cond:
+                ppbad+=(not truth) or (not gtruth)
+                pp+=(c<=M*p**e and M*p**e+c<=s2)
+print("E",E,"pseudoperfect-certified (all e)",pp,"unsound interval/gap (all e)",ppbad)
 print("N",N,"deficient",defi,"centred",cent,"cond-true",ok,"unsound",bad,"missed",missed)

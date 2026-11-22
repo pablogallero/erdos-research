@@ -1120,3 +1120,51 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   below `c` plus the chain condition) that produces `(c, g)` by `decide +kernel` for one concrete prefix, then use
   `pseudoperfect_mul_prime_of_interval` to settle a whole family of last primes `q` at once. Measure first how many of the search's
   families (`Pstruct0` cases) the condition covers.
+
+## Session 55 (2026-11-22, 06:50–~07:15 UTC): the prime-power step (no search run)
+
+- Board: card #143 (deploy the ω = 6 Job) still open with no answer, so by the standing rule no queue command and no `owf`.
+- **Split for prime powers:** for a prime `p ∤ n`, `D(n p^(e+1)) = D(n) ∪ {n} ∪ p·D(n p^e)`: the scaled part is `p` times the
+  *previous level*, not `p·D(n)`. The glue only needs the interval `[c, s − c]` on the base `D(n)` and gaps `≤ g` on the scaled
+  part, and `gap_of_interval` keeps the gap bound `g`. So the **same** session-54 conditions `p g + 2c ≤ s + 1`,
+  `n + 2c ≤ (p + 1) s + 1` (`s = ∑ D n`) work for every exponent (the second one only gets easier, since `∑ D(n p^e) ≥ s`).
+- New `ErdosResearch/SubsetSumPrimePow.lean` (imported from the root; no sorry; axioms propext/choice/Quot.sound; full
+  `lake build` OK, 9070 jobs; no warnings in the new module; `check-lean-sources.py` OK):
+  - `interval_union_insert_image` (abstract glue step `A ∪ {n} ∪ p·B`, `B` only needs gaps);
+  - `properDivisors_mul_prime_pow_succ`, `sum_properDivisors_mul_prime_pow_succ`;
+  - `interval_properDivisors_mul_prime_pow`: for every `e`, `SS(D(n p^e)) ⊇ [c, ∑ D(n p^e) − c]` with gaps `≤ g`;
+  - `pseudoperfect_mul_prime_pow_of_interval`: if also `c ≤ n p^e` and `n p^e + c ≤ ∑ D(n p^e)`, `n p^e` is pseudoperfect.
+- Numerical check: `scripts/prime_step_check.py 600 40 3` (new optional argument `E`): whenever the condition holds, the interval
+  and the gap bound hold for `e = 1, 2, 3` (**0 unsound**); 58 pseudoperfect certificates over all `e`. E = 1 output unchanged.
+- Elementary; new only as a formalisation. Not a new result on #470.
+- **Decidable base certificate:** new `ErdosResearch/SubsetSumCert.lean` (imported from the root; same checks, full `lake build`
+  OK, 9071 jobs; axioms propext/choice/Quot.sound):
+  - `ssBits l` = subset-sum bitset of a list (`b ||| b <<< d`, GMP-accelerated in the kernel); soundness
+    `mem_subsetSums_of_testBit` (duplicate-free list);
+  - Boolean checks `intervalOK b c s`, `gapOK b g s`, with soundness lemmas;
+  - `pseudoperfect_mul_prime_pow_of_cert`: one `decide +kernel` on the base `n` (list = `D n`, interval, gaps) plus linear
+    conditions in `p` ⇒ `n p^e` pseudoperfect;
+  - `pseudoperfect_of_excess_mem` (**excess test**: `m ≤ ∑ D m` and `∑ D m − m ∈ SS(A)`, `A ⊆ D m` ⇒ pseudoperfect) and
+    `pseudoperfect_mul_prime_pow_of_cert'`, which uses the excess test when the excess is below `c`, so only plain
+    abundance `n p^e ≤ ∑ D(n p^e)` is needed;
+  - examples: `pseudoperfect_315_mul_prime` (`315 p`, primes `11 ≤ p ≤ 103`) and **`not_weird_525_mul_prime`**: no `525 q`
+    (`q` prime, `q ∤ 525`) is weird. That is a whole last-prime family settled in Lean by one kernel check of 525's bitset
+    (`c = 18`, `g = 2`; `q = 17` has excess 6 < c and uses the excess test). Each base check takes a few seconds.
+  - `not_weird_mul_prime_of_cert` (**family decider**): base certificate + hypotheses linear in `q` ⇒ `¬ (n q).Weird`; each
+    instance is `omega` plus at most one bit lookup. `not_weird_525_mul_prime` and `not_weird_495_mul_prime` use it.
+- **Coverage (new `scripts/cert_coverage.py LIM W`, exact):** odd deficient `M < 3·10^5`, all primes `q > P(M)` with `Mq` abundant.
+  ω(M) = 3: 87 families, 655 primes; the interval alone covers 649, and with the excess test **all 655**. ω(M) = 4: 165
+  families, 4167 primes, **all covered** by the interval alone. Bias: small `M` only, exponent of `q` = 1.
+  ω(M) = 5, `M < 10^6`: 258 families, 19843 primes; interval alone 19842, with the excess test **all 19843**
+  (`python3 scripts/cert_coverage.py 1000000 5`, ~3 min).
+- **Chain probe (Python only, `scripts/chain_cert_probe.py [LIMB]`):** for the search's prefixes with large exponents, a full
+  bitset of `D(n)` is impossible, but `interval_properDivisors_mul_prime_pow` keeps `(c, g)`. So: a bitset only for a small base `b`
+  (a sub-product of `N`, `b ≤ LIMB`), then add the remaining prime powers one at a time (ascending or descending order). On 57
+  random abundant ω = 6 candidates `N = prefix · q`: LIMB = 2·10^4 certifies 0, LIMB = 10^6 certifies 14. Failures (e.g.
+  `3^10·7^2·17^6·29^10·37·q`): every dense base needs the high power of 3, and every 3-free base is sparse (`c`, `g` in the thousands).
+- **Idea for those (not checked yet):** raise an exponent inside the chain with the other split
+  `D(m p^(e+1)) = D(m p^e) ∪ {m p^e} ∪ p^(e+1)·D(m)` (`p ∤ m`). This is again `interval_union_insert_image`, with multiplier `p^(e+1)`, interval part
+  `D(m p^e)` and gap part `D(m)`. Condition: `p^(e+1) g_m + 2c ≤ ∑D(m p^e) + 1`. Measure it in the probe before formalising.
+- **Next (if #143 still unanswered):** (1) a Lean *chain* certificate: a recursive `∑D` (from `sum_properDivisors_mul_prime_pow_succ`)
+  plus a list of (prime, exponent) steps checked by `decide +kernel` from a bitset base; (2) the exponent-raising split above, measured
+  with the chain probe first; (3) a generator emitting `not_weird_mul_prime_of_cert` instances per prefix.
