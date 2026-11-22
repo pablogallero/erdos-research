@@ -12,6 +12,12 @@ variants `odd_weird_10_pow_21` (Fang) and the Liddy–Riedl variant.
 `gzip -9 -c notes/data/omega6.ck > notes/data/omega6.ck.gz` afterwards. Before running the C binary after any change
 to the search code, `sh scripts/validate-owf.sh` must print `ALL OK`.
 
+**Split since session 50 (1 MB file limit):** `omega6.ck.gz` is **frozen** at 36729 lines; new lines go to
+**`omega6-2.ck.gz`** (lines 36730 onwards of the plain file). To run: `zcat notes/data/omega6.ck.gz
+notes/data/omega6-2.ck.gz > /tmp/pgal-sesion/omega6.ck`; afterwards `tail -n +36730 /tmp/pgal-sesion/omega6.ck |
+gzip -9 -c > notes/data/omega6-2.ck.gz` (never rewrite the frozen file). When `omega6-2.ck.gz` nears 1 MB, freeze it
+too and start `omega6-3.ck.gz` the same way.
+
 ## Why switch from #1052 (decision of 2026-11-08, session 8)
 
 Session 7 concluded that something new on #1052 needs ≥ 9 odd primes (Wall 1988 covers ≤ 8), which
@@ -1009,3 +1015,16 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Failed: nothing. Only slow progress (≈ 6 b per root per session).
 - **Next:** split the checkpoint before it reaches 1 MB (freeze `omega6.ck.gz`, put new lines in `omega6-2.ck.gz`, run on
   `zcat a b > plain`). Then resume `START3=15 STOP3=15` and `START3=16 STOP3=16`, and start 17 when one prints "STOP3 reached".
+
+### Session 50 (2026-11-21/22, 23:00–00:28 UTC): checkpoint split; 3^15 and 3^16 continued (no code or Lean changes)
+
+- C binary with sha256 b0841f9c… (validated version); ω = 4 build smoke test: 911 nodes, True. Board empty.
+- **Checkpoint split** (the .gz was at 748 KB): `omega6.ck.gz` frozen at 36729 lines (byte-unchanged); new lines in
+  `omega6-2.ck.gz` (614 lines, 18.6 KB). `zcat omega6.ck.gz omega6-2.ck.gz` is byte-identical to the live plain file
+  (37343 lines, 0 duplicates, ends with a newline; sha256 5b490ca9…). Procedure at the top of this file.
+- `START3=15 STOP3=15`, 87 min, no failure: log at (5,25), so 5^b is done for b ≤ 24. Not finished.
+- `START3=16 STOP3=16`, 87 min, no failure: log at (5,26), so 5^b is done for b ≤ 25. Not finished.
+- Finished roots still v_3 ∈ {1..14}. ROOTTEST=50 stays parked (`roottest50.ck.gz` unchanged, 1710 lines).
+- Failed: nothing. Only slow progress (≈ 4 b per root per session).
+- **Next:** `zcat` both parts into the plain file, resume `START3=15 STOP3=15` and `START3=16 STOP3=16`; start 17 when one prints
+  "STOP3 reached". Afterwards write `tail -n +36730 plain | gzip -9 -c > notes/data/omega6-2.ck.gz`.
