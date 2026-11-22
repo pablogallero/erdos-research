@@ -1093,3 +1093,30 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   a deficient `A`, with two intervals (`[c, A' ]` and its mirror `[σ − A', σ − c]`) plus the gap between them, i.e. what
   `Pstruct0` stores (bitset + interval + symmetry). Check numerically first how it propagates through `p·div A`. (2) Only then
   formalise the prime step with `glue_subsetSums` + `subsetSums_image_mul` + `divisors_mul_prime`.
+
+## Session 54 (2026-11-22, 05:53–~06:10 UTC): the prime step on proper divisors (no search run)
+
+- Board: card #143 (deploy the ω = 6 Job) still open with no answer, so by the standing rule no queue command and no `owf`.
+- **Idea that removes session 53's obstacle:** work with the *proper* divisors `D(M)`, not `div M`. For a prime `p ∤ M`,
+  `D(Mp) = D(M) ∪ {M} ∪ p·D(M)`. Glue `A = SS(D M)` (centred interval `[c, s − c]`, `s = σ(M) − M`) with
+  `B = SS({M} ∪ p·D M)`. The gaps of `B` are at most `p·g` (scaled copy) and `M − p s` (jump to the shifted copy), so the
+  middle gap of `div M` never appears. Result: `SS(D(Mp)) ⊇ [c, s' − c]` with `s' = s + M + p s`, **and the same `c`**.
+- New `ErdosResearch/SubsetSumPrimeStep.lean` (imported from the root; no sorry; axioms propext/choice/Quot.sound; full
+  `lake build` OK, 9069 jobs, no warnings in the new module; `check-lean-sources.py` OK):
+  - `properDivisors_mul_prime`, `sum_properDivisors_mul_prime'` (`∑ D(np) = s + (n + p s)`);
+  - `interval_properDivisors_mul_prime`: if `SS(D n) ⊇ [c, s − c]`, the gaps of `SS(D n)` on `[0, s]` are `≤ g`,
+    `p g + 2c ≤ s + 1` and `n + 2c ≤ (p + 1) s + 1`, then `SS(D(np)) ⊇ [c, s' − c]`;
+  - `gap_of_interval` / `gap_properDivisors_mul_prime`: the gap bound `g` carries over to `D(np)` (old gaps below `c`, the
+    interval in the middle, complement symmetry `sub_mem_subsetSums` at the top), so **the step can be iterated** prime by prime
+    with fixed `(c, g)`;
+  - `pseudoperfect_mul_prime_of_interval`: if also `c ≤ np` and `np + c ≤ s'`, then `np` is pseudoperfect.
+- Numerical check (`scripts/prime_step_check.py 4000 80`, exact bitsets, ~1 min): of 1994 odd deficient `M < 4000`, **1968** have
+  a centred interval on `D(M)` (session 53 found none on `div M`). Over pairs `(M, p)`, `p < 80`, `p ∤ M`, the condition holds in
+  1079 cases, **0 unsound** (as the lemma guarantees), 1247 missed (it is conservative, mainly because `g` is the global max gap,
+  which comes from the low end).
+- Elementary; new only as a formalisation. A building block for a Lean version of the family search, not a new result on #470.
+- **Next:** if #143 is answered, only `scripts/owf-queue.sh status | export | launch-next`. Otherwise: (1) prime powers
+  (`D(M p^e)`, e.g. as `p^e·D(M) ∪ …`, or by gluing `p^i·SS(D M)` layers), (2) a decidable base check (bitset for `SS(D M)`
+  below `c` plus the chain condition) that produces `(c, g)` by `decide +kernel` for one concrete prefix, then use
+  `pseudoperfect_mul_prime_of_interval` to settle a whole family of last primes `q` at once. Measure first how many of the search's
+  families (`Pstruct0` cases) the condition covers.
