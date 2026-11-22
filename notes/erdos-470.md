@@ -1249,3 +1249,48 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   is too slow, generate the divisors already sorted (merge of sorted lists with fuel) or let the generator supply the sorted list
   and check `descOK` + membership. (3) Honest view unchanged: these are family certificates for given prefixes; covering all of
   ω = 6 still needs the prefix tree (the Job's search).
+
+## Session 58 (2026-11-22, 10:13–~11:05 UTC): generator of family certificates, all last primes at once, merged divisors, fast bitset checks (no search run)
+
+- Board: card #143 (deploy the ω = 6 Job) still unanswered, so by the standing rule no queue command and no `owf`.
+- **Lean (no sorry, no native_decide; axioms propext/choice/Quot.sound; full `lake build` OK, 9079 jobs; no warnings in the new
+  modules; `check-lean-sources.py` OK):**
+  - new `ErdosResearch/SubsetSumLastOK.lean`: Boolean `lastOK n S c g B` and **`not_weird_mul_prime_of_lastOK`**. For deficient
+    `n` (`S = ∑ D n < n`) `nq` is abundant only if `q(n−S) < n+S`, so with `n+S < B(n−S)` the Boolean checks the last-prime
+    conditions for every `q ∈ [2, B)` with `q ∤ n` (composites included: no primality test in the kernel). Generated instances
+    need no `omega` case analysis on `q`.
+  - new `ErdosResearch/SubsetSumDivsDesc.lean`: decreasing divisors by merging (`mergeF` with fuel, `mergeAll`, `divsDesc`,
+    `divsDesc_perm`); `gapCertM` + **`gap_properDivisors_of_gapCertM`** (same conclusion as `gapCert`); `baseOK`/`baseList` +
+    **`baseList_properDivisors`** (proper divisors of a bitset base from its factorisation; kernel `properDivisors b` scans up
+    to `b`). The merge order is never trusted (fuel exhausted ⇒ append; `descOK` is checked).
+    Reason: with the insertion sort, an instance whose cofactors have 660 and 1452 divisors was killed at the 8 GB limit (exit
+    137) even after splitting the certificate; with `gapCertM` it compiles in 24 s.
+  - new `ErdosResearch/SubsetSumBitsFast.lean`: `intervalOKB` / `gapOKB` (masks `2^w − 1`, `>>>`, `|||` via `orShifts`; GMP in
+    the kernel) with soundness, and `intervalGap_of_bitsB`. Reason: `intervalOK`/`gapOK` test bit by bit (≈ s² bit operations),
+    and bases near 10^6 ran out of memory. Sanity: on `l315`/`l525` the fast and old checks agree, including two cases that must
+    be false (`c = 17`, `g = 1` for 525).
+  - new `ErdosResearch/OddWeirdPlans.lean`, **generated** by `scripts/late_cert_gen.py 1000000 40 2000 100000` (regeneration is
+    byte-identical): 40 theorems `not_weird_i`: no `N·q` weird (`q` prime, `q ∤ N`) for 40 random deficient 5-prime prefixes `N`
+    (same random family as `MULTI=1 raise_late_plan.py`, seed 3; e.g. `5^6·11^2·13^2·17^2·23^10`). Each instance is split
+    into `cert_i_base` (`baseOK`, bitset with fast checks, `stepsOK`, `stepsEnd`), per raise `cert_i_gapj` (`gapCertM`) and
+    `cert_i_raisej`, and `cert_i_last` (`lastOK`), each by `decide +kernel`, with `set_option Elab.async false`.
+    Module: 152 s (≈ 4 s per instance), 163 KB.
+- **New `scripts/late_cert_gen.py LIMB COUNT MAXDIV MAXB`** (Python; uses `multi_plan` from `raise_late_plan.py`; does not run
+  the search). `DRY=1` only counts; `MINDIV=N` keeps instances whose largest cofactor has > N divisors (timing tests).
+  Coverage on 1322 random deficient prefixes (repeats included), no size limits: LIMB 2·10^4: 1002 plans (all emittable;
+  492 with MAXDIV 300 / B ≤ 5000); LIMB 10^5: 1116; **LIMB 10^6: 1293 (97.8 %)**. Every plan also passes `lastOK`. (The generator's "tried" count can include repeats of
+  prefixes without a plan; the distinct count is below.)
+- **Failed:** one big `decide +kernel` conjunction per instance ⇒ out of memory (fixed by splitting into declarations + merged
+  divisors); bit-by-bit bitset checks ⇒ out of memory for bases near 10^6 (fixed by mask checks); a non-f-string in the
+  generator (caught by the first heavy test).
+- Elementary; new only as a formalisation. Not a new result on #470 (ω = 6 still open here).
+- **Uncovered prefixes at LIMB 10^6** (throwaway script, not in the repo; counted over distinct prefixes): 26. 25 of them
+  have `v_3 = 1` and neither 5 nor 7 (σ/n ≈ 1.69–1.75), e.g. `3·11^8·13·17·23^10`; the other is `11·13·17^8·19^3·23^10`.
+  Per candidate base the dominant failure is the prime-power step condition (then `b > LIMB`, then no centred interval);
+  allowing `e0_p ∈ {0..3}` covers none of them. (The root `3^1` of the ω = 6 search is already finished, so this
+  pattern is not where the search is still open.)
+- **Next (if #143 still unanswered):** (1) for the `3^1`, 5- and 7-free prefixes: a step condition with the greedy gap of the
+  current number instead of the base `g` (the base gap is too coarse there), measured in Python first. (2) Wire the decider in
+  as a fast path of the search (a family decided by a plan = a Lean-checkable leaf), so the Job's output could later be
+  replayed as Lean instances. This changes the search code ⇒ `scripts/validate-owf.sh` is mandatory, and the Job image must be
+  rebuilt (Pablo). (3) Honest view unchanged: these certify given prefixes; all of ω = 6 still needs the prefix tree.
