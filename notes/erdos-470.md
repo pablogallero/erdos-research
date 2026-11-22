@@ -1168,3 +1168,43 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - **Next (if #143 still unanswered):** (1) a Lean *chain* certificate: a recursive `∑D` (from `sum_properDivisors_mul_prime_pow_succ`)
   plus a list of (prime, exponent) steps checked by `decide +kernel` from a bitset base; (2) the exponent-raising split above, measured
   with the chain probe first; (3) a generator emitting `not_weird_mul_prime_of_cert` instances per prefix.
+
+## Session 56 (2026-11-22, 07:59–~08:20 UTC): the exponent-raising step and step lists (no search run)
+
+- Board: card #143 (deploy the ω = 6 Job) still open with no answer, so by the standing rule no queue command and no `owf`.
+- **Measured first (new `scripts/raise_step_probe.py [LIMB]`, Python only):** the split `D(m p^(e+1)) = D(m p^e) ∪ {m p^e} ∪
+  p^(e+1)·D(m)` with conditions `p^(e+1) g_B + 2c ≤ ∑D(m p^e) + 1`, `m p^e + 2c ≤ p^(e+1) ∑D(m) + ∑D(m p^e) + 1` (`g_B` = max gap
+  of `SS(D m)`, from a bitset). Soundness by bitsets: odd `m < 400`, `p ≤ 13`, `e ≤ 3`: 184 cases with the condition true,
+  **0 unsound** (interval and gap bound). Coverage of the session-55 chain probe (same 57 random ω = 6 candidates, seed 1):
+  base bitset ≤ 2·10^4: old chain 0 → with one raised prime 15; base ≤ 10^6: 14 → **37**. Only one prime is raised (the one whose
+  high exponent kills the bitset), right after the base; then the old prime-power steps. Remaining failures are like
+  `3^1·5^6·13^3·19^10·29^3·q` (two high exponents: 19^10 and 5^6/13^3) and `3^6·7^15·17^4·23^15·37^10·q`.
+- **Lean (new `ErdosResearch/SubsetSumRaise.lean`, imported from the root; no sorry; axioms propext/choice/Quot.sound; full
+  `lake build` OK, 9072 jobs; no warnings in the module; `check-lean-sources.py` OK):**
+  - `properDivisors_raise` (the split; holds for any prime `p`, disjoint when `p ∤ m`: `raise_disjoint`), `sum_properDivisors_raise`;
+  - `interval_properDivisors_raise`: interval `[c, ∑ − c]` + gaps `≤ g` on `D(m p^e)` and gaps `≤ gB` on `D m` ⇒ the same on
+    `D(m p^(e+1))` (an instance of `interval_union_insert_image` plus `gap_of_interval`); `interval_properDivisors_raise_iter`;
+  - decidable form: `raiseSum` (recursive `∑D`, `raiseSum_eq`), `raiseOK`, `interval_raise_of_cert`, `pseudoperfect_raise_of_cert`,
+    and the family decider **`not_weird_mul_prime_of_raise_cert`** (raise chain to `n`, then the prime step for the last prime `q`);
+  - instances: `pseudoperfect_325_mul_three_pow_six` and **`not_weird_3969405_mul_prime`: no `3^8·5·11^2·q` (`q` prime, `q ∤ n`) is
+    weird** (bitsets of `D 5445` and `D 605`, six raises; `q ≥ 92` deficient, the 19 primes 7, 13 … 89 by the prime step). The whole
+    file compiles in ~6 s.
+- Elementary; new only as a formalisation. Not a new result on #470 (ω = 6 is still open here; Liddy–Riedl's ω ≥ 6 is unread).
+- **Step lists (second part of the session; new `ErdosResearch/SubsetSumSteps.lean`, imported from the root; same checks; full
+  `lake build` OK, 9073 jobs; module ~2 min, almost all in the kernel's `properDivisors 11583`):**
+  - `ppSum` (recursive `∑D(n q^f)`, `ppSum_eq`), `stepsEnd`, `stepsOK` (one Boolean for a list of prime-power steps `(q, f)`),
+    `IntervalGap n S c g` (interval + gaps + `∑D n = S`), `intervalGap_of_stepsOK`, `intervalGap_of_raise_cert`, and the last-prime
+    decider `not_weird_mul_prime_of_intervalGap`;
+  - instance **`not_weird_mul_prime_example`: no `3^4·11^10·13·17^10·23^10·q` (`q` prime, `q ∤` prefix) is weird.** Base `11583`
+    (`c = 69`, `g = 5`), `D 1053` (`gB = 61`), nine raises of 11, steps `17^10`, `23^10`; `nq` abundant only for `q ≤ 57`.
+    The prefix is deficient with three exponents equal to 10: far beyond any bitset.
+  - plan finder `scripts/raise_steps_plan.py LIMB` (random deficient 5-prime prefixes, max exponent ≥ 6, every last prime covered);
+    with LIMB = 2·10^4 it finds 6 such prefixes in the first ~3000 trials (seed 2). Run it under `ulimit -v`: a first version
+    without the `m ≤ LIMB` guard was OOM-killed (bitset of `D m` for a huge `m`).
+- **Next (if #143 still unanswered):** (1) a generator that, for the **real** search prefixes (decode the checkpoint keys; check
+  first what the key `(f, un, ud, j, q0)` stores), finds a plan with `raise_steps_plan.py` logic and emits one `cert_…` +
+  `not_weird_…` instance per prefix; measure what fraction of prefixes get a plan. Avoid `properDivisors` of the base in the kernel
+  (2 min for 11583): prove `l.toFinset = D b` once per base by a faster route (e.g. `Nat.divisors_mul` / a product of the prime-power
+  divisor lists), or keep bases below ~5000. (2) Raising two primes needs a gap bound for `D m` with `m` large (not a bitset);
+  look for a recursive gap bound. (3) Honest view: these are family certificates for individual prefixes; covering all of ω = 6 this way
+  still needs the prefix tree (the Job's search) and, for prefixes without a plan, the bitset fallback.

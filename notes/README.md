@@ -14,6 +14,8 @@ what was tried, what failed and why, and the next step. Plain language; Lean goe
   `gunzip -kf notes/data/omega6.ck.gz` before a run, `gzip -9 -c notes/data/omega6.ck > notes/data/omega6.ck.gz` after.
   Since session 50 the checkpoint is split: `data/omega6.ck.gz` is frozen (36729 lines) and new lines go to
   `data/omega6-2.ck.gz`; run on `zcat data/omega6.ck.gz data/omega6-2.ck.gz > plain` (details at the top of `erdos-470.md`).
+  Sessions 52–56: subset-sum certificates in Lean (`ErdosResearch/SubsetSum*.lean`: chain condition, glue, prime step,
+  prime-power step, bitset certificate, exponent-raising step, step lists) as building blocks for a Lean family search.
   `data/roottest50.ck.gz` (session 32): resumable checkpoint of `ROOTTEST=50` (region subtree of root 3^50), same format.
 - `omega6-job.md`: **since 2026-11-22 the ω = 6 search runs only as Kubernetes Jobs (max 2), never in a session.**
   A session only runs `sh scripts/owf-queue.sh status | export | launch-next`. The older run instructions are history.
