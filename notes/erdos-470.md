@@ -1208,3 +1208,44 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   divisor lists), or keep bases below ~5000. (2) Raising two primes needs a gap bound for `D m` with `m` large (not a bitset);
   look for a recursive gap bound. (3) Honest view: these are family certificates for individual prefixes; covering all of ω = 6 this way
   still needs the prefix tree (the Job's search) and, for prefixes without a plan, the bitset fallback.
+
+## Session 57 (2026-11-22, 09:02–~09:20 UTC): greedy gap bound + late / multiple raises (no search run)
+
+- Board: card #143 (deploy the ω = 6 Job) still open with no answer, so by the standing rule no queue command and no `owf`.
+- **Correction to session 56:** the "~2 min" for `SubsetSumSteps.lean` was a measurement artefact. Profiled now: the whole
+  module takes ~14 s, the `cert_11583_steps` kernel check 6.8 s, and kernel `properDivisors 11583` alone 2.8 s. A faster
+  `l.toFinset = D b` proof is therefore not needed for bases of this size (item (1) of session 56's "Next" is dropped).
+- **Measured first (Python only).** New `scripts/raise_late_probe.py [LIMB]` (same 57 random ω = 6 candidates as session 56):
+  - "late raise" (steps first, then raise `p` over the large cofactor `m`) with `gB` obtained from a bitset-based chain on `m₀`:
+    37 → 37, no gain. Every attempt failed in the step chain on the small cofactor `m₀` (too sparse) or because `m₀` > LIMB;
+  - the same with `gB` taken from the **greedy bound** `max(1, maxᵢ dᵢ − (d₁+…+dᵢ₋₁))` on the sorted proper divisors of `m`
+    (`GREEDY=1`): **37 → 52 of 57** (LIMB 1e6). The 5 left are `3^15·7^6·19^10·23^2·41^15·q` (two exponents of 15).
+  - The greedy bound equals the exact maximum gap (bitset) for all 14999 odd `m < 30000` (0 unsound, all tight).
+- **Family plans.** New `scripts/raise_late_plan.py LIMB [TRIALS]` (seed 3; random deficient 5-prime prefixes, max exponent ≥ 6,
+  every last prime `q` covered by the last-prime decider): LIMB = 2·10^4, 262 prefixes: session 56's `plan()` 19, plus one late
+  raise 59, **plus multiple raises (`MULTI=1`) 210**. Multi-raise means: base `∏ p^{e0_p}` with `e0_p ∈ {0,1,2}`, steps for the
+  primes with `e0_p = 0`, then raise every other prime to its full exponent, one after another, with `gB` = greedy bound of the
+  current cofactor. Soundness against exact bitsets (small prefixes, n ≤ 3·10^5, chains with ≥ 1 raise): 157 checked, 0 unsound
+  (throwaway script, not in the repo; the Lean lemmas below are what matter).
+- **Lean (no sorry; axioms propext/choice/Quot.sound; full `lake build` OK, 9075 jobs; no warnings in the new modules;
+  `check-lean-sources.py` OK):**
+  - new `ErdosResearch/SubsetSumGreedy.lean`: `greedyGap`, **`gap_greedy`** (for any list without repetitions: after each
+    `x <` total there is a subset sum `z` with `x < z ≤ x + greedyGap l`, `z ≤` total); `prodOf`/`divsOf` (divisors listed from
+    the factorisation; `divsOf_toFinset` via `Nat.divisors_mul`, `Nat.divisors_prime_pow`), a local insertion sort `sortDesc`
+    (Mathlib's `List.insertionSort`/`mergeSort` do not reduce under `decide` from a `module`: not exposed / well-founded),
+    `descOK` (linear Nodup check), and the Boolean **`gapCert fs G S`** with `gap_properDivisors_of_gapCert`
+    (`∑ D m = S` and gaps ≤ `G` for `m = prodOf fs`; the kernel never scans `m`). Sanity `gap_example` (`D(3·5^6·13^3)`, G = 4).
+  - new `ErdosResearch/SubsetSumLate.lean`: `intervalGap_of_bits`, **`intervalGap_raise`** (raise chain in `IntervalGap` form,
+    from any source of interval/gaps), and the instance **`not_weird_late_example`: no `3^3·11^2·13^10·17^2·23·q` (`q` prime,
+    `q ∤` prefix) is weird** (base `6831`, `c = 2295`, `g = 5`; steps `13^10`, `17^2`; raise of `11` from 1 to 2 over
+    `m = 3^3·23·13^10·17^2`, 264 divisors, greedy `gB = 5`; `nq` abundant only for `q ≤ 43`). Session 56's plans do not certify
+    this prefix. The module compiles in well under a minute.
+- Elementary; new only as a formalisation. Not a new result on #470 (ω = 6 still open here).
+- **Next (if #143 still unanswered):** (1) a generator `scripts/late_cert_gen.py` that turns a `multi_plan` into a Lean instance
+  (cert conjunction + `intervalGap_raise` per raised prime; the `m · p^e = …` equalities by `decide +kernel`), tested on 3–5 of the
+  210 prefixes; watch the kernel cost of `sortDesc` (quadratic). Measured in a scratch file: `gapCert` for
+  `3^6·17^4·23^15` (560 divisors) and `3^6·17^4·23^15·37^2` (1680 divisors) both pass by `decide +kernel`, in ~1–2.5 min each
+  (timings noisy here: 68–156 s, not monotone in size); 264 divisors stays in the seconds. (2) If quadratic sorting
+  is too slow, generate the divisors already sorted (merge of sorted lists with fuel) or let the generator supply the sorted list
+  and check `descOK` + membership. (3) Honest view unchanged: these are family certificates for given prefixes; covering all of
+  ω = 6 still needs the prefix tree (the Job's search).
