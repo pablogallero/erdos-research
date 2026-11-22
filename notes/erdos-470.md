@@ -6,10 +6,10 @@ numbers? The $10 is for (i) (Guy B2). Lean: `FormalConjectures/ErdosProblems/470
 Mathlib's `Nat.Weird` (abundant ∧ ¬ pseudoperfect). Both parts are still `sorry` there, as are the
 variants `odd_weird_10_pow_21` (Fang) and the Liddy–Riedl variant.
 
-**ω = 6 search, operative rule since 2026-11-22 (overrides every "Next"/"resume START3=…" line below):** the search runs
-only as Kubernetes Jobs, one per root 3^E, never more than 2 at a time (`deploy/owf/`). A session NEVER runs `owf`,
-`odd_weird_family.py`, `START3`, `STOP3` or `ROOTTEST`; it only runs `sh scripts/owf-queue.sh status | export | launch-next`.
-Full flow: `notes/omega6-job.md`. The commands below are a record of what earlier sessions did.
+**ω = 6 search, operative rule since 2026-11-22 (overrides every "Next"/"resume START3=…"/"launch-next" line below):**
+the search runs by itself in pgal's StatefulSet `owf` (2 workers, `run-root.sh worker`, erdos-research #58), with its data in
+`/lean/state/owf`. A session NEVER runs `owf`, `odd_weird_family.py`, `START3`, `STOP3`, `ROOTTEST` or `launch-next`; it only
+runs `sh scripts/owf-queue.sh read` (read-only). Full flow: `notes/omega6-job.md`. The commands below are a record of what earlier sessions did.
 
 **ω = 6 checkpoint location (since session 31):** the repo stores only **`notes/data/omega6.ck.gz`**; the plain
 `notes/data/omega6.ck` is no longer tracked (it is gitignored). Every older session below that says

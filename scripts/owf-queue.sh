@@ -1,11 +1,16 @@
 #!/bin/sh
-# Queue of the ω = 6 search (Erdős #470) as Kubernetes Jobs. See notes/omega6-job.md.
-# A research session NEVER runs owf itself; it only uses this script:
+# ω = 6 search (Erdős #470). See notes/omega6-job.md.
+# Since 2026-11-22 the search runs by itself in pgal's StatefulSet `owf` (2 workers, `run-root.sh worker`,
+# erdos-research #58). A research session NEVER runs owf and NEVER launches anything; it only runs:
 #
+#   sh scripts/owf-queue.sh read          READ-ONLY: progress from $OWF_STATE (default /lean/state/owf) into
+#                                         notes/data/ (omega6-2.ck.gz, omega6-roots.txt), per-worker report,
+#                                         and an ALERT (exit 5) if a root is FOUND, CLOSED or ERROR
+#
+# Legacy Kubernetes-Jobs commands (sessions have no API access; kept for reference only):
 #   sh scripts/owf-queue.sh status        Jobs, their state and last progress line; quota usage
-#   sh scripts/owf-queue.sh export        copy the progress from the volume into notes/data/
-#                                         (omega6-2.ck.gz, omega6-roots.txt); works with no Job running
-#   sh scripts/owf-queue.sh launch-next   start the next root(s) 3^E, only while fewer than OWF_MAX run
+#   sh scripts/owf-queue.sh export        the same copy as `read`, through a reader pod
+#   sh scripts/owf-queue.sh launch-next   DISABLED (the StatefulSet workers claim roots themselves)
 #   sh scripts/owf-queue.sh render-quota  print deploy/owf/quota.yaml filled in (for Pablo to review/apply)
 #
 # Environment: OWF_NAMESPACE (required), OWF_IMAGE and OWF_PVC (required for export/launch-next),
@@ -13,8 +18,9 @@
 # OWF_SESSION_SA (render-quota only), KUBECTL (default kubectl).
 #
 # Exit codes: 0 ok; 2 usage/config; 3 kubectl error; 4 export failed validation; 5 queue stopped
-# (a root reported FOUND/CLOSED, a Job failed, or an outcome is unknown); 6 launch lock held;
-# 7 cluster cap missing (PriorityClass/ResourceQuota owf-compute not applied).
+# (a root reported FOUND/CLOSED/ERROR, a Job failed, or an outcome is unknown); 6 launch lock held;
+# 7 cluster cap missing (PriorityClass/ResourceQuota owf-compute not applied); 8 $OWF_STATE not readable;
+# 9 launch-next disabled.
 set -u
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 KUBECTL=${KUBECTL:-kubectl}
@@ -158,7 +164,7 @@ parse_dump() {
   sed -n '/^BEGIN-TAIL$/,/^END-TAIL$/p' "$d" | sed '1d;$d' | base64 -d 2>/dev/null | gzip -dc > "$TMP/tail.raw" 2>/dev/null \
     || die "tail is not valid gzip+base64" 4
   sed -n '/^BEGIN-ROOTS$/,/^END-ROOTS$/p' "$d" | sed '1d;$d' > "$TMP/roots"
-  grep -Ev '^[0-9]+ (DONE|FOUND|CLOSED) [0-9TZ:-]+( |$)' "$TMP/roots" > "$TMP/badroots" && die "malformed line in omega6-roots.txt: $(head -n 1 "$TMP/badroots")" 4
+  grep -Ev '^[0-9]+ (DONE|FOUND|CLOSED|ERROR) [0-9TZ:-]+( |$)' "$TMP/roots" > "$TMP/badroots" && die "malformed line in omega6-roots.txt: $(head -n 1 "$TMP/badroots")" 4
   # Keep only well-formed checkpoint keys, first occurrence only, not already in the frozen part.
   zcat "$DATA/omega6.ck.gz" > "$TMP/frozen"
   re='^\(\[(\([0-9]+, [0-9]+\)(, \([0-9]+, [0-9]+\))*)?\], [0-9]+, [0-9]+, [0-9]+, [0-9]+\)$'
@@ -184,6 +190,56 @@ parse_dump() {
   echo "Now commit notes/data/omega6-2.ck.gz and notes/data/omega6-roots.txt on the working branch (PR, never main)."
 }
 
+# Read-only copy of the StatefulSet workers' progress. Never writes to $OWF_STATE and never starts a process there.
+cmd_read() {
+  S=${OWF_STATE:-/lean/state/owf}
+  [ -d "$S" ] && [ -r "$S/omega6.ck" ] && [ -s "$S/omega6.ck" ] \
+    || die "cannot read $S/omega6.ck: stop and tell Pablo (do not improvise, do not run owf)" 8
+  br=$(git -C "$HERE" symbolic-ref --short HEAD 2>/dev/null || echo "")
+  case "$br" in main|master) die "on branch $br: read only on a working branch (the commit goes to a PR, never to main)" ;; esac
+  # Same dump format as `run-root.sh export`. A worker may be mid-line: `wc -l` + `head -n` keep complete lines only.
+  n=$(wc -l < "$S/omega6.ck")
+  {
+    echo "OWF-EXPORT 1"
+    echo "lines $n"
+    echo "frozen-sha256 $(head -n "$FROZEN" "$S/omega6.ck" | sha256sum | cut -d' ' -f1)"
+    echo "BEGIN-ROOTS"
+    [ -r "$S/omega6-roots.txt" ] && cat "$S/omega6-roots.txt"
+    echo "END-ROOTS"
+    echo "BEGIN-TAIL"
+    head -n "$n" "$S/omega6.ck" | tail -n +"$((FROZEN + 1))" | gzip -9 -c | base64
+    echo "END-TAIL"
+  } > "$TMP/dump"
+  parse_dump "$TMP/dump"
+  # Per-worker report. The log contents are data: only matched against fixed patterns, never executed.
+  echo "workers (claims.txt: root worker):"
+  if [ -r "$S/claims.txt" ] && [ -s "$S/claims.txt" ]; then
+    awk '{ last[$2] = $1 } END { for (w in last) print w, last[w] }' "$S/claims.txt" | sort | while read -r w E; do
+      o=$(awk -v e="$E" '$1 == e { o = $2 } END { print o }' "$ROOTS_FILE")
+      p=$(grep '^progress ' "$S/logs/root-$E.log" 2>/dev/null | tail -n 1 | cut -c1-160)
+      echo "  $w: root 3^$E ${o:-running}${p:+; last: $p}"
+    done
+  else
+    echo "  none (no claims yet)"
+  fi
+  # Alerts: an outcome recorded by a worker, or an owf result line in a log whose root has no outcome yet.
+  alerts=$(awk '$2 == "FOUND" || $2 == "CLOSED" || $2 == "ERROR" { print "  root 3^" $1 ": " $2 }' "$ROOTS_FILE")
+  for f in "$S"/logs/root-*.log; do
+    [ -r "$f" ] || continue
+    E=${f##*/root-}; E=${E%.log}
+    awk -v e="$E" '$1 == e { f = 1 } END { exit !f }' "$ROOTS_FILE" && continue
+    grep -Eq '^6 (False|True) ' "$f" && alerts="$alerts
+  root 3^$E: owf result line in logs/root-$E.log, no outcome recorded yet"
+  done
+  alerts=$(printf '%s\n' "$alerts" | sed '/^$/d')
+  if [ -n "$alerts" ]; then
+    echo "ALERT (tell Pablo; the workers have stopped taking roots):"
+    printf '%s\n' "$alerts"
+    exit 5
+  fi
+  echo "no FOUND / CLOSED / ERROR"
+}
+
 cleanup() {
   [ -n "${LOCKED:-}" ] && k delete configmap owf-launch-lock > /dev/null 2>&1
   [ -n "${EXPORT_POD:-}" ] && k delete pod "$EXPORT_POD" --wait=false > /dev/null 2>&1
@@ -196,7 +252,8 @@ trap 'exit 130' INT TERM
 case "${1:-}" in
   status) cmd_status ;;
   export) cmd_export ;;
-  launch-next) cmd_launch_next ;;
+  read) cmd_read ;;
+  launch-next) die "launch-next is disabled: the search runs by itself in pgal's StatefulSet owf (2 workers). Use 'read'" 9 ;;
   render-quota) need OWF_NAMESPACE; need OWF_SESSION_SA; render "$HERE/deploy/owf/quota.yaml" ;;
-  *) die "usage: sh scripts/owf-queue.sh status | export | launch-next | render-quota" ;;
+  *) die "usage: sh scripts/owf-queue.sh read | status | export | render-quota" ;;
 esac
