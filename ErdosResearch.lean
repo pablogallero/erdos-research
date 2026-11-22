@@ -23,3 +23,7 @@ public import ErdosResearch.SubsetSumRaise
 public import ErdosResearch.SubsetSumSteps
 public import ErdosResearch.SubsetSumGreedy
 public import ErdosResearch.SubsetSumLate
+public import ErdosResearch.SubsetSumLastOK
+public import ErdosResearch.SubsetSumDivsDesc
+public import ErdosResearch.SubsetSumBitsFast
+public import ErdosResearch.OddWeirdPlans
