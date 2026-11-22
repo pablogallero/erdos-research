@@ -18,8 +18,8 @@ what was tried, what failed and why, and the next step. Plain language; Lean goe
   prime-power step, bitset certificate, exponent-raising step, step lists, greedy gap bound, late raise) as building
   blocks for a Lean family search.
   `data/roottest50.ck.gz` (session 32): resumable checkpoint of `ROOTTEST=50` (region subtree of root 3^50), same format.
-- `omega6-job.md`: **since 2026-11-22 the ω = 6 search runs only as Kubernetes Jobs (max 2), never in a session.**
-  A session only runs `sh scripts/owf-queue.sh status | export | launch-next`. The older run instructions are history.
-  `data/omega6-roots.txt` (written by `export`) lists the finished roots.
+- `omega6-job.md`: **since 2026-11-22 the ω = 6 search runs by itself in pgal's StatefulSet `owf` (2 workers), never in a session.**
+  A session only runs `sh scripts/owf-queue.sh read` (read-only, from `/lean/state/owf`); never `owf` or `launch-next`.
+  The older run instructions are history. `data/omega6-roots.txt` (written by `read`) lists the finished roots.
 - `palomar.md`: the Palomar package (Lean v4.35.0, module system, Challenge/Solution, comparator.json,
   formalization.yaml, preflight CI); sessions 14–16.
