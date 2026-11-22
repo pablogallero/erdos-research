@@ -1041,3 +1041,24 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Nothing has been applied to the cluster: the image, namespace/PVC names and `deploy/owf/quota.yaml` are waiting on Pablo (board card #143).
 - No ω = 6 computation was run in this session (by design). The queue starts at 3^15 and 3^16 from the state of session 50.
 - **Next:** once deployed, run only the three queue commands above. Until then, no ω = 6 run; work on Lean or the multiplicative interval lemma.
+
+## Session 52 (2026-11-22, 03:31–~03:45 UTC): chain-condition lemma in Lean (no search run)
+
+- Board: card #143 (deploy the ω = 6 Job) still open with no answer, so no queue command was run and, by the operative
+  rule, no `owf` either. Used the session for Lean, as planned in session 51.
+- New `ErdosResearch/SubsetSumChain.lean` (imported from the root; no sorry; axioms propext/choice/Quot.sound;
+  full `lake build` OK, 9067 jobs; `check-lean-sources.py` OK; module ~5 s). It formalises the soundness of the
+  interval certificate used by `odd_weird_family.{py,c}` (`Pstruct0`'s chain condition):
+  - `ChainOK` (decidable): each element, read from the largest, is ≤ 1 + sum of the rest;
+  - `subsetSum_of_chainOK_list` / `subsetSum_of_chainOK_finset`: then every `m ≤` total is a subset sum;
+  - `Complete.cons`, `complete_append`: a base certified another way (the search's bitset of small divisors) extended by
+    the chain condition, which is exactly the shape the search uses for odd prefixes;
+  - `pseudoperfect_of_chainOK`: chain + not deficient ⇒ pseudoperfect (never applies to odd `n`; sanity examples on 12 and 945).
+- Classical: zbMATH confirms Stewart, *Sums of distinct divisors*, Amer. J. Math. 1954 (Zbl 0056.27004); Srinivasan 1948
+  (practical numbers) was not found in zbMATH, so it is cited from memory only. New only as formalisation. It is one building block towards a Lean version of the family search; the multiplicative interval
+  lemma (session 12 sketch) is still open.
+- Failed (minor): declaring `theorem List.foo` inside a namespace made `List.sum` resolve to the wrong namespace;
+  `Finset.sort` does not reduce under `decide` (used explicit lists); the lemma is `List.sum_toFinset`, not `Finset.…`.
+- **Next:** if #143 is answered, only `scripts/owf-queue.sh status | export | launch-next`. Otherwise: (1) the
+  bitset-base half in Lean (a decidable check that a short list is complete, `decide +kernel`), then the multiplicative
+  interval lemma.
