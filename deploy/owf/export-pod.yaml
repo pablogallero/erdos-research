@@ -1,0 +1,36 @@
+# Short-lived read-only reader of the search volume, used by `scripts/owf-queue.sh export`.
+# It works with or without running Jobs and does not use `kubectl exec`.
+# Not in PriorityClass owf-compute: it does not take one of the 2 compute slots (it runs for seconds).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ${POD_NAME}
+  namespace: ${OWF_NAMESPACE}
+  labels:
+    app: owf-export
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+  containers:
+    - name: export
+      image: ${OWF_IMAGE}
+      args: ["export"]
+      env:
+        - name: OWF_DATA
+          value: /data
+      resources:
+        requests: {cpu: 50m, memory: 32Mi}
+        limits: {cpu: 200m, memory: 128Mi}
+      volumeMounts:
+        - name: data
+          mountPath: /data
+          subPath: ${OWF_SUBPATH}
+          readOnly: true
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: ${OWF_PVC}
+        readOnly: true

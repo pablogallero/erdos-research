@@ -6,6 +6,11 @@ numbers? The $10 is for (i) (Guy B2). Lean: `FormalConjectures/ErdosProblems/470
 Mathlib's `Nat.Weird` (abundant ∧ ¬ pseudoperfect). Both parts are still `sorry` there, as are the
 variants `odd_weird_10_pow_21` (Fang) and the Liddy–Riedl variant.
 
+**ω = 6 search, operative rule since 2026-11-22 (overrides every "Next"/"resume START3=…" line below):** the search runs
+only as Kubernetes Jobs, one per root 3^E, never more than 2 at a time (`deploy/owf/`). A session NEVER runs `owf`,
+`odd_weird_family.py`, `START3`, `STOP3` or `ROOTTEST`; it only runs `sh scripts/owf-queue.sh status | export | launch-next`.
+Full flow: `notes/omega6-job.md`. The commands below are a record of what earlier sessions did.
+
 **ω = 6 checkpoint location (since session 31):** the repo stores only **`notes/data/omega6.ck.gz`**; the plain
 `notes/data/omega6.ck` is no longer tracked (it is gitignored). Every older session below that says
 `notes/data/omega6.ck` means the decompressed file: run `gunzip -kf notes/data/omega6.ck.gz` before resuming and
@@ -77,7 +82,7 @@ jobs; module ~10 s):** `ErdosResearch/OddWeird.lean`
 
 **Failed:** two `omega` calls (fixed by naming the hypotheses and giving `s.card = 1/2` explicitly).
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. ω = 3 in Lean: an odd abundant `n` with ω = 3 is a multiple of one of the 8 odd PANs with ω = 3
    (smallest 945 = 3³·5·7). Prove each one is pseudoperfect with an explicit subset (`decide`), plus
    "multiple of a pseudoperfect is pseudoperfect" (scale the subset). The finiteness/enumeration
@@ -124,7 +129,7 @@ jobs; module ~10 s):** `ErdosResearch/OddWeird.lean`
 `obtain rfl : x = 2` (fixed by stating the helper with `(2 + 1)`). `interval_cases z <;> norm_num at …`
 closed goals and broke the bullet structure (fixed by `first | omega | (exfalso; revert hr; norm_num)`).
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. ω = 4 in Lean. The same scheme works, but there are 576 PANs and many more boxes, so generate the
    case tree with a script (as for #1052) or write a reflective checker: a decidable
    "dominates a PAN with a certificate, or box bound" check over exponent vectors, with the subsets
@@ -182,7 +187,7 @@ closed goals and broke the bullet structure (fixed by `first | omega | (exfalso;
 - A filter that dropped bases divisible by any skipped `q` was wrong for composite `q` (it removed
   the bases with 9 ∣ b), and the search failed. Now the filtering happens only when a prime is chosen.
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. ω = 5 in Lean with the same pipeline (`odd_pan_search.py 5`, then a chunk generator for `j = 5`).
    First measure the search size: see "ω = 5 feasibility" below. The generator and `sound_top` are
    written for `j = 4`; parametrise them by `j`.
@@ -263,7 +268,7 @@ at once ("family" node):
   test with a full `Pstruct` of `M q^e` was too slow for large `e`; it was replaced by the digit DFS.
 - Finding the holes bit by bit cost 55 s at ω = 4; with `bit_length` it is 0.1 s.
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. ω = 5 in Lean with families. Bottleneck: 235k families, each needing the interval certificate of
    `P(M)` (thousands of sorted divisors), which is far too much for `decide +kernel` (≈ 25k simple
    calls/min, 3 GB data limit for `lean` now). It would need a *multiplicative* interval lemma that
@@ -332,7 +337,7 @@ before running it on ω = 6. `ps`/`pkill` are missing here: kill via `/proc/*/cm
 - Rate ≈ 2.7k nodes/s per core. Each 3^a takes ≈ 30–60 min on one core, and the exponent of 5 grows with `a`.
   The exponent of 3 went up to 21 at ω = 5, so the whole run is likely **≥ 10–20 core-hours**, i.e. several sessions.
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. Resume, unchanged: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` (it
    continues in 3^2) and helper `START3=4 timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck`
    (3^3 is left to the main run). Stop both before the cutoff, and **the checkpoint must go into the PR**
@@ -368,7 +373,7 @@ with the main run plus a helper `START3=4`, both under `timeout` from 14:47 to a
 - Rate as before (≈ 2.7k nodes/s per core). Once the main run reached 3^4 it duplicated the helper's work
   until reloading at depth ≤ 2.
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. Resume: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` (continues in 3^4) and a
    helper `START3=5` (not 4: the main run is already in 3^4). The checkpoint must go into the PR.
 2. Unchanged: the multiplicative interval lemma to speed up `Pstruct0`; everything proved so far is classical.
@@ -394,7 +399,7 @@ Fixed by quoting one step name. No mathematical change to #470.
 - Still holds as computer evidence: no odd weird number with ω = 6 and v_3 ∈ {1, 2, 3}.
   3^4 is not finished yet: the bound on b is still being reached.
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. Resume with the same two commands: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck`
    and helper `START3=5 timeout T python3 …`. The checkpoint must go into the PR.
 2. Unchanged: the multiplicative interval lemma to speed up `Pstruct0`. Everything proved so far is classical.
@@ -422,7 +427,7 @@ helper `START3=5`, both under `timeout 5000`, from 23:52 to 01:15 UTC.
 - **Inefficiency found:** after finishing 3^4, the main run entered 3^5 and duplicated the helper's subtree
   (the workers do not share progress in memory; some checkpoint lines appear twice, which is harmless).
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. Resume with main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` (it will skip
    finished 3^5 subtrees) and helper **`START3=6`** (not 5) so the two do not overlap. The checkpoint must go
    into the PR.
@@ -449,7 +454,7 @@ overlap.
   3^6: every (3^6, 5^b) with b ≤ 6 is done, and the helper was inside 5^7 (17^10).
 - Cost per (3^a, 5^b) subtree grows with b: about 15–20 min of one core each for 3^5 at b ≈ 12–14.
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. Resume with the same pair: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck`
    and helper `START3=6`. When the main run finishes 3^5, stop it and restart it with `START3=7` so it does not
    duplicate the helper. The checkpoint must go into the PR.
@@ -475,7 +480,7 @@ plus a helper `START3=6`, both under `timeout 5100`, from 04:26 to 05:51 UTC.
   3^6: every (3^6, 5^b) with b ≤ 11 is done, and the helper was inside 5^12 (17^4).
 - Each (3^a, 5^b) subtree still costs about 15–25 min of one core. Finished roots: v_3 ∈ {1, 2, 3, 4}.
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. Resume with the same pair: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` and helper
    `START3=6`. When the main run finishes 3^5, restart it with `START3=7`. The checkpoint must go into the PR.
 2. The multiplicative interval lemma to speed up `Pstruct0`. CPU alone will need many more sessions.
@@ -500,7 +505,7 @@ plus a helper `START3=6`, both under `timeout 5100`, from 06:41 to 08:06 UTC.
 - Finished roots: v_3 ∈ {1, 2, 3, 4}. Max b done so far: 3^1 → 19, 3^2 → 24, 3^3 → 28, 3^4 → 26 (b is bounded, so
   these roots are complete).
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. Resume with the same pair: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` and helper
    `START3=6`. When the main run finishes 3^5, restart it with `START3=7`. The checkpoint must go into the PR.
 2. The multiplicative interval lemma to speed up `Pstruct0`. CPU alone will need many more sessions.
@@ -526,7 +531,7 @@ plus a helper `START3=6`, both under `timeout 5340`, from 08:58 to 10:27 UTC.
 - Pace: about 2–3 values of b per root per 90-min session. Each b gets slower as it grows, so CPU alone will not
   finish 3^5 and 3^6 soon, and v_3 ≥ 7 is still untouched.
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. Resume with the same pair: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` and helper
    `START3=6`. When the main run finishes 3^5, restart it with `START3=7`. The checkpoint must go into the PR.
 2. The multiplicative interval lemma to speed up `Pstruct0`. Given the pace above, it is now the priority over raw CPU.
@@ -567,7 +572,7 @@ The restart lost only the depth-3 subtree each worker was in the middle of.
 - Finished roots: v_3 ∈ {1, 2, 3, 4}. Max b on finished roots: 3^1 → 19, 3^2 → 24, 3^3 → 28, 3^4 → 26.
   So 3^5 should be close to finishing (a few more b).
 
-**Next step (in order):**
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):**
 1. Resume with the same pair: main `timeout T python3 scripts/odd_weird_family.py 6 notes/data/omega6.ck` and helper
    `START3=6`. When the main run finishes 3^5 (record `([(3, 5)], …)`), restart it with `START3=7`. The checkpoint
    must go into the PR.
@@ -591,7 +596,7 @@ The restart lost only the depth-3 subtree each worker was in the middle of.
 Checkpoint `notes/data/omega6.ck` 10069 → 10512 lines. 3^5 done for 5^b with b ≤ 27 (now inside b = 28);
 3^6 done for b ≤ 24 (now inside b = 25). Finished roots: v_3 ∈ {1,2,3,4}. Still evidence only, not Lean.
 
-**Next step (in order):** unchanged from session 23: (1) resume the same pair; when the main run records
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):** unchanged from session 23: (1) resume the same pair; when the main run records
 `([(3, 5)], …)`, restart it with `START3=7`; the checkpoint must go into the PR. (2) Carry the low bitset down
 the DFS for speed (at ~3 b per root per session, CPU alone needs many more sessions).
 
@@ -609,7 +614,7 @@ Checkpoint `notes/data/omega6.ck` 10512 → 10956 lines. 3^5 done for 5^b with b
 3^6 done for b ≤ 28 (now inside b = 29). Finished roots: v_3 ∈ {1,2,3,4}. Still evidence only, not Lean.
 Palomar: no reply on card #106; main `1314c236` has "Lean" and "Palomar preflight" green.
 
-**Next step (in order):** unchanged: (1) resume the same pair; when the main run records `([(3, 5)], …)`,
+**Next step (in order; history — for the ω = 6 search see `notes/omega6-job.md`):** unchanged: (1) resume the same pair; when the main run records `([(3, 5)], …)`,
 restart it with `START3=7`; the checkpoint must go into the PR. (2) Carry the low bitset down the DFS for speed.
 
 **Daily summary:**
@@ -796,7 +801,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   is complete (the workers were killed by PID; the file is flushed after each line).
 - Lost: one core sat idle for about 22 min after 3^8 finished (around 03:44) until I noticed at 04:06. Check more
   often than every 25 min, or chain `START3=E+1` automatically.
-- **Next:** (1) keep going with ROOTTEST=50 (resumes) on one core and `START3=9 STOP3=9` on the other. When 3^9
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** (1) keep going with ROOTTEST=50 (resumes) on one core and `START3=9 STOP3=9` on the other. When 3^9
   finishes, start 10. (2) If ROOTTEST=50 turns out False, stop the ω = 6 loop: it does not terminate by this
   method (see session 31 follow-up 2).
 
@@ -809,7 +814,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   `[(3,50),(5,11),(17,14),…]`. Still inconclusive. Its checkpoint grew from 569 to 723 lines.
 - Checkpoints: `omega6.ck.gz` 18825 → 20893 lines; `roottest50.ck.gz` 569 → 723 lines. 0 duplicates in both, each old
   file is an exact byte prefix of the new one, and both end in a newline.
-- **Next:** resume `ROOTTEST=50` (it picks up from its checkpoint) and `START3=10 STOP3=10`. When 3^10 finishes, start 11.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `ROOTTEST=50` (it picks up from its checkpoint) and `START3=10 STOP3=10`. When 3^10 finishes, start 11.
   ROOTTEST=50 advances only about 1 b of 5 per 90 min, so it may need several sessions. Consider giving it both cores.
 
 ### Session 34 (2026-11-19, 07:45–09:15 UTC): 3^10 and ROOTTEST=50 continued (no code or Lean changes)
@@ -823,7 +828,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   old file is an exact byte prefix of the new one, and both end in a newline.
   sha256 (decompressed): omega6 2c523c15…, roottest50 57663962….
 - Failed: nothing. Pace is the limit (3^10: ~10 b of 5 per 90 min; ROOTTEST=50: ~2 b per 90 min).
-- **Next:** resume both runs exactly as before (`ROOTTEST=50` on rt50.ck; `START3=10 STOP3=10` on omega6.ck; when 3^10
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume both runs exactly as before (`ROOTTEST=50` on rt50.ck; `START3=10 STOP3=10` on omega6.ck; when 3^10
   prints "STOP3 reached", start 11). Speed work (profile w256 path; bitset carry) is still the way to shorten this.
 
 ### Session 35 (2026-11-19, 10:03–11:36 UTC): 3^10 finished; 3^11 and ROOTTEST=50 continued (no code or Lean changes)
@@ -838,7 +843,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   file is an exact byte prefix of the new one, and both end in a newline.
   sha256 (decompressed): omega6 b80c5ce3…, roottest50 28fa1943….
 - Failed: nothing. Pace is still the limit.
-- **Next:** resume `ROOTTEST=50` on rt50.ck and `START3=11 STOP3=11` on omega6.ck; when 3^11 finishes, start 12.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `ROOTTEST=50` on rt50.ck and `START3=11 STOP3=11` on omega6.ck; when 3^11 finishes, start 12.
 
 ### Session 36 (2026-11-19, 12:26–13:58 UTC): 3^11 and ROOTTEST=50 continued (no code or Lean changes)
 
@@ -853,7 +858,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   live file, so they never include a half-written line.
   sha256 (decompressed): omega6 5b6a59eb…, roottest50 6dc69e1a….
 - Failed: nothing. Pace is still the limit.
-- **Next:** resume `ROOTTEST=50` on rt50.ck and `START3=11 STOP3=11` on omega6.ck; when 3^11 finishes, start 12.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `ROOTTEST=50` on rt50.ck and `START3=11 STOP3=11` on omega6.ck; when 3^11 finishes, start 12.
 
 ### Session 37 (2026-11-19, 14:46–16:16 UTC): 3^11 and ROOTTEST=50 continued (no code or Lean changes)
 
@@ -867,7 +872,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   file is an exact byte prefix of the new one, both end in a newline (snapshots with `head -n N`).
   sha256 (decompressed): omega6 05d3cf63…, roottest50 0d3792b7….
 - Failed: nothing. Pace is still the limit (3^11 is a slow root: ~3 sessions so far).
-- **Next:** resume `ROOTTEST=50` on rt50.ck and `START3=11 STOP3=11` on omega6.ck; when 3^11 finishes, start 12.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `ROOTTEST=50` on rt50.ck and `START3=11 STOP3=11` on omega6.ck; when 3^11 finishes, start 12.
 
 ### Session 38 (2026-11-19/20, 23:00–00:38 UTC): 3^11 finished, 3^12 started, ROOTTEST=50 continued (no code or Lean changes)
 
@@ -879,7 +884,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   inconclusive.
 - Checkpoints: `omega6.ck.gz` 24613 → 26318 lines; `roottest50.ck.gz` 1251 → 1329 lines. 0 duplicates, the old files are exact
   byte prefixes, and snapshots were taken with `head -n N`. sha256 (decompressed): omega6 a29c302f…, roottest50 9bb3cfe2….
-- **Next:** resume `ROOTTEST=50` and `START3=12 STOP3=12`, and check every 10 min so that 3^13 starts as soon as 3^12 finishes.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `ROOTTEST=50` and `START3=12 STOP3=12`, and check every 10 min so that 3^13 starts as soon as 3^12 finishes.
 
 ### Session 39 (2026-11-20, 01:25–02:51 UTC): 3^12 and ROOTTEST=50 continued (no code or Lean changes)
 
@@ -891,7 +896,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Checkpoints: `omega6.ck.gz` 26318 → 26956 lines; `roottest50.ck.gz` 1329 → 1403 lines. 0 duplicates, the old files are exact
   byte prefixes, and the final file ends with a newline. sha256 (decompressed): omega6 5a8401cd…, roottest50 197314ac….
 - Failed: nothing. Pace is the only limit: ~10 b per session on 3^12, ~1 b per session on ROOTTEST=50.
-- **Next:** resume `ROOTTEST=50` and `START3=12 STOP3=12`, and check every 10 min so that 3^13 starts as soon as 3^12 finishes.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `ROOTTEST=50` and `START3=12 STOP3=12`, and check every 10 min so that 3^13 starts as soon as 3^12 finishes.
 
 ### Session 40 (2026-11-20, 03:40–05:13 UTC): 3^12 and ROOTTEST=50 continued (no code or Lean changes)
 
@@ -903,7 +908,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Checkpoints: `omega6.ck.gz` 26956 → 27393 lines; `roottest50.ck.gz` 1403 → 1478 lines. 0 duplicates, the old files are exact
   byte prefixes, and both end with a newline. sha256 (decompressed): omega6 790714ae…, roottest50 7c041605….
 - Failed: nothing. Pace is the only limit (~6 b per session on 3^12 at high b, ~1 b per session on ROOTTEST=50).
-- **Next:** resume `ROOTTEST=50` and `START3=12 STOP3=12`, check every 10 min, start `START3=13 STOP3=13` when 3^12 finishes.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `ROOTTEST=50` and `START3=12 STOP3=12`, check every 10 min, start `START3=13 STOP3=13` when 3^12 finishes.
 
 ### Session 41 (2026-11-20, 05:58–07:28 UTC): 3^12 finished, 3^13 and ROOTTEST=50 continued (no code or Lean changes)
 
@@ -915,7 +920,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Checkpoints: `omega6.ck.gz` 27393 → 29220 lines; `roottest50.ck.gz` 1478 → 1548 lines. 0 duplicates, the old files are exact
   byte prefixes, and both end with a newline. sha256 (decompressed): omega6 bdb5cc56…, roottest50 c21d72eb….
 - Failed: nothing. Pace is the only limit (~16 b per session on a fresh root, ~1 b per session on ROOTTEST=50).
-- **Next:** resume `ROOTTEST=50` and `START3=13 STOP3=13`; check every 10 min and start `START3=14 STOP3=14` when 3^13 finishes.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `ROOTTEST=50` and `START3=13 STOP3=13`; check every 10 min and start `START3=14 STOP3=14` when 3^13 finishes.
 
 ### Session 42 (2026-11-20, 08:15–09:45 UTC): 3^13 and ROOTTEST=50 continued (no code or Lean changes)
 
@@ -926,7 +931,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Checkpoints: `omega6.ck.gz` 29220 → 29762 lines; `roottest50.ck.gz` 1548 → 1555 lines. 0 duplicates, the old files are exact
   byte prefixes, and both end with a newline. sha256 (decompressed): omega6 8bb6dcbc…, roottest50 0087d5ee….
 - Failed: nothing. ROOTTEST=50 is now very slow inside 5^22 (7 keys in a session).
-- **Next:** resume both runs as before; start `START3=14 STOP3=14` when 3^13 finishes.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume both runs as before; start `START3=14 STOP3=14` when 3^13 finishes.
 
 ### Session 43 (2026-11-20, 10:33–12:01 UTC): 3^13 and ROOTTEST=50 continued (no code or Lean changes)
 
@@ -938,7 +943,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Checkpoints: `omega6.ck.gz` 29762 → 30087 lines; `roottest50.ck.gz` 1555 → 1628 lines. 0 duplicates, the old files are exact
   byte prefixes, and both end with a newline. sha256 (decompressed): omega6 17302a67…, roottest50 876cdb13….
 - Failed: nothing. Pace only (~4 b per session on 3^13 at high b, ~1 b per session on ROOTTEST=50).
-- **Next:** resume both runs as before; start `START3=14 STOP3=14` when 3^13 finishes.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume both runs as before; start `START3=14 STOP3=14` when 3^13 finishes.
 
 ### Session 44 (2026-11-20/21, 23:00–00:30 UTC): 3^13 finished, 3^14 started, ROOTTEST=50 continued (no code or Lean changes)
 
@@ -949,7 +954,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Checkpoints: `omega6.ck.gz` 30087 → 31891 lines; `roottest50.ck.gz` 1628 → 1632 lines. 0 duplicates, the old files are exact
   byte prefixes. sha256 (decompressed): omega6 c0196a5e…, roottest50 4bfb1805….
 - Failed: nothing. Pace only (ROOTTEST=50 inside 5^23 is very slow: 4 keys this session).
-- **Next:** resume `ROOTTEST=50` and `START3=14 STOP3=14`; start `START3=15 STOP3=15` when 3^14 finishes.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `ROOTTEST=50` and `START3=14 STOP3=14`; start `START3=15 STOP3=15` when 3^14 finishes.
 
 ### Session 45 (2026-11-21, 01:19–02:50 UTC): 3^14 and ROOTTEST=50 continued (no code or Lean changes)
 
@@ -961,7 +966,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Checkpoints: `omega6.ck.gz` 31891 → 32342 lines; `roottest50.ck.gz` 1632 → 1706 lines. 0 duplicates, the old files are exact
   byte prefixes, and both end with a newline. sha256 (decompressed): omega6 d1a69736…, roottest50 1c6cdcd3….
 - Failed: nothing. Pace only. Watch the size: `omega6.ck.gz` is now 649 KB (+~8 KB/session); split it before 1 MB.
-- **Next:** resume `ROOTTEST=50` and `START3=14 STOP3=14`; start `START3=15 STOP3=15` when 3^14 finishes.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `ROOTTEST=50` and `START3=14 STOP3=14`; start `START3=15 STOP3=15` when 3^14 finishes.
 
 ### Session 46 (2026-11-21, 03:36–05:08 UTC): 3^14 and ROOTTEST=50 continued (no code or Lean changes)
 
@@ -973,7 +978,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Checkpoints: `omega6.ck.gz` 32342 → 32714 lines; `roottest50.ck.gz` 1706 → 1709 lines. 0 duplicates, the old files are exact
   byte prefixes, and both end with a newline. sha256 (decompressed): omega6 f77e4507…, roottest50 59eb1ec3….
 - Failed: nothing. Pace only. `omega6.ck.gz` is now 645 KiB (660 KB); split it before 1 MB.
-- **Next:** resume `ROOTTEST=50` and `START3=14 STOP3=14`; start `START3=15 STOP3=15` when 3^14 finishes.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `ROOTTEST=50` and `START3=14 STOP3=14`; start `START3=15 STOP3=15` when 3^14 finishes.
 
 ### Session 47 (2026-11-21, 05:55–07:24 UTC): 3^14 and ROOTTEST=50 continued (no code or Lean changes)
 
@@ -987,7 +992,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Failed: nothing. Only slow progress. `omega6.ck.gz` is now 669 KB; split it before it reaches 1 MB.
 - Assessment: ROOTTEST=50 has stalled in 5^24 (≈ 4 keys in 3 sessions). With one core it may take many more sessions to finish.
   Consider giving both cores to 3^14/3^15, or profiling ROOTTEST in 5^24, before spending more CPU on it.
-- **Next:** resume `START3=14 STOP3=14` (b ≥ 29 left) and `ROOTTEST=50`; start `START3=15 STOP3=15` when 3^14 finishes.
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `START3=14 STOP3=14` (b ≥ 29 left) and `ROOTTEST=50`; start `START3=15 STOP3=15` when 3^14 finishes.
 
 ### Session 48 (2026-11-21, 08:09–09:40 UTC): 3^14 finished; 3^15 and 3^16 started (no code or Lean changes)
 
@@ -1001,7 +1006,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   newline. sha256 (decompressed): fd263be6…. **About 3–4 sessions left before 1 MB:** split it (e.g. `omega6.ck.gz` frozen plus
   `omega6-2.ck.gz` for new lines, concatenated with `zcat a b > plain` before running) at the start of the next session or the one after.
 - Failed: nothing.
-- **Next:** resume `START3=15 STOP3=15` and `START3=16 STOP3=16`; when one prints "STOP3 reached", start the next free exponent (17).
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** resume `START3=15 STOP3=15` and `START3=16 STOP3=16`; when one prints "STOP3 reached", start the next free exponent (17).
   ROOTTEST=50 stays parked unless it gets profiled.
 
 ### Session 49 (2026-11-21, 10:25–11:56 UTC): 3^15 and 3^16 continued (no code or Lean changes)
@@ -1013,7 +1018,7 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - Checkpoint: `omega6.ck.gz` 35844 → 36729 lines (748 KB). 0 duplicates, the old file is an exact byte prefix, and it ends
   with a newline. sha256 (decompressed): 41ad8d0d….
 - Failed: nothing. Only slow progress (≈ 6 b per root per session).
-- **Next:** split the checkpoint before it reaches 1 MB (freeze `omega6.ck.gz`, put new lines in `omega6-2.ck.gz`, run on
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** split the checkpoint before it reaches 1 MB (freeze `omega6.ck.gz`, put new lines in `omega6-2.ck.gz`, run on
   `zcat a b > plain`). Then resume `START3=15 STOP3=15` and `START3=16 STOP3=16`, and start 17 when one prints "STOP3 reached".
 
 ### Session 50 (2026-11-21/22, 23:00–00:28 UTC): checkpoint split; 3^15 and 3^16 continued (no code or Lean changes)
@@ -1026,5 +1031,13 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - `START3=16 STOP3=16`, 87 min, no failure: log at (5,26), so 5^b is done for b ≤ 25. Not finished.
 - Finished roots still v_3 ∈ {1..14}. ROOTTEST=50 stays parked (`roottest50.ck.gz` unchanged, 1710 lines).
 - Failed: nothing. Only slow progress (≈ 4 b per root per session).
-- **Next:** `zcat` both parts into the plain file, resume `START3=15 STOP3=15` and `START3=16 STOP3=16`; start 17 when one prints
+- **Next (superseded 2026-11-22: sessions never run the search, see `notes/omega6-job.md`):** `zcat` both parts into the plain file, resume `START3=15 STOP3=15` and `START3=16 STOP3=16`; start 17 when one prints
   "STOP3 reached". Afterwards write `tail -n +36730 plain | gzip -9 -c > notes/data/omega6-2.ck.gz`.
+
+## Session 51 (2026-11-22): the search moves out of sessions (task from Pablo)
+
+- The ω = 6 search now runs as Kubernetes Jobs, one per root 3^E (max 2), with its checkpoint in the persistent volume.
+  Sessions only run `scripts/owf-queue.sh status | export | launch-next`. Details, outcomes and deployment are in `notes/omega6-job.md`.
+- Nothing has been applied to the cluster: the image, namespace/PVC names and `deploy/owf/quota.yaml` are waiting on Pablo (board card #143).
+- No ω = 6 computation was run in this session (by design). The queue starts at 3^15 and 3^16 from the state of session 50.
+- **Next:** once deployed, run only the three queue commands above. Until then, no ω = 6 run; work on Lean or the multiplicative interval lemma.

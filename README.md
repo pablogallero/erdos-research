@@ -7,6 +7,9 @@ is checked by the compiler, not by trust.
 
 - `ErdosResearch/`: definitions, statements and proofs.
 - `notes/`: what was tried, what failed and what is next, in plain language.
+- `deploy/owf/` + `scripts/owf-queue.sh`: the long ω = 6 search for #470 runs as Kubernetes Jobs, one per
+  root and at most 2 at a time, with checkpoints in a persistent volume and no session attached. Sessions only check
+  progress, export it to `notes/data/` and launch the next root. See `notes/omega6-job.md`.
 - Toolchain `leanprover/lean4:v4.35.0` and Mathlib `v4.35.0` (PGAL's image ships this toolchain;
   Palomar requires at least v4.35.0-rc2). Every `.lean` file uses Lean's module system.
 - Palomar package (prepared, not submitted): `Challenge.lean` (statements only, Mathlib imports
