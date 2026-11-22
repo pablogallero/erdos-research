@@ -16,3 +16,4 @@ public import ErdosResearch.OddWeirdFour
 public import ErdosResearch.OddWeirdLastPrime
 public import ErdosResearch.SubsetSumChain
 public import ErdosResearch.SubsetSumGlue
+public import ErdosResearch.SubsetSumPrimeStep
