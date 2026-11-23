@@ -1322,3 +1322,15 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
 - **Next:** (1) `read` again; alert Pablo on exit 5. (2) Measure, in Python, a reflective leaf: `multi_plan` cost vs a cheap
   necessary condition, to judge whether a `chk`-style checker for one sub-root (e.g. 3^17·5^24) is feasible in the kernel.
   (3) Abundant 5-prime prefixes: how often are they pseudoperfect via a small explicit subset (cheap Lean leaf)?
+
+**Session 60 follow-up (review, 2026-11-23 ~00:50 UTC):** the checker's `lake build` timed out at 1200 s. The only new
+Lean was `OddWeirdRealPrefix.lean` (327–419 s of kernel, `maxRecDepth 1000000`, 4500-divisor cofactor), so it was
+**taken out of the repo and out of the root imports**. The generator `scripts/real_prefix_cert.py` stays, so the module
+can be regenerated on demand (`python3 scripts/real_prefix_cert.py '3^17*5^24*17^4*257^4*113149' > /tmp/x.lean`), but it
+must not go into the default build. Rule from now on: no module may add more than ~1 min to `lake build`; heavy
+certificates stay outside the default targets. Local `lake build` OK again (9079 jobs, same as main), check-lean-sources OK.
+Data files in the diff: `omega6-2.ck.gz` (2108 → 5265 lines) and `omega6-roots.txt` (+ root 15 DONE) are the output
+of `sh scripts/owf-queue.sh read`. They change because the pgal `owf` StatefulSet keeps working. Checked: gzip -t OK,
+0 duplicates, the old file is a byte-exact prefix, every line is a checkpoint tuple (digits, brackets, commas) with no
+other content and no secrets. Palomar: already in main and green (see notes/palomar.md, re-check 2026-11-23).
+Next step unchanged (session 60 "Next"), but any Lean certificate must be cheap (< 1 min) before it enters the build.
