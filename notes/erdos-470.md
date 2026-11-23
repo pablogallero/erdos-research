@@ -1373,3 +1373,48 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   sub-root, with `ppOK` (abundant) and the plan decider (deficient) as leaves. Count the leaves and estimate the kernel cost of
   `gapCertM` per deficient leaf; if that is minutes, look for a cheaper deficient leaf (e.g. reuse one base interval across
   the sibling last primes). NEVER run owf in a session.
+
+## Session 63 (2026-11-23, 07:03–~07:50 UTC): one certificate per 4-prime sub-tree (no owf run)
+
+- `sh scripts/owf-queue.sh read` (exit 0, no FOUND/CLOSED/ERROR): no new root finished (finished roots v_3 ∈ {1..18}).
+  owf-0 on 3^20 (log at (5,20),(17,12)), owf-1 on 3^19 (log at (5,27),(17,1)) at 07:48. `omega6-2.ck.gz` 10513 → 11278 lines,
+  frozen prefix OK, 0 dropped lines. Board unchanged; Palomar files unchanged.
+- **Measured (Python, new `scripts/subroot_leaf_probe.py PREFIX4 LIMB MAXLEAVES REPO`):** replays only the SHAPE of the last
+  two levels of `search1`/`family` below a fixed deficient 4-prime prefix (same bounds and exponent loop; every pp test is
+  assumed to pass, so it decides nothing and is not the search). Census of the leaves a Lean checker would need:
+  `3^20·5^18·19^4·97^3` (from owf-0's log): 1112 abundant + 1262 deficient 5-prime leaves (the 5th prime runs over every
+  prime up to qtop ≈ 9179, then beyond); `3^18·5^17·19^2·97^3`: 521 + 566; `3^19·5^25·29^7·73`: 0 + 13.
+  With session 60's per-leaf instances (minutes each) that is days per 4-prime prefix: per-leaf certificates are hopeless.
+- **Speed fix in the probe:** `allq` (raise_steps_plan.py) loops over every q < σ/(2n−σ), which is ~10^7–10^8 for
+  near-perfect leaves (session 60's "never-ending q loop"). `allq_fast` gives the same truth value in closed form (every
+  condition is linear in q, so the good q form an interval; scan only for the first prime outside it). Checked equal to
+  `allq` on 20000 random inputs (`CHECKALLQ=1`). multi_plan then decides all 1262 deficient leaves above in 31 s.
+- **Key finding (`UNIFORM=1`):** all sibling leaves use the same plan shape (base 855, step 97, then the 5th prime q, then
+  raises of 3, 5, 19). Reordering — certify the 4-prime prefix M4 ONCE (`IntervalGap M4 S4 c g` by base+steps+raises), then
+  the prime-power step by q (conditions `q g + 2c ≤ S4 + 1`, `M4 + 2c ≤ (q+1) S4 + 1`, valid for every exponent) — decides
+  EVERY leaf: abundant leaves by `c ≤ M5 ≤ ∑D(M5) − c` (pseudoperfect), deficient ones by the last-prime test (`allq`),
+  and (`STARS=1`) the 6th prime with exponent ≥ 2 by a second step + interval test. Result: 4 hand-picked prefixes + 40
+  random deficient 4-prime prefixes shaped like the open roots (seed 63; 2623 leaves): **44/44 uniform, 0 failing leaves**;
+  with STARS on 18 of them, 18/18 (≈ 200 star leaves). Indicative only: the random prefixes are not the search's distribution.
+- **Lean (in `ErdosResearchExtra`, NOT the default build; no sorry/native_decide; standard axioms; module ≈ 15 s):** new
+  `ErdosResearch/SubsetSumUniform.lean`: `intervalGap_mul_prime_pow` (IntervalGap survives n ↦ n q^e for every e),
+  `pseudoperfect_mul_prime_pow_of_intervalGap` (abundant leaf), `not_weird_mul_prime_pow_mul_prime_of_intervalGap`
+  (deficient leaf, 6th prime r^1), `pseudoperfect_star_of_intervalGap` (6th prime r^f). These are the generic
+  ingredients; q, e, r stay symbolic, so one sub-tree = one kernel certificate of M4 + inequalities in q.
+  Full `lake build` OK (9066 jobs), `lake build ErdosResearchExtra` OK (9065), check-lean-sources OK. Elementary; new only
+  as a formalisation.
+- **Range lemma (Lean, same module):** `pseudoperfect_mul_prime_of_range`: the abundant-leaf conditions are linear in q, so
+  four inequalities at the ends q₀, q₁ give "n q pseudoperfect for EVERY prime q ∈ [q₀, q₁], q ∤ n" with no per-prime work.
+  Python check: for `3^20·5^18·19^4·97^3` with (c, g) = (57, 2), all 1112 abundant leaves (q = 101 … 9173) satisfy the four
+  end conditions; same for `3^18·5^17·19^2·97^3` (521 leaves, q = 101 … 3931). So the abundant half of a sub-tree is ONE
+  lemma application once `IntervalGap M4` is certified.
+- **Not done / open:** (a) the side conditions per leaf are still numeric (q, e, r concrete); to get ONE theorem per sub-tree
+  they must be proved for all primes q in a range at once (they are linear in q for fixed e except the `allq` part, which
+  is linear in r for fixed q, e) — or checked by a reflective loop over the leaves (cheap: only GMP arithmetic, no divisors).
+  (b) the per-prefix certificate of M4 still needs `gapCertM` on cofactors with thousands of divisors (session 60: minutes).
+  (c) Region nodes (exponent "≥ e") of the search are not modelled separately; the probe takes each exact exponent.
+- **Next:** (1) `read` first; alert Pablo on exit 5. (2) A reflective `subtreeOK M4 S4 c g` that runs the j = 2 loop of the
+  search (primes q by a cheap primality-free stride, exponent loop) and only checks the linear side conditions, with a
+  soundness proof built on the four session-63 lemmas; time it in the kernel on `3^1·5^2·11·13` (16 leaves), then on
+  `3^18·5^17·19^2·97^3` (1087 leaves). (3) Measure how many distinct M4 certificates one root needs (= number of 4-prime
+  prefixes with room for 2 primes). NEVER run owf in a session.
