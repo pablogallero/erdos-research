@@ -27,3 +27,4 @@ public import ErdosResearch.SubsetSumLastOK
 public import ErdosResearch.SubsetSumDivsDesc
 public import ErdosResearch.SubsetSumBitsFast
 public import ErdosResearch.OddWeirdPlans
+public import ErdosResearch.OddWeirdRealPrefix

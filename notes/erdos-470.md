@@ -1294,3 +1294,31 @@ continue ω = 6 with it, optionally carry the bitset down the DFS, and estimate 
   as a fast path of the search (a family decided by a plan = a Lean-checkable leaf), so the Job's output could later be
   replayed as Lean instances. This changes the search code ⇒ `scripts/validate-owf.sh` is mandatory, and the Job image must be
   rebuilt (Pablo). (3) Honest view unchanged: these certify given prefixes; all of ω = 6 still needs the prefix tree.
+
+## Session 60 (2026-11-22/23, 23:00–~00:30 UTC): the decider on the OPEN part of the search; one real node in Lean
+
+- `sh scripts/owf-queue.sh read` (exit 0, no FOUND/CLOSED/ERROR): **root 3^15 DONE** (20:58 UTC, nfail 0), so the
+  finished roots are v_3 ∈ {1..16}. owf-0 is on 3^18 and owf-1 on 3^17. `omega6-2.ck.gz` 2108 → 5265 lines (126 KB), frozen
+  prefix OK. No owf run.
+- **Coverage measured where the search is still open** (new `scripts/highv3_coverage_probe.py`, Python only):
+  `multi_plan` decides **every** sampled deficient 5-prime prefix with v_3 ∈ {17,18,19,20,25,30}: 300/300 at LIMB 10^5 and
+  300/300 at LIMB 2·10^4, < 0.1 s each. The sample includes the real node `3^17·5^24·17^4·257^4·113149` from owf-1's
+  progress log. The last prefix prime is chosen so that abundance stays reachable, but the sample is NOT the search's real
+  node distribution, so treat these numbers as indicative only.
+  Caveat: the other node from the log, `3^18·5^17·19^2·97^3·2647`, is already **abundant** (σ/n ≈ 2.00025). The
+  decider does not apply to abundant prefixes (they need pseudoperfectness of the prefix itself, cf. `Pseudoperfect.of_dvd`).
+- **Lean (no sorry/native_decide; axioms propext/choice/Quot.sound):** new `ErdosResearch/OddWeirdRealPrefix.lean`, generated
+  by new `scripts/real_prefix_cert.py '3^17*5^24*17^4*257^4*113149'` (byte-identical on rerun; uses `multi_plan`/`build`/`emit`
+  of `late_cert_gen.py`): **`not_weird_0`: no `3^17·5^24·17^4·257^4·113149·q` is weird** (q prime, q ∤ prefix). Plan: base
+  21675 = 3·5^2·17^2 (c = 283, g = 6), steps 257^4 and 113149, raises of 3, 5 and 17 (cofactors with 90, 540 and 4500 divisors),
+  `lastOK` with B = 140293. Module: **327–419 s** (419 s in the full `lake build`, 9080 jobs, OK), imported from the root. It is a single node of the open search, not the whole root.
+- **Failed:** (1) the first build hit a kernel "deep recursion" in `gapCertM` on the 4500-divisor cofactor. Fixed with
+  `set_option maxRecDepth 1000000`, which the script emits. (2) My first probe put the abundant node into `allq`
+  (`max(1, 2n−σ)` ⇒ q-loop up to σ: never ends), which was a probe bug. (3) Trap: a `/proc/*/cmdline` kill loop matching
+  `*highv3*` killed my own shell (the pattern was in its command line). Match on `python3*…` or keep PIDs.
+- Honest view: kernel cost per real node is minutes (cofactor divisors and B both grow with the exponents), and the
+  open roots have millions of nodes. So Lean replay of a whole root by per-node instances is not realistic. A Lean
+  ω = 6 proof would need the reflective-checker route of `OddWeirdFourCore` with the plan decider as its leaf test.
+- **Next:** (1) `read` again; alert Pablo on exit 5. (2) Measure, in Python, a reflective leaf: `multi_plan` cost vs a cheap
+  necessary condition, to judge whether a `chk`-style checker for one sub-root (e.g. 3^17·5^24) is feasible in the kernel.
+  (3) Abundant 5-prime prefixes: how often are they pseudoperfect via a small explicit subset (cheap Lean leaf)?
