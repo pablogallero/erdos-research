@@ -1490,3 +1490,33 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   soundness rests on `prime_imp_not_skipB` and SubsetSumSteps/Uniform. Start with `3^17·5^2·43^2` (20 leaves) and time it in the kernel.
   (3) Add a hint list (composites to skip, each with a factor) in case a larger q range ever shows a composite failure.
   NEVER run owf in a session.
+
+## Session 68 (2026-11-23, 14:21–~14:50 UTC): first layer of the reflective checker (loop + tail) in Lean (no owf run)
+
+- `sh scripts/owf-queue.sh read` (exit 0, no FOUND/CLOSED/ERROR): **root 3^20 DONE** (13:47 UTC, 109.6M nodes, nfail 0), so the
+  finished roots are v_3 ∈ {1..20}. owf-0 is on 3^22 (22.6M nodes), owf-1 on 3^21 (75.4M nodes). `omega6-2.ck.gz` 14144 → 15890 lines
+  (392 KB), frozen prefix OK, 0 duplicates; `omega6-roots.txt` gains root 20. Palomar files unchanged.
+- **New `ErdosResearch/SubsetSumFifthLoop.lean`** (ErdosResearchExtra only, not the default build; ≈ 25–38 s; no sorry/native_decide;
+  axioms propext/choice/Quot.sound; check-lean-sources OK; Extra build OK, 9067 jobs; default build OK, 9066 jobs):
+  - `leafOK n S c g e q` (Boolean): the prime-power step conditions for `q`, then either the abundant interval test for `n q^e`
+    or `lastOK` for `n q^e`, with `B = (N + S')/(N − S') + 1`. `not_weird_of_leafOK`: under `IntervalGap n S c g`, no `n q^e r`
+    is weird (`r` prime, `r ∤ n q^e`). The abundant case goes through `Nat.Pseudoperfect.of_dvd`.
+  - `qLoop P n S c g e q₀ k`: every odd `q` from `q₀` (`k` values), skipping `skipB q P` (proven composite) and `q ∣ n`.
+    `not_weird_of_qLoop`: sound for every prime `q` in the range. **No primality is proved anywhere** (session 67 idea, now used).
+  - `ppSum_exact'` (closed form σ(n q^e)(q − 1) + σ(n) = σ(n) q^(e+1), no subtraction) and **`not_weird_tail`**: if
+    `σ(n)(Q + 1) ≤ 2n(Q − 1)`, then no `n q^e r` with primes `q, r ≥ Q` is abundant, for EVERY `e`. This is the region bound
+    that closes the loop.
+  - Instance **`not_weird_late_prefix_mul_mul`**: for `n = 3^3·11·13^10·17^2·23` (IntervalGap from `cert_late`, c = 2295, g = 5):
+    for all primes `q < r` with q odd, q ∤ n, r ∤ n q, `n q r` is not weird. The loop covers q < 71 (k = 33, ~1 s) and the tail
+    covers Q = 71 (σ/n ≈ 1.9408). That is a whole two-prime family (exponent 1 for q) from ONE certificate. Elementary; new only
+    as a formalisation.
+- **Kernel timings** (`P1000` = product of the odd primes ≤ 1000, 1379 bits): `qLoop` over 50 q took 1.5 s; over 500 q (q < 1005)
+  it took 9.3 s with e = 1 and 17.4 s with e = 3. That is ≈ 18–35 ms per q, dominated by the `lastOK` ranges (Σ B ≈ 15k).
+  Python simulation (`/tmp`, throwaway): all 500 q pass for e = 1, 2, 3.
+- **Failed (minor):** a parity proof via `.elim` on an implication; q = 2 does not divide an odd n, so the instance needs `q ≠ 2`.
+- **Next:** (1) `read` first (alert Pablo on exit 5; on CLOSED, start the paper task with the literature check first). (2) The loop
+  over the exponent e of q: `not_weird_tail` already covers every e for q ≥ Q. For q < Q, either a per-e loop up to the point where
+  `n q^e` stops changing the regime (ratio → σ(n)/n · q/(q−1)), or a region lemma for e ≥ e₀ like the search's (exponent region
+  `x ≥ e`). (3) One level up: loop over the 4th prime with an `IntervalGap` step for each (`intervalGap_mul_prime_pow`), so a
+  3-prime prefix gets ONE certificate (`subtreeOK3`), timed on `3^17·5^2·43^2`. (4) Lean `lastOK` is the hot spot: replace the
+  `List.range B` scan by the closed form of session 63 (`allq_fast`) if instances get slow. NEVER run owf in a session.
