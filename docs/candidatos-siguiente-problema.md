@@ -229,8 +229,13 @@ así que la cola por encima de 10^14 es casi nula. La ventaja es que casi nadie 
   páginas usadas en el cribado. Todas consultadas el 2026-11-23.
 - zbMATH Open API (2026-11-23): consultas «unimodal independence polynomial trees» y «coprime
   powerful numbers sum».
-- arXiv: consultas propias para #993 y #64 (2026-11-23: 2609.04686, 2608.02675, 2610.22098,
-  2603.03025, …). Las demás referencias están citadas desde el foro o desde zbMATH (2510.18826, 2305.01784, 2610.22098, 2603.17114,
-  2604.18824, 2606.18462, 2508.08703). Para #128 y #939, la API de arXiv respondió «Rate exceeded» o no
-  dio resultados pertinentes, así que **ahí falta una búsqueda independiente en arXiv**. Si eliges uno, es lo primero
-  que haría.
+- arXiv, por grado de verificación (los identificadores 26MM.xxxxx son de 2026, anteriores a
+  la fecha de este informe, 2026-11-23):
+  - **Verificadas directamente** en la API de arXiv (título, autores y fecha vistos; solo el
+    resumen, no el texto completo) en consultas propias para #64 y #993: 2608.02675, 2609.04686,
+    2610.22098 y 2603.03025.
+  - **Solo citadas desde el foro de erdosproblems.com o desde zbMATH**, sin abrirlas en arXiv:
+    2510.18826, 2305.01784, 2603.17114, 2604.18824, 2606.18462 y 2508.08703. Lo que digo de ellas
+    viene de esas fuentes.
+  - Para #128 y #939, la API de arXiv respondió «Rate exceeded» o no dio resultados pertinentes, así
+    que **ahí falta una búsqueda independiente en arXiv**. Si eliges uno, es lo primero que haría.
