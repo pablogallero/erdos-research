@@ -20,19 +20,16 @@ public import ErdosResearch.UnitaryPerfect
 All of this is known mathematically (see `notes/erdos-1052.md`); it is new only as a
 formalisation.
 
-## How `arith_sorted_5` is proved (generated proof)
+## How `arith_sorted_5` is proved (reflective checker)
 
-The case tree was produced by a script (`notes/erdos-1052.md` describes it). At each level the
-smallest remaining factor `yᵢ` is either a size bound or one of finitely many values:
-* bound `yᵢ ≥ B`: shift every remaining variable to its lower bound (`yⱼ = zⱼ + B + (j - i)`).
-  Then `2 ∏ y - ∏ (1 + y)` is a polynomial in the `z`s with nonnegative coefficients and a
-  positive constant term, so `linarith` closes it once the monomials `0 ≤ z * z' * …` are
-  given;
-* a value with a common factor with an earlier `yⱼ`: `norm_num` on the coprimality hypothesis;
-* the last variable: the equation is linear in it, so `omega` decides it.
-The integer solutions that are not pairwise coprime, such as `(3, 5, 9, 11, 32)` or
-`(3, 5, 9, 16, 17)`, are cut by coprimality. The only coprime one is `(3, 5, 7, 13, 64)`.
-The tree is split into one lemma per `(y₁, y₂)` prefix to stay within the heartbeat limit.
+`upnCheck` (the Boolean search of `UnitaryPerfectFiveOdd.lean`, moved here) decides that a family
+of sorted, pairwise coprime lists has no solution, and `upnCheck_sound` proves that `true` is
+correct. Since `(3, 5, 7, 13, 64)` *is* a solution, the search cannot run on the whole tree, so
+`arith_sorted_5` splits by hand along that one branch (`y₁ ∈ {2, 3, ≥ 4}`, then `y₂`, `y₃`, `y₄`)
+and gives every other branch to one `upnCheck … = true` (`decide +kernel`). On the branch
+`(3, 5, 7, 13)` the equation is linear in `y₅`, and `omega` gives `y₅ = 64`.
+Until session 61 this lemma was a generated case tree (`scripts/upn_case_tree.py`, ~900 lines,
+≈ 235 s to compile); the reflective proof compiles in well under a minute.
 -/
 
 namespace ErdosResearch.Erdos1052
@@ -88,802 +85,183 @@ lemma exists_sorted_factors {n : ℕ} (hn : n ≠ 0) :
       ((Nat.prime_of_mem_primeFactors hp).factorization_pos_of_dvd hn
         (Nat.dvd_of_mem_primeFactors hp))]
 
-section Generated
+/-! ## The reflective checker `upnCheck`
 
-set_option linter.unusedVariables false
+`upnCheck` and `upnCheck_sound` (described in `UnitaryPerfectFiveOdd.lean`, where they were first
+used for five odd primes) live here so that `arith_sorted_5` can use them. -/
 
-lemma arith_sorted_5_2_3 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
-    (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
-    (c1_3 : Nat.Coprime y1 y3) (c1_4 : Nat.Coprime y1 y4) (c1_5 : Nat.Coprime y1 y5)
-    (c2_3 : Nat.Coprime y2 y3) (c2_4 : Nat.Coprime y2 y4) (c2_5 : Nat.Coprime y2 y5)
-    (c3_4 : Nat.Coprime y3 y4) (c3_5 : Nat.Coprime y3 y5) (c4_5 : Nat.Coprime y4 y5)
-    (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
-      2 * y1 * y2 * y3 * y4 * y5) (hne : ¬y1 * y2 * y3 * y4 * y5 = 87360) (e1 : y1 = 2) (e2 : y2 =
-          3) :
-    False := by
-  subst e1 e2
-  linarith [Nat.zero_le (y3 * y4), Nat.zero_le (y3 * y5), Nat.zero_le (y4 * y5), Nat.zero_le (y3 *
-      y4 * y5)]
+/-- `ascProd L r = L · (L+1) ⋯ (L+r-1)`. -/
+def ascProd (L : ℕ) : ℕ → ℕ
+  | 0 => 1
+  | r + 1 => L * ascProd (L + 1) r
 
-lemma arith_sorted_5_2_5 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
-    (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
-    (c1_3 : Nat.Coprime y1 y3) (c1_4 : Nat.Coprime y1 y4) (c1_5 : Nat.Coprime y1 y5)
-    (c2_3 : Nat.Coprime y2 y3) (c2_4 : Nat.Coprime y2 y4) (c2_5 : Nat.Coprime y2 y5)
-    (c3_4 : Nat.Coprime y3 y4) (c3_5 : Nat.Coprime y3 y5) (c4_5 : Nat.Coprime y4 y5)
-    (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
-      2 * y1 * y2 * y3 * y4 * y5) (hne : ¬y1 * y2 * y3 * y4 * y5 = 87360) (e1 : y1 = 2) (e2 : y2 =
-          5) :
-    False := by
-  subst e1 e2
-  rcases (show y3 = 6 ∨ y3 = 7 ∨ y3 = 8 ∨ y3 = 9 ∨ y3 = 10 ∨ y3 = 11 ∨ y3 = 12 ∨ y3 = 13 ∨ y3 = 14 ∨
-      y3 = 15 ∨ y3 = 16 ∨ y3 = 17 ∨ y3 = 18 ∨ y3 = 19 ∨ y3 = 20 ∨ y3 = 21 ∨ y3 = 22 ∨ y3 = 23 ∨ y3 =
-      24 ∨ y3 = 25 ∨ y3 = 26 ∨ y3 = 27 ∨ 28 ≤ y3 by omega) with rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      | hb
-  · norm_num at c1_3
-  · linarith [Nat.zero_le (y4 * y5)]
-  · norm_num at c1_3
-  · linarith [Nat.zero_le (y4 * y5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 12 ∨ y4 = 13 ∨ y4 = 14 ∨ y4 = 15 ∨ y4 = 16 ∨ y4 = 17 ∨ y4 = 18 ∨ y4 = 19 ∨ y4
-      = 20 ∨ y4 = 21 ∨ y4 = 22 ∨ y4 = 23 ∨ y4 = 24 ∨ y4 = 25 ∨ y4 = 26 ∨ y4 = 27 ∨ y4 = 28 ∨ y4 = 29
-      ∨ y4 = 30 ∨ y4 = 31 ∨ y4 = 32 ∨ y4 = 33 ∨ y4 = 34 ∨ y4 = 35 ∨ y4 = 36 ∨ y4 = 37 ∨ y4 = 38 ∨ y4
-      = 39 ∨ y4 = 40 ∨ y4 = 41 ∨ y4 = 42 ∨ y4 = 43 ∨ y4 = 44 ∨ y4 = 45 ∨ y4 = 46 ∨ y4 = 47 ∨ y4 = 48
-      ∨ y4 = 49 ∨ y4 = 50 ∨ y4 = 51 ∨ y4 = 52 ∨ y4 = 53 ∨ y4 = 54 ∨ y4 = 55 ∨ y4 = 56 ∨ y4 = 57 ∨ y4
-      = 58 ∨ y4 = 59 ∨ y4 = 60 ∨ y4 = 61 ∨ y4 = 62 ∨ y4 = 63 ∨ y4 = 64 ∨ y4 = 65 ∨ y4 = 66 ∨ y4 = 67
-      ∨ y4 = 68 ∨ y4 = 69 ∨ y4 = 70 ∨ y4 = 71 ∨ y4 = 72 ∨ y4 = 73 ∨ y4 = 74 ∨ y4 = 75 ∨ y4 = 76 ∨ y4
-      = 77 ∨ y4 = 78 ∨ y4 = 79 ∨ y4 = 80 ∨ y4 = 81 ∨ y4 = 82 ∨ y4 = 83 ∨ y4 = 84 ∨ y4 = 85 ∨ y4 = 86
-      ∨ y4 = 87 ∨ y4 = 88 ∨ y4 = 89 ∨ y4 = 90 ∨ y4 = 91 ∨ y4 = 92 ∨ y4 = 93 ∨ y4 = 94 ∨ y4 = 95 ∨ y4
-      = 96 ∨ y4 = 97 ∨ y4 = 98 ∨ y4 = 99 ∨ y4 = 100 ∨ y4 = 101 ∨ y4 = 102 ∨ y4 = 103 ∨ y4 = 104 ∨ y4
-      = 105 ∨ y4 = 106 ∨ y4 = 107 ∨ y4 = 108 ∨ 109 ≤ y4 by omega) with rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · obtain rfl : y5 = 1044 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · obtain rfl : y5 = 648 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain rfl : y5 = 384 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain rfl : y5 = 252 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain rfl : y5 = 164 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · obtain rfl : y5 = 144 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 109 := ⟨y4 - 109, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 110 := ⟨y5 - 110, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 14 ∨ y4 = 15 ∨ y4 = 16 ∨ y4 = 17 ∨ y4 = 18 ∨ y4 = 19 ∨ y4 = 20 ∨ y4 = 21 ∨ y4
-      = 22 ∨ y4 = 23 ∨ y4 = 24 ∨ y4 = 25 ∨ y4 = 26 ∨ y4 = 27 ∨ y4 = 28 ∨ y4 = 29 ∨ y4 = 30 ∨ y4 = 31
-      ∨ y4 = 32 ∨ y4 = 33 ∨ y4 = 34 ∨ y4 = 35 ∨ y4 = 36 ∨ y4 = 37 ∨ y4 = 38 ∨ y4 = 39 ∨ y4 = 40 ∨ y4
-      = 41 ∨ y4 = 42 ∨ y4 = 43 ∨ y4 = 44 ∨ y4 = 45 ∨ y4 = 46 ∨ y4 = 47 ∨ y4 = 48 ∨ y4 = 49 ∨ y4 = 50
-      ∨ y4 = 51 ∨ y4 = 52 ∨ y4 = 53 ∨ y4 = 54 ∨ y4 = 55 ∨ y4 = 56 ∨ y4 = 57 ∨ y4 = 58 ∨ y4 = 59 ∨ y4
-      = 60 ∨ y4 = 61 ∨ y4 = 62 ∨ y4 = 63 ∨ 64 ≤ y4 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
-      | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain rfl : y5 = 714 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain rfl : y5 = 90 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · obtain rfl : y5 = 84 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain rfl : y5 = 64 := by omega
-      norm_num at c1_5
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 64 := ⟨y4 - 64, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 65 := ⟨y5 - 65, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · norm_num at c2_3
-  · norm_num at c1_3
-  · rcases (show y4 = 18 ∨ y4 = 19 ∨ y4 = 20 ∨ y4 = 21 ∨ y4 = 22 ∨ y4 = 23 ∨ y4 = 24 ∨ y4 = 25 ∨ y4
-      = 26 ∨ y4 = 27 ∨ y4 = 28 ∨ y4 = 29 ∨ y4 = 30 ∨ y4 = 31 ∨ y4 = 32 ∨ y4 = 33 ∨ y4 = 34 ∨ y4 = 35
-      ∨ y4 = 36 ∨ y4 = 37 ∨ y4 = 38 ∨ y4 = 39 ∨ y4 = 40 ∨ 41 ≤ y4 by omega) with rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      | rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain rfl : y5 = 594 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · obtain rfl : y5 = 84 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain rfl : y5 = 54 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 41 := ⟨y4 - 41, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 42 := ⟨y5 - 42, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 20 ∨ y4 = 21 ∨ y4 = 22 ∨ y4 = 23 ∨ y4 = 24 ∨ y4 = 25 ∨ y4 = 26 ∨ y4 = 27 ∨ y4
-      = 28 ∨ y4 = 29 ∨ y4 = 30 ∨ y4 = 31 ∨ y4 = 32 ∨ y4 = 33 ∨ y4 = 34 ∨ y4 = 35 ∨ y4 = 36 ∨ 37 ≤ y4
-      by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · obtain rfl : y5 = 132 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · obtain rfl : y5 = 56 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 37 := ⟨y4 - 37, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 38 := ⟨y5 - 38, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 22 ∨ y4 = 23 ∨ y4 = 24 ∨ y4 = 25 ∨ y4 = 26 ∨ y4 = 27 ∨ y4 = 28 ∨ y4 = 29 ∨ y4
-      = 30 ∨ y4 = 31 ∨ y4 = 32 ∨ y4 = 33 ∨ 34 ≤ y4 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
-      | rfl | rfl | rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 34 := ⟨y4 - 34, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 35 := ⟨y5 - 35, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 24 ∨ y4 = 25 ∨ y4 = 26 ∨ y4 = 27 ∨ y4 = 28 ∨ y4 = 29 ∨ y4 = 30 ∨ 31 ≤ y4 by
-      omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 31 := ⟨y4 - 31, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 32 := ⟨y5 - 32, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · norm_num at c2_3
-  · norm_num at c1_3
-  · rcases (show y4 = 28 ∨ 29 ≤ y4 by omega) with rfl | hb
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 29 := ⟨y4 - 29, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 30 := ⟨y5 - 30, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 28 := ⟨y3 - 28, by omega⟩
-    obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 29 := ⟨y4 - 29, by omega⟩
-    obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 30 := ⟨y5 - 30, by omega⟩
-    linarith [Nat.zero_le (z3 * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z3 *
-        z4 * z5)]
+/-- `true` iff `y` is coprime to every element of `pre`. -/
+def coprimeAll (y : ℕ) : List ℕ → Bool
+  | [] => true
+  | p :: ps => Nat.gcd y p == 1 && coprimeAll y ps
 
-lemma arith_sorted_5_2_7 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
-    (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
-    (c1_3 : Nat.Coprime y1 y3) (c1_4 : Nat.Coprime y1 y4) (c1_5 : Nat.Coprime y1 y5)
-    (c2_3 : Nat.Coprime y2 y3) (c2_4 : Nat.Coprime y2 y4) (c2_5 : Nat.Coprime y2 y5)
-    (c3_4 : Nat.Coprime y3 y4) (c3_5 : Nat.Coprime y3 y5) (c4_5 : Nat.Coprime y4 y5)
-    (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
-      2 * y1 * y2 * y3 * y4 * y5) (hne : ¬y1 * y2 * y3 * y4 * y5 = 87360) (e1 : y1 = 2) (e2 : y2 =
-          7) :
-    False := by
-  subst e1 e2
-  rcases (show y3 = 8 ∨ y3 = 9 ∨ y3 = 10 ∨ y3 = 11 ∨ y3 = 12 ∨ y3 = 13 ∨ y3 = 14 ∨ y3 = 15 ∨ y3 = 16
-      ∨ y3 = 17 ∨ y3 = 18 ∨ 19 ≤ y3 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | hb
-  · norm_num at c1_3
-  · rcases (show y4 = 10 ∨ y4 = 11 ∨ y4 = 12 ∨ y4 = 13 ∨ y4 = 14 ∨ y4 = 15 ∨ y4 = 16 ∨ y4 = 17 ∨ y4
-      = 18 ∨ y4 = 19 ∨ y4 = 20 ∨ y4 = 21 ∨ y4 = 22 ∨ y4 = 23 ∨ y4 = 24 ∨ y4 = 25 ∨ y4 = 26 ∨ y4 = 27
-      ∨ y4 = 28 ∨ y4 = 29 ∨ y4 = 30 ∨ y4 = 31 ∨ y4 = 32 ∨ y4 = 33 ∨ y4 = 34 ∨ y4 = 35 ∨ y4 = 36 ∨ y4
-      = 37 ∨ y4 = 38 ∨ y4 = 39 ∨ y4 = 40 ∨ 41 ≤ y4 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
-      | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · obtain rfl : y5 = 160 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · obtain rfl : y5 = 104 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 41 := ⟨y4 - 41, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 42 := ⟨y5 - 42, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 12 ∨ y4 = 13 ∨ y4 = 14 ∨ y4 = 15 ∨ y4 = 16 ∨ y4 = 17 ∨ y4 = 18 ∨ y4 = 19 ∨ y4
-      = 20 ∨ y4 = 21 ∨ y4 = 22 ∨ y4 = 23 ∨ y4 = 24 ∨ y4 = 25 ∨ y4 = 26 ∨ y4 = 27 ∨ y4 = 28 ∨ 29 ≤ y4
-      by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain rfl : y5 = 384 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain rfl : y5 = 32 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 29 := ⟨y4 - 29, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 30 := ⟨y5 - 30, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 14 ∨ y4 = 15 ∨ y4 = 16 ∨ y4 = 17 ∨ y4 = 18 ∨ y4 = 19 ∨ y4 = 20 ∨ y4 = 21 ∨ y4
-      = 22 ∨ y4 = 23 ∨ y4 = 24 ∨ 25 ≤ y4 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · obtain rfl : y5 = 64 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 25 := ⟨y4 - 25, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 26 := ⟨y5 - 26, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 16 ∨ y4 = 17 ∨ y4 = 18 ∨ y4 = 19 ∨ y4 = 20 ∨ y4 = 21 ∨ 22 ≤ y4 by omega) with
-      rfl | rfl | rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 22 := ⟨y4 - 22, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 23 := ⟨y5 - 23, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 18 ∨ y4 = 19 ∨ 20 ≤ y4 by omega) with rfl | rfl | hb
-    · norm_num at c1_4
-    · omega
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 20 := ⟨y4 - 20, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 21 := ⟨y5 - 21, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 19 := ⟨y3 - 19, by omega⟩
-    obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 20 := ⟨y4 - 20, by omega⟩
-    obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 21 := ⟨y5 - 21, by omega⟩
-    linarith [Nat.zero_le (z3 * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z3 *
-        z4 * z5)]
+lemma coprimeAll_spec {y : ℕ} {pre : List ℕ} (h : coprimeAll y pre = true) :
+    ∀ p ∈ pre, Nat.Coprime y p := by
+  induction pre with
+  | nil => simp
+  | cons q qs ih =>
+    simp only [coprimeAll, Bool.and_eq_true, beq_iff_eq] at h
+    intro p hp
+    rcases List.mem_cons.1 hp with rfl | hp
+    · exact h.1
+    · exact ih h.2 p hp
 
-lemma arith_sorted_5_2_9 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
-    (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
-    (c1_3 : Nat.Coprime y1 y3) (c1_4 : Nat.Coprime y1 y4) (c1_5 : Nat.Coprime y1 y5)
-    (c2_3 : Nat.Coprime y2 y3) (c2_4 : Nat.Coprime y2 y4) (c2_5 : Nat.Coprime y2 y5)
-    (c3_4 : Nat.Coprime y3 y4) (c3_5 : Nat.Coprime y3 y5) (c4_5 : Nat.Coprime y4 y5)
-    (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
-      2 * y1 * y2 * y3 * y4 * y5) (hne : ¬y1 * y2 * y3 * y4 * y5 = 87360) (e1 : y1 = 2) (e2 : y2 =
-          9) :
-    False := by
-  subst e1 e2
-  rcases (show y3 = 10 ∨ y3 = 11 ∨ y3 = 12 ∨ y3 = 13 ∨ y3 = 14 ∨ y3 = 15 ∨ 16 ≤ y3 by omega) with
-      rfl | rfl | rfl | rfl | rfl | rfl | hb
-  · norm_num at c1_3
-  · rcases (show y4 = 12 ∨ y4 = 13 ∨ y4 = 14 ∨ y4 = 15 ∨ y4 = 16 ∨ y4 = 17 ∨ y4 = 18 ∨ y4 = 19 ∨ y4
-      = 20 ∨ 21 ≤ y4 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 21 := ⟨y4 - 21, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 22 := ⟨y5 - 22, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 14 ∨ y4 = 15 ∨ y4 = 16 ∨ y4 = 17 ∨ 18 ≤ y4 by omega) with rfl | rfl | rfl |
-      rfl | hb
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · omega
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 18 := ⟨y4 - 18, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 19 := ⟨y5 - 19, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · norm_num at c2_3
-  · obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 16 := ⟨y3 - 16, by omega⟩
-    obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 17 := ⟨y4 - 17, by omega⟩
-    obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 18 := ⟨y5 - 18, by omega⟩
-    linarith [Nat.zero_le (z3 * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z3 *
-        z4 * z5)]
+lemma coprimeAll_of {y : ℕ} {pre : List ℕ} (h : ∀ p ∈ pre, Nat.Coprime y p) :
+    coprimeAll y pre = true := by
+  induction pre with
+  | nil => rfl
+  | cons q qs ih =>
+    simp only [coprimeAll, Bool.and_eq_true, beq_iff_eq]
+    exact ⟨h q (by simp), ih fun p hp => h p (by simp [hp])⟩
 
-lemma arith_sorted_5_2_11 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
-    (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
-    (c1_3 : Nat.Coprime y1 y3) (c1_4 : Nat.Coprime y1 y4) (c1_5 : Nat.Coprime y1 y5)
-    (c2_3 : Nat.Coprime y2 y3) (c2_4 : Nat.Coprime y2 y4) (c2_5 : Nat.Coprime y2 y5)
-    (c3_4 : Nat.Coprime y3 y4) (c3_5 : Nat.Coprime y3 y5) (c4_5 : Nat.Coprime y4 y5)
-    (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
-      2 * y1 * y2 * y3 * y4 * y5) (hne : ¬y1 * y2 * y3 * y4 * y5 = 87360) (e1 : y1 = 2) (e2 : y2 =
-          11) :
-    False := by
-  subst e1 e2
-  rcases (show y3 = 12 ∨ y3 = 13 ∨ 14 ≤ y3 by omega) with rfl | rfl | hb
-  · norm_num at c1_3
-  · rcases (show y4 = 14 ∨ 15 ≤ y4 by omega) with rfl | hb
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 15 := ⟨y4 - 15, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 16 := ⟨y5 - 16, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 14 := ⟨y3 - 14, by omega⟩
-    obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 15 := ⟨y4 - 15, by omega⟩
-    obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 16 := ⟨y5 - 16, by omega⟩
-    linarith [Nat.zero_le (z3 * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z3 *
-        z4 * z5)]
+/-- The search. `true` means: there is no list `ys` of length `r`, strictly increasing,
+with entries `≥ L`, pairwise coprime and coprime to `pre`, such that
+`Q · ∏ (1 + y) = 2 P · ∏ y`. `fuel` only makes the recursion structural. -/
+def upnCheck : ℕ → ℕ → ℕ → ℕ → List ℕ → ℕ → Bool
+  | _, P, Q, _, _, 0 => Q != 2 * P
+  | 0, _, _, _, _, _ + 1 => false
+  | fuel + 1, P, Q, L, pre, r + 1 =>
+    if 2 * P ≤ Q then 0 < Q
+    else if r = 0 then
+      (Q % (2 * P - Q) != 0) || (Q / (2 * P - Q) < L) || !coprimeAll (Q / (2 * P - Q)) pre
+    else if Q * ascProd (L + 1) (r + 1) < 2 * P * ascProd L (r + 1) then true
+    else (!coprimeAll L pre || upnCheck fuel (P * L) (Q * (1 + L)) (L + 1) (L :: pre) r) &&
+      upnCheck fuel P Q (L + 1) pre (r + 1)
 
-lemma arith_sorted_5_3_4 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
-    (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
-    (c1_3 : Nat.Coprime y1 y3) (c1_4 : Nat.Coprime y1 y4) (c1_5 : Nat.Coprime y1 y5)
-    (c2_3 : Nat.Coprime y2 y3) (c2_4 : Nat.Coprime y2 y4) (c2_5 : Nat.Coprime y2 y5)
-    (c3_4 : Nat.Coprime y3 y4) (c3_5 : Nat.Coprime y3 y5) (c4_5 : Nat.Coprime y4 y5)
-    (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
-      2 * y1 * y2 * y3 * y4 * y5) (hne : ¬y1 * y2 * y3 * y4 * y5 = 87360) (e1 : y1 = 3) (e2 : y2 =
-          4) :
-    False := by
-  subst e1 e2
-  rcases (show y3 = 5 ∨ y3 = 6 ∨ y3 = 7 ∨ y3 = 8 ∨ y3 = 9 ∨ y3 = 10 ∨ y3 = 11 ∨ y3 = 12 ∨ y3 = 13 ∨
-      y3 = 14 ∨ y3 = 15 ∨ 16 ≤ y3 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      | rfl | rfl | hb
-  · linarith [Nat.zero_le (y4 * y5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 8 ∨ y4 = 9 ∨ y4 = 10 ∨ y4 = 11 ∨ y4 = 12 ∨ y4 = 13 ∨ y4 = 14 ∨ y4 = 15 ∨ y4 =
-      16 ∨ y4 = 17 ∨ y4 = 18 ∨ y4 = 19 ∨ y4 = 20 ∨ y4 = 21 ∨ y4 = 22 ∨ y4 = 23 ∨ y4 = 24 ∨ y4 = 25 ∨
-      y4 = 26 ∨ y4 = 27 ∨ y4 = 28 ∨ y4 = 29 ∨ y4 = 30 ∨ y4 = 31 ∨ y4 = 32 ∨ y4 = 33 ∨ y4 = 34 ∨ y4 =
-      35 ∨ y4 = 36 ∨ y4 = 37 ∨ y4 = 38 ∨ y4 = 39 ∨ y4 = 40 ∨ 41 ≤ y4 by omega) with rfl | rfl | rfl
-      | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hb
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · obtain rfl : y5 = 160 := by omega
-      norm_num at c2_5
-    · norm_num at c1_4
-    · obtain rfl : y5 = 104 := by omega
-      norm_num at c2_5
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · omega
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 41 := ⟨y4 - 41, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 42 := ⟨y5 - 42, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c2_3
-  · norm_num at c1_3
-  · norm_num at c2_3
-  · rcases (show y4 = 12 ∨ y4 = 13 ∨ y4 = 14 ∨ y4 = 15 ∨ y4 = 16 ∨ y4 = 17 ∨ y4 = 18 ∨ y4 = 19 ∨ y4
-      = 20 ∨ 21 ≤ y4 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · omega
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c2_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 21 := ⟨y4 - 21, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 22 := ⟨y5 - 22, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 14 ∨ y4 = 15 ∨ y4 = 16 ∨ y4 = 17 ∨ 18 ≤ y4 by omega) with rfl | rfl | rfl |
-      rfl | hb
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · omega
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 18 := ⟨y4 - 18, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 19 := ⟨y5 - 19, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c2_3
-  · norm_num at c1_3
-  · obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 16 := ⟨y3 - 16, by omega⟩
-    obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 17 := ⟨y4 - 17, by omega⟩
-    obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 18 := ⟨y5 - 18, by omega⟩
-    linarith [Nat.zero_le (z3 * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z3 *
-        z4 * z5)]
+/-- Sorted lists with entries `≥ L`: `∏ (1 + y) · L⋯(L+r-1) ≤ ∏ y · (L+1)⋯(L+r)`. -/
+lemma prod_succ_mul_le : ∀ (ys : List ℕ) (L : ℕ), ys.Pairwise (· < ·) → (∀ y ∈ ys, L ≤ y) →
+    (ys.map (1 + ·)).prod * ascProd L ys.length ≤ ys.prod * ascProd (L + 1) ys.length
+  | [], _, _, _ => by simp [ascProd]
+  | y :: ys, L, hs, hL => by
+    rw [List.pairwise_cons] at hs
+    have hy : L ≤ y := hL y (by simp)
+    have ih := prod_succ_mul_le ys (L + 1) hs.2 fun z hz => by have := hs.1 z hz; omega
+    simp only [List.map_cons, List.prod_cons, List.length_cons, ascProd]
+    have h1 : (1 + y) * L ≤ y * (L + 1) := by nlinarith
+    calc (1 + y) * (ys.map (1 + ·)).prod * (L * ascProd (L + 1) ys.length)
+        = ((1 + y) * L) * ((ys.map (1 + ·)).prod * ascProd (L + 1) ys.length) := by ring
+      _ ≤ (y * (L + 1)) * (ys.prod * ascProd (L + 1 + 1) ys.length) := Nat.mul_le_mul h1 ih
+      _ = y * ys.prod * ((L + 1) * ascProd (L + 1 + 1) ys.length) := by ring
 
-lemma arith_sorted_5_3_5 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
-    (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
-    (c1_3 : Nat.Coprime y1 y3) (c1_4 : Nat.Coprime y1 y4) (c1_5 : Nat.Coprime y1 y5)
-    (c2_3 : Nat.Coprime y2 y3) (c2_4 : Nat.Coprime y2 y4) (c2_5 : Nat.Coprime y2 y5)
-    (c3_4 : Nat.Coprime y3 y4) (c3_5 : Nat.Coprime y3 y5) (c4_5 : Nat.Coprime y4 y5)
-    (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
-      2 * y1 * y2 * y3 * y4 * y5) (hne : ¬y1 * y2 * y3 * y4 * y5 = 87360) (e1 : y1 = 3) (e2 : y2 =
-          5) :
-    False := by
-  subst e1 e2
-  rcases (show y3 = 6 ∨ y3 = 7 ∨ y3 = 8 ∨ y3 = 9 ∨ y3 = 10 ∨ y3 = 11 ∨ y3 = 12 ∨ 13 ≤ y3 by omega)
-      with rfl | rfl | rfl | rfl | rfl | rfl | rfl | hb
-  · norm_num at c1_3
-  · rcases (show y4 = 8 ∨ y4 = 9 ∨ y4 = 10 ∨ y4 = 11 ∨ y4 = 12 ∨ y4 = 13 ∨ y4 = 14 ∨ y4 = 15 ∨ y4 =
-      16 ∨ y4 = 17 ∨ y4 = 18 ∨ y4 = 19 ∨ y4 = 20 ∨ y4 = 21 ∨ 22 ≤ y4 by omega) with rfl | rfl | rfl
-      | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | hb
-    · omega
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · obtain rfl : y5 = 384 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · obtain rfl : y5 = 64 := by omega
-      exact hne (by norm_num)
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · obtain rfl : y5 = 34 := by omega
-      norm_num at c4_5
-    · omega
-    · norm_num at c1_4
-    · omega
-    · norm_num at c2_4
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 22 := ⟨y4 - 22, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 23 := ⟨y5 - 23, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · rcases (show y4 = 9 ∨ y4 = 10 ∨ y4 = 11 ∨ y4 = 12 ∨ y4 = 13 ∨ y4 = 14 ∨ y4 = 15 ∨ y4 = 16 ∨ y4 =
-      17 ∨ y4 = 18 ∨ 19 ≤ y4 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | hb
-    · norm_num at c1_4
-    · norm_num at c2_4
-    · obtain rfl : y5 = 54 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c3_4
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · omega
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 19 := ⟨y4 - 19, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 20 := ⟨y5 - 20, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · norm_num at c2_3
-  · rcases (show y4 = 12 ∨ y4 = 13 ∨ 14 ≤ y4 by omega) with rfl | rfl | hb
-    · norm_num at c1_4
-    · omega
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 14 := ⟨y4 - 14, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 15 := ⟨y5 - 15, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 13 := ⟨y3 - 13, by omega⟩
-    obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 14 := ⟨y4 - 14, by omega⟩
-    obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 15 := ⟨y5 - 15, by omega⟩
-    linarith [Nat.zero_le (z3 * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z3 *
-        z4 * z5)]
+lemma prod_lt_prod_succ : ∀ (ys : List ℕ), ys ≠ [] → (∀ y ∈ ys, 1 ≤ y) →
+    ys.prod < (ys.map (1 + ·)).prod
+  | [], h, _ => (h rfl).elim
+  | [y], _, _ => by simp
+  | y :: z :: ys, _, h => by
+    have ih := prod_lt_prod_succ (z :: ys) (by simp) fun w hw => h w (by simp [hw])
+    have hy : 1 ≤ y := h y (by simp)
+    simp only [List.map_cons, List.prod_cons] at ih ⊢
+    exact Nat.mul_lt_mul_of_le_of_lt (by omega) ih (by omega)
 
-lemma arith_sorted_5_3_7 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
-    (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
-    (c1_3 : Nat.Coprime y1 y3) (c1_4 : Nat.Coprime y1 y4) (c1_5 : Nat.Coprime y1 y5)
-    (c2_3 : Nat.Coprime y2 y3) (c2_4 : Nat.Coprime y2 y4) (c2_5 : Nat.Coprime y2 y5)
-    (c3_4 : Nat.Coprime y3 y4) (c3_5 : Nat.Coprime y3 y5) (c4_5 : Nat.Coprime y4 y5)
-    (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
-      2 * y1 * y2 * y3 * y4 * y5) (hne : ¬y1 * y2 * y3 * y4 * y5 = 87360) (e1 : y1 = 3) (e2 : y2 =
-          7) :
-    False := by
-  subst e1 e2
-  rcases (show y3 = 8 ∨ y3 = 9 ∨ 10 ≤ y3 by omega) with rfl | rfl | hb
-  · rcases (show y4 = 9 ∨ y4 = 10 ∨ y4 = 11 ∨ y4 = 12 ∨ 13 ≤ y4 by omega) with rfl | rfl | rfl | rfl
-      | hb
-    · norm_num at c1_4
-    · norm_num at c3_4
-    · omega
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 13 := ⟨y4 - 13, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 14 := ⟨y5 - 14, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 10 := ⟨y3 - 10, by omega⟩
-    obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 11 := ⟨y4 - 11, by omega⟩
-    obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 12 := ⟨y5 - 12, by omega⟩
-    linarith [Nat.zero_le (z3 * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z3 *
-        z4 * z5)]
+lemma prod_pos_of_one_le : ∀ (ys : List ℕ), (∀ y ∈ ys, 1 ≤ y) → 0 < ys.prod
+  | [], _ => by simp
+  | y :: ys, h => by
+    simp only [List.prod_cons]
+    exact Nat.mul_pos (h y (by simp)) (prod_pos_of_one_le ys fun w hw => h w (by simp [hw]))
 
-lemma arith_sorted_5_3_8 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
-    (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
-    (c1_3 : Nat.Coprime y1 y3) (c1_4 : Nat.Coprime y1 y4) (c1_5 : Nat.Coprime y1 y5)
-    (c2_3 : Nat.Coprime y2 y3) (c2_4 : Nat.Coprime y2 y4) (c2_5 : Nat.Coprime y2 y5)
-    (c3_4 : Nat.Coprime y3 y4) (c3_5 : Nat.Coprime y3 y5) (c4_5 : Nat.Coprime y4 y5)
-    (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
-      2 * y1 * y2 * y3 * y4 * y5) (hne : ¬y1 * y2 * y3 * y4 * y5 = 87360) (e1 : y1 = 3) (e2 : y2 =
-          8) :
-    False := by
-  subst e1 e2
-  rcases (show y3 = 9 ∨ 10 ≤ y3 by omega) with rfl | hb
-  · norm_num at c1_3
-  · obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 10 := ⟨y3 - 10, by omega⟩
-    obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 11 := ⟨y4 - 11, by omega⟩
-    obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 12 := ⟨y5 - 12, by omega⟩
-    linarith [Nat.zero_le (z3 * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z3 *
-        z4 * z5)]
+/-- Soundness of `upnCheck`. -/
+theorem upnCheck_sound : ∀ (fuel P Q L : ℕ) (pre : List ℕ) (r : ℕ),
+    upnCheck fuel P Q L pre r = true → 1 ≤ L →
+    ∀ ys : List ℕ, ys.length = r → ys.Pairwise (· < ·) → (∀ y ∈ ys, L ≤ y) →
+      (∀ y ∈ ys, ∀ p ∈ pre, Nat.Coprime y p) → ys.Pairwise Nat.Coprime →
+      Q * (ys.map (1 + ·)).prod ≠ 2 * P * ys.prod
+  | _, P, Q, _, _, 0, h, _, ys, hlen, _, _, _, _ => by
+    rw [List.length_eq_zero_iff] at hlen
+    subst hlen
+    simp only [upnCheck, bne_iff_ne, ne_eq] at h
+    simpa using h
+  | 0, _, _, _, _, _ + 1, h, _, _, _, _, _, _, _ => by simp [upnCheck] at h
+  | fuel + 1, P, Q, L, pre, r + 1, h, hL1, ys, hlen, hs, hL, hpre, hcop => by
+    have hone : ∀ y ∈ ys, 1 ≤ y := fun y hy => le_trans hL1 (hL y hy)
+    have hne : ys ≠ [] := by rintro rfl; simp at hlen
+    have hpos := prod_pos_of_one_le ys hone
+    have hlt := prod_lt_prod_succ ys hne hone
+    intro heq
+    simp only [upnCheck] at h
+    by_cases h2P : 2 * P ≤ Q
+    · rw [if_pos h2P, decide_eq_true_iff] at h
+      have : 2 * P * ys.prod < Q * (ys.map (1 + ·)).prod :=
+        lt_of_le_of_lt (Nat.mul_le_mul_right _ h2P) (Nat.mul_lt_mul_of_pos_left hlt h)
+      omega
+    rw [if_neg h2P] at h
+    by_cases hr : r = 0
+    · subst hr
+      rw [if_pos rfl] at h
+      obtain ⟨y, rfl⟩ : ∃ y, ys = [y] := by
+        rcases ys with _ | ⟨y, _ | ⟨z, ys⟩⟩
+        · simp at hlen
+        · exact ⟨y, rfl⟩
+        · simp at hlen
+      simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one] at heq
+      have hq : Q = (2 * P - Q) * y := by
+        rw [Nat.sub_mul]; rw [mul_add, mul_one] at heq; omega
+      have hd : 0 < 2 * P - Q := by omega
+      have hdiv : Q / (2 * P - Q) = y :=
+        Nat.div_eq_of_eq_mul_left hd (by rw [mul_comm]; exact hq)
+      have hmod : Q % (2 * P - Q) = 0 := Nat.mod_eq_zero_of_dvd ⟨y, hq⟩
+      rw [hdiv, hmod] at h
+      have hyL : ¬ y < L := not_lt.2 (hL y (by simp))
+      have hca : coprimeAll y pre = true := coprimeAll_of (hpre y (by simp))
+      simp [hyL, hca] at h
+    rw [if_neg hr] at h
+    by_cases hb : Q * ascProd (L + 1) (r + 1) < 2 * P * ascProd L (r + 1)
+    · have hm := prod_succ_mul_le ys L hs hL
+      rw [hlen] at hm
+      have hm' := Nat.mul_le_mul_left Q hm
+      have hA : 0 < ascProd L (r + 1) := by
+        have : ∀ L r, 1 ≤ L → 0 < ascProd L r := by
+          intro L r; induction r generalizing L with
+          | zero => simp [ascProd]
+          | succ r ih => intro hL; simp only [ascProd]; exact Nat.mul_pos (by omega) (ih _ (by omega))
+        exact this L _ hL1
+      have key : 2 * P * ys.prod * ascProd L (r + 1) ≤ Q * ascProd (L + 1) (r + 1) * ys.prod := by
+        calc 2 * P * ys.prod * ascProd L (r + 1) = Q * ((ys.map (1 + ·)).prod * ascProd L (r + 1)) := by
+              rw [← heq]; ring
+          _ ≤ Q * (ys.prod * ascProd (L + 1) (r + 1)) := hm'
+          _ = Q * ascProd (L + 1) (r + 1) * ys.prod := by ring
+      have := Nat.mul_lt_mul_of_pos_right hb hpos
+      nlinarith
+    rw [if_neg hb, Bool.and_eq_true, Bool.or_eq_true] at h
+    obtain ⟨hy, hrest⟩ := h
+    obtain ⟨y, ys', rfl⟩ : ∃ y ys', ys = y :: ys' := List.exists_cons_of_ne_nil hne
+    rw [List.pairwise_cons] at hs
+    by_cases hyL : y = L
+    · subst hyL
+      rcases hy with hy | hy
+      · have : coprimeAll y pre = true := coprimeAll_of (hpre y (by simp))
+        simp [this] at hy
+      · rw [List.pairwise_cons] at hcop
+        refine upnCheck_sound fuel (P * y) (Q * (1 + y)) (y + 1) (y :: pre) r hy (by omega) ys'
+          (by simpa using hlen) hs.2 (fun z hz => hs.1 z hz) ?_ hcop.2 ?_
+        · intro z hz p hp
+          rcases List.mem_cons.1 hp with rfl | hp
+          · exact (hcop.1 z hz).symm
+          · exact hpre z (by simp [hz]) p hp
+        · simp only [List.map_cons, List.prod_cons] at heq
+          linarith [heq]
+    · refine upnCheck_sound fuel P Q (L + 1) pre (r + 1) hrest (by omega) (y :: ys') hlen
+        (List.pairwise_cons.2 hs) ?_ hpre hcop heq
+      intro z hz
+      rcases List.mem_cons.1 hz with rfl | hz
+      · have := hL z (by simp); omega
+      · have := hs.1 z hz; have := hL y (by simp); omega
+/-- Close the side conditions of `upnCheck_sound` on an explicit list. -/
+macro "upn_side" : tactic => `(tactic| (
+  simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, List.Pairwise.nil, and_true, List.forall_mem_nil, implies_true, IsEmpty.forall_iff,
+    List.mem_nil_iff, false_imp_iff, true_and]
+  try and_intros
+  all_goals first | omega | assumption | exact Nat.Coprime.symm (by assumption) | trivial))
 
-lemma arith_sorted_5_4_5 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
-    (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
-    (c1_3 : Nat.Coprime y1 y3) (c1_4 : Nat.Coprime y1 y4) (c1_5 : Nat.Coprime y1 y5)
-    (c2_3 : Nat.Coprime y2 y3) (c2_4 : Nat.Coprime y2 y4) (c2_5 : Nat.Coprime y2 y5)
-    (c3_4 : Nat.Coprime y3 y4) (c3_5 : Nat.Coprime y3 y5) (c4_5 : Nat.Coprime y4 y5)
-    (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
-      2 * y1 * y2 * y3 * y4 * y5) (hne : ¬y1 * y2 * y3 * y4 * y5 = 87360) (e1 : y1 = 4) (e2 : y2 =
-          5) :
-    False := by
-  subst e1 e2
-  rcases (show y3 = 6 ∨ y3 = 7 ∨ y3 = 8 ∨ y3 = 9 ∨ 10 ≤ y3 by omega) with rfl | rfl | rfl | rfl | hb
-  · norm_num at c1_3
-  · rcases (show y4 = 8 ∨ y4 = 9 ∨ y4 = 10 ∨ y4 = 11 ∨ y4 = 12 ∨ 13 ≤ y4 by omega) with rfl | rfl |
-      rfl | rfl | rfl | hb
-    · norm_num at c1_4
-    · obtain rfl : y5 = 20 := by omega
-      norm_num at c1_5
-    · norm_num at c1_4
-    · omega
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 13 := ⟨y4 - 13, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 14 := ⟨y5 - 14, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · norm_num at c1_3
-  · rcases (show y4 = 10 ∨ 11 ≤ y4 by omega) with rfl | hb
-    · norm_num at c1_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 11 := ⟨y4 - 11, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 12 := ⟨y5 - 12, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 10 := ⟨y3 - 10, by omega⟩
-    obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 11 := ⟨y4 - 11, by omega⟩
-    obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 12 := ⟨y5 - 12, by omega⟩
-    linarith [Nat.zero_le (z3 * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z3 *
-        z4 * z5)]
-
-lemma arith_sorted_5_5_6 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
-    (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
-    (c1_3 : Nat.Coprime y1 y3) (c1_4 : Nat.Coprime y1 y4) (c1_5 : Nat.Coprime y1 y5)
-    (c2_3 : Nat.Coprime y2 y3) (c2_4 : Nat.Coprime y2 y4) (c2_5 : Nat.Coprime y2 y5)
-    (c3_4 : Nat.Coprime y3 y4) (c3_5 : Nat.Coprime y3 y5) (c4_5 : Nat.Coprime y4 y5)
-    (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
-      2 * y1 * y2 * y3 * y4 * y5) (hne : ¬y1 * y2 * y3 * y4 * y5 = 87360) (e1 : y1 = 5) (e2 : y2 =
-          6) :
-    False := by
-  subst e1 e2
-  rcases (show y3 = 7 ∨ 8 ≤ y3 by omega) with rfl | hb
-  · rcases (show y4 = 8 ∨ 9 ≤ y4 by omega) with rfl | hb
-    · norm_num at c2_4
-    · obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 9 := ⟨y4 - 9, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 10 := ⟨y5 - 10, by omega⟩
-      linarith [Nat.zero_le (z4 * z5)]
-  · obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 8 := ⟨y3 - 8, by omega⟩
-    obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 9 := ⟨y4 - 9, by omega⟩
-    obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 10 := ⟨y5 - 10, by omega⟩
-    linarith [Nat.zero_le (z3 * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z3 *
-        z4 * z5)]
+/-- Close the equation side condition of `upnCheck_sound` from `h`. -/
+macro "upn_eq" : tactic => `(tactic| (
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one] at *
+  linarith))
 
 lemma arith_sorted_5 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
     (hlt1 : y1 < y2) (hlt2 : y2 < y3) (hlt3 : y3 < y4) (hlt4 : y4 < y5) (c1_2 : Nat.Coprime y1 y2)
@@ -893,91 +271,37 @@ lemma arith_sorted_5 {y1 y2 y3 y4 y5 : ℕ} (h1 : 1 < y1)
     (h : (1 + y1) * (1 + y2) * (1 + y3) * (1 + y4) * (1 + y5) =
       2 * y1 * y2 * y3 * y4 * y5) :
     y1 * y2 * y3 * y4 * y5 = 87360 := by
-  by_contra hne
-  rcases (show y1 = 2 ∨ y1 = 3 ∨ y1 = 4 ∨ y1 = 5 ∨ 6 ≤ y1 by omega) with rfl | rfl | rfl | rfl | hb
-  · rcases (show y2 = 3 ∨ y2 = 4 ∨ y2 = 5 ∨ y2 = 6 ∨ y2 = 7 ∨ y2 = 8 ∨ y2 = 9 ∨ y2 = 10 ∨ y2 = 11 ∨
-      y2 = 12 ∨ 13 ≤ y2 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      hb
-    · exact arith_sorted_5_2_3 h1 hlt1 hlt2 hlt3 hlt4 c1_2 c1_3 c1_4 c1_5 c2_3 c2_4 c2_5 c3_4 c3_5
-        c4_5 h hne rfl rfl
-    · norm_num at c1_2
-    · exact arith_sorted_5_2_5 h1 hlt1 hlt2 hlt3 hlt4 c1_2 c1_3 c1_4 c1_5 c2_3 c2_4 c2_5 c3_4 c3_5
-        c4_5 h hne rfl rfl
-    · norm_num at c1_2
-    · exact arith_sorted_5_2_7 h1 hlt1 hlt2 hlt3 hlt4 c1_2 c1_3 c1_4 c1_5 c2_3 c2_4 c2_5 c3_4 c3_5
-        c4_5 h hne rfl rfl
-    · norm_num at c1_2
-    · exact arith_sorted_5_2_9 h1 hlt1 hlt2 hlt3 hlt4 c1_2 c1_3 c1_4 c1_5 c2_3 c2_4 c2_5 c3_4 c3_5
-        c4_5 h hne rfl rfl
-    · norm_num at c1_2
-    · exact arith_sorted_5_2_11 h1 hlt1 hlt2 hlt3 hlt4 c1_2 c1_3 c1_4 c1_5 c2_3 c2_4 c2_5 c3_4 c3_5
-        c4_5 h hne rfl rfl
-    · norm_num at c1_2
-    · obtain ⟨z2, rfl⟩ : ∃ z, y2 = z + 13 := ⟨y2 - 13, by omega⟩
-      obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 14 := ⟨y3 - 14, by omega⟩
-      obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 15 := ⟨y4 - 15, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 16 := ⟨y5 - 16, by omega⟩
-      linarith [Nat.zero_le (z2 * z3), Nat.zero_le (z2 * z4), Nat.zero_le (z2 * z5), Nat.zero_le (z3
-          * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z2 * z3 * z4),
-          Nat.zero_le (z2 * z3 * z5), Nat.zero_le (z2 * z4 * z5), Nat.zero_le (z3 * z4 * z5),
-          Nat.zero_le (z2 * z3 * z4 * z5)]
-  · rcases (show y2 = 4 ∨ y2 = 5 ∨ y2 = 6 ∨ y2 = 7 ∨ y2 = 8 ∨ 9 ≤ y2 by omega) with rfl | rfl | rfl
-      | rfl | rfl | hb
-    · exact arith_sorted_5_3_4 h1 hlt1 hlt2 hlt3 hlt4 c1_2 c1_3 c1_4 c1_5 c2_3 c2_4 c2_5 c3_4 c3_5
-        c4_5 h hne rfl rfl
-    · exact arith_sorted_5_3_5 h1 hlt1 hlt2 hlt3 hlt4 c1_2 c1_3 c1_4 c1_5 c2_3 c2_4 c2_5 c3_4 c3_5
-        c4_5 h hne rfl rfl
-    · norm_num at c1_2
-    · exact arith_sorted_5_3_7 h1 hlt1 hlt2 hlt3 hlt4 c1_2 c1_3 c1_4 c1_5 c2_3 c2_4 c2_5 c3_4 c3_5
-        c4_5 h hne rfl rfl
-    · exact arith_sorted_5_3_8 h1 hlt1 hlt2 hlt3 hlt4 c1_2 c1_3 c1_4 c1_5 c2_3 c2_4 c2_5 c3_4 c3_5
-        c4_5 h hne rfl rfl
-    · obtain ⟨z2, rfl⟩ : ∃ z, y2 = z + 9 := ⟨y2 - 9, by omega⟩
-      obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 10 := ⟨y3 - 10, by omega⟩
-      obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 11 := ⟨y4 - 11, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 12 := ⟨y5 - 12, by omega⟩
-      linarith [Nat.zero_le (z2 * z3), Nat.zero_le (z2 * z4), Nat.zero_le (z2 * z5), Nat.zero_le (z3
-          * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z2 * z3 * z4),
-          Nat.zero_le (z2 * z3 * z5), Nat.zero_le (z2 * z4 * z5), Nat.zero_le (z3 * z4 * z5),
-          Nat.zero_le (z2 * z3 * z4 * z5)]
-  · rcases (show y2 = 5 ∨ y2 = 6 ∨ 7 ≤ y2 by omega) with rfl | rfl | hb
-    · exact arith_sorted_5_4_5 h1 hlt1 hlt2 hlt3 hlt4 c1_2 c1_3 c1_4 c1_5 c2_3 c2_4 c2_5 c3_4 c3_5
-        c4_5 h hne rfl rfl
-    · norm_num at c1_2
-    · obtain ⟨z2, rfl⟩ : ∃ z, y2 = z + 7 := ⟨y2 - 7, by omega⟩
-      obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 8 := ⟨y3 - 8, by omega⟩
-      obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 9 := ⟨y4 - 9, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 10 := ⟨y5 - 10, by omega⟩
-      linarith [Nat.zero_le (z2 * z3), Nat.zero_le (z2 * z4), Nat.zero_le (z2 * z5), Nat.zero_le (z3
-          * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z2 * z3 * z4),
-          Nat.zero_le (z2 * z3 * z5), Nat.zero_le (z2 * z4 * z5), Nat.zero_le (z3 * z4 * z5),
-          Nat.zero_le (z2 * z3 * z4 * z5)]
-  · rcases (show y2 = 6 ∨ 7 ≤ y2 by omega) with rfl | hb
-    · exact arith_sorted_5_5_6 h1 hlt1 hlt2 hlt3 hlt4 c1_2 c1_3 c1_4 c1_5 c2_3 c2_4 c2_5 c3_4 c3_5
-        c4_5 h hne rfl rfl
-    · obtain ⟨z2, rfl⟩ : ∃ z, y2 = z + 7 := ⟨y2 - 7, by omega⟩
-      obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 8 := ⟨y3 - 8, by omega⟩
-      obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 9 := ⟨y4 - 9, by omega⟩
-      obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 10 := ⟨y5 - 10, by omega⟩
-      linarith [Nat.zero_le (z2 * z3), Nat.zero_le (z2 * z4), Nat.zero_le (z2 * z5), Nat.zero_le (z3
-          * z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z2 * z3 * z4),
-          Nat.zero_le (z2 * z3 * z5), Nat.zero_le (z2 * z4 * z5), Nat.zero_le (z3 * z4 * z5),
-          Nat.zero_le (z2 * z3 * z4 * z5)]
-  · obtain ⟨z1, rfl⟩ : ∃ z, y1 = z + 6 := ⟨y1 - 6, by omega⟩
-    obtain ⟨z2, rfl⟩ : ∃ z, y2 = z + 7 := ⟨y2 - 7, by omega⟩
-    obtain ⟨z3, rfl⟩ : ∃ z, y3 = z + 8 := ⟨y3 - 8, by omega⟩
-    obtain ⟨z4, rfl⟩ : ∃ z, y4 = z + 9 := ⟨y4 - 9, by omega⟩
-    obtain ⟨z5, rfl⟩ : ∃ z, y5 = z + 10 := ⟨y5 - 10, by omega⟩
-    linarith [Nat.zero_le (z1 * z2), Nat.zero_le (z1 * z3), Nat.zero_le (z1 * z4), Nat.zero_le (z1 *
-        z5), Nat.zero_le (z2 * z3), Nat.zero_le (z2 * z4), Nat.zero_le (z2 * z5), Nat.zero_le (z3 *
-        z4), Nat.zero_le (z3 * z5), Nat.zero_le (z4 * z5), Nat.zero_le (z1 * z2 * z3), Nat.zero_le
-        (z1 * z2 * z4), Nat.zero_le (z1 * z2 * z5), Nat.zero_le (z1 * z3 * z4), Nat.zero_le (z1 * z3
-        * z5), Nat.zero_le (z1 * z4 * z5), Nat.zero_le (z2 * z3 * z4), Nat.zero_le (z2 * z3 * z5),
-        Nat.zero_le (z2 * z4 * z5), Nat.zero_le (z3 * z4 * z5), Nat.zero_le (z1 * z2 * z3 * z4),
-        Nat.zero_le (z1 * z2 * z3 * z5), Nat.zero_le (z1 * z2 * z4 * z5), Nat.zero_le (z1 * z3 * z4
-        * z5), Nat.zero_le (z2 * z3 * z4 * z5), Nat.zero_le (z1 * z2 * z3 * z4 * z5)]
+  rcases (show y1 = 2 ∨ y1 = 3 ∨ 4 ≤ y1 by omega) with rfl | rfl | h4
+  · exact (upnCheck_sound 5000 2 3 3 [2] 4 (by decide +kernel) (by norm_num) [y2, y3, y4, y5] rfl
+      (by upn_side) (by upn_side) (by upn_side) (by upn_side) (by upn_eq)).elim
+  · rcases (show y2 = 4 ∨ y2 = 5 ∨ 6 ≤ y2 by omega) with rfl | rfl | h6
+    · exact (upnCheck_sound 5000 12 20 5 [4, 3] 3 (by decide +kernel) (by norm_num) [y3, y4, y5] rfl
+        (by upn_side) (by upn_side) (by upn_side) (by upn_side) (by upn_eq)).elim
+    · rcases (show y3 = 6 ∨ y3 = 7 ∨ 8 ≤ y3 by omega) with rfl | rfl | h8
+      · norm_num at c1_3
+      · rcases (show y4 = 8 ∨ y4 = 9 ∨ y4 = 10 ∨ y4 = 11 ∨ y4 = 12 ∨ y4 = 13 ∨ 14 ≤ y4 by omega)
+          with rfl | rfl | rfl | rfl | rfl | rfl | h14
+        · exact (upnCheck_sound 5000 (105 * 8) (192 * 9) 9 [8, 7, 5, 3] 1 (by decide +kernel)
+            (by norm_num) [y5] rfl (by upn_side) (by upn_side) (by upn_side) (by upn_side)
+            (by upn_eq)).elim
+        · norm_num at c1_4
+        · norm_num at c2_4
+        · exact (upnCheck_sound 5000 (105 * 11) (192 * 12) 12 [11, 7, 5, 3] 1 (by decide +kernel)
+            (by norm_num) [y5] rfl (by upn_side) (by upn_side) (by upn_side) (by upn_side)
+            (by upn_eq)).elim
+        · norm_num at c1_4
+        · omega
+        · exact (upnCheck_sound 5000 105 192 14 [7, 5, 3] 2 (by decide +kernel) (by norm_num)
+            [y4, y5] rfl (by upn_side) (by upn_side) (by upn_side) (by upn_side)
+            (by upn_eq)).elim
+      · exact (upnCheck_sound 5000 15 24 8 [5, 3] 3 (by decide +kernel) (by norm_num)
+          [y3, y4, y5] rfl (by upn_side) (by upn_side) (by upn_side) (by upn_side)
+          (by upn_eq)).elim
+    · exact (upnCheck_sound 5000 3 4 6 [3] 4 (by decide +kernel) (by norm_num) [y2, y3, y4, y5] rfl
+        (by upn_side) (by upn_side) (by upn_side) (by upn_side) (by upn_eq)).elim
+  · exact (upnCheck_sound 5000 1 1 4 [] 5 (by decide +kernel) (by norm_num) [y1, y2, y3, y4, y5]
+      rfl (by upn_side) (by upn_side) (by upn_side) (by upn_side) (by upn_eq)).elim
 
-end Generated
 /-- The only unitary perfect number with exactly four odd prime factors is `87360`. -/
 theorem eq_87360_of_isUnitaryPerfect_of_card_primeFactors_eq_five {n : ℕ}
     (h : IsUnitaryPerfect n) (hcard : n.primeFactors.card = 5) : n = 87360 := by
