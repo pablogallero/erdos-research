@@ -3,8 +3,8 @@
 # Since 2026-11-22 the search runs by itself in pgal's StatefulSet `owf` (2 workers, `run-root.sh worker`,
 # erdos-research #58). A research session NEVER runs owf and NEVER launches anything; it only runs:
 #
-#   sh scripts/owf-queue.sh read          READ-ONLY: progress from $OWF_STATE (default /lean/state/owf) into
-#                                         notes/data/ (omega6-2.ck.gz, omega6-roots.txt), per-worker report,
+#   sh scripts/owf-queue.sh read          READ-ONLY: progress from $OWF_STATE (default /lean/state/owf/v2) into
+#                                         notes/data/ (omega6-v2.ck.gz, omega6-v2-roots.txt), per-worker report,
 #                                         and an ALERT (exit 5) if a root is FOUND, CLOSED or ERROR
 #
 # Legacy Kubernetes-Jobs commands (sessions have no API access; kept for reference only):
@@ -12,6 +12,10 @@
 #   sh scripts/owf-queue.sh export        the same copy as `read`, through a reader pod
 #   sh scripts/owf-queue.sh launch-next   DISABLED (the StatefulSet workers claim roots themselves)
 #   sh scripts/owf-queue.sh render-quota  print deploy/owf/quota.yaml filled in (for Pablo to review/apply)
+#
+# Generation v2 (2026-11-23): the workers restarted from an EMPTY checkpoint at 3^1 with the parity fix, in the
+# subdirectory v2 of the volume. The generation-1 data (buggy code) is in notes/data/*-con-fallo.* and
+# notes/omega6-invalidated.md; this script never reads or writes it.
 #
 # Environment: OWF_NAMESPACE (required), OWF_IMAGE and OWF_PVC (required for export/launch-next),
 # OWF_SUBPATH (default owf), OWF_MAX (1 or 2, default 2), OWF_FIRST (first root of the queue, default 15),
@@ -26,10 +30,11 @@ HERE=$(cd "$(dirname "$0")/.." && pwd)
 KUBECTL=${KUBECTL:-kubectl}
 OWF_SUBPATH=${OWF_SUBPATH:-owf}
 OWF_MAX=${OWF_MAX:-2}
-OWF_FIRST=${OWF_FIRST:-15}
-FROZEN=36729
+OWF_FIRST=${OWF_FIRST:-1}
+FROZEN=0       # generation v2 has no seed: the whole volume checkpoint is the tail
 DATA=$HERE/notes/data
-ROOTS_FILE=$DATA/omega6-roots.txt
+CKGZ=$DATA/omega6-v2.ck.gz
+ROOTS_FILE=$DATA/omega6-v2-roots.txt
 MAXGZ=900000   # stay well below the 1 MB per-file limit of the repo
 
 die() { echo "owf-queue: $1" >&2; exit "${2:-2}"; }
@@ -118,7 +123,7 @@ cmd_launch_next() {
           DONE) ;;
           FOUND) die "root 3^$E reported FOUND (owf returned False): undecided families or a candidate. Queue stopped for a human" 5 ;;
           CLOSED) die "root 3^$E reported CLOSED: the search over powers of 3 closed. Queue stopped; check and record it" 5 ;;
-          *) die "root 3^$E finished but its outcome is unknown: run export and check notes/data/omega6-roots.txt" 5 ;;
+          *) die "root 3^$E finished but its outcome is unknown: run export and check notes/data/omega6-v2-roots.txt" 5 ;;
         esac ;;
     esac
   done < "$TMP/st"
@@ -154,45 +159,46 @@ cmd_export() {
   parse_dump "$TMP/dump"
 }
 
-# Validate a dump from `run-root.sh export` and write notes/data/omega6-2.ck.gz and omega6-roots.txt.
+# Validate a dump from `run-root.sh export` and write notes/data/omega6-v2.ck.gz and omega6-v2-roots.txt.
 parse_dump() {
   d=$1
   [ "$(head -n 1 "$d")" = "OWF-EXPORT 1" ] || die "not an export dump" 4
-  want=$(zcat "$DATA/omega6.ck.gz" | sha256sum | cut -d' ' -f1)
+  want=$(printf '' | sha256sum | cut -d' ' -f1)   # FROZEN = 0: empty prefix
   got=$(awk '$1 == "frozen-sha256" { print $2 }' "$d")
-  [ "$got" = "$want" ] || die "frozen prefix of the volume checkpoint differs from notes/data/omega6.ck.gz ($got)" 4
+  [ "$got" = "$want" ] || die "frozen-prefix hash of the dump is not the empty one ($got): is it a generation-1 dump?" 4
   sed -n '/^BEGIN-TAIL$/,/^END-TAIL$/p' "$d" | sed '1d;$d' | base64 -d 2>/dev/null | gzip -dc > "$TMP/tail.raw" 2>/dev/null \
     || die "tail is not valid gzip+base64" 4
   sed -n '/^BEGIN-ROOTS$/,/^END-ROOTS$/p' "$d" | sed '1d;$d' > "$TMP/roots"
-  grep -Ev '^[0-9]+ (DONE|FOUND|CLOSED|ERROR) [0-9TZ:-]+( |$)' "$TMP/roots" > "$TMP/badroots" && die "malformed line in omega6-roots.txt: $(head -n 1 "$TMP/badroots")" 4
+  grep -Ev '^[0-9]+ (DONE|FOUND|CLOSED|ERROR) [0-9TZ:-]+( |$)' "$TMP/roots" > "$TMP/badroots" && die "malformed line in the volume's omega6-roots.txt: $(head -n 1 "$TMP/badroots")" 4
   # Keep only well-formed checkpoint keys, first occurrence only, not already in the frozen part.
-  zcat "$DATA/omega6.ck.gz" > "$TMP/frozen"
+  : > "$TMP/frozen"
   re='^\(\[(\([0-9]+, [0-9]+\)(, \([0-9]+, [0-9]+\))*)?\], [0-9]+, [0-9]+, [0-9]+, [0-9]+\)$'
-  grep -E "$re" "$TMP/tail.raw" | awk 'NR == FNR { seen[$0] = 1; next } !seen[$0]++' "$TMP/frozen" - > "$TMP/tail"
+  # (the frozen file is read in BEGIN: with an empty file, the usual NR == FNR idiom would swallow stdin)
+  grep -E "$re" "$TMP/tail.raw" | awk -v F="$TMP/frozen" 'BEGIN { while ((getline l < F) > 0) seen[l] = 1 } !seen[$0]++' > "$TMP/tail"
   dropped=$(( $(wc -l < "$TMP/tail.raw") - $(wc -l < "$TMP/tail") ))
-  # Append-only: the committed omega6-2 must be an exact prefix of the new tail.
+  # Append-only: the committed omega6-v2 must be an exact prefix of the new tail.
   old=0
-  if [ -f "$DATA/omega6-2.ck.gz" ]; then
-    zcat "$DATA/omega6-2.ck.gz" > "$TMP/old"
+  if [ -f "$CKGZ" ]; then
+    zcat "$CKGZ" > "$TMP/old"
     old=$(wc -l < "$TMP/old")
     head -n "$old" "$TMP/tail" | cmp -s - "$TMP/old" \
-      || die "the committed omega6-2.ck.gz ($old lines) is not a prefix of the volume's tail: refusing to overwrite" 4
+      || die "the committed omega6-v2.ck.gz ($old lines) is not a prefix of the volume's tail: refusing to overwrite" 4
   fi
   gzip -9 -n -c "$TMP/tail" > "$TMP/tail.gz"
   size=$(wc -c < "$TMP/tail.gz")
-  [ "$size" -lt "$MAXGZ" ] || die "omega6-2.ck.gz would be $size bytes (> $MAXGZ): freeze it and add omega6-3 first" 4
-  cp "$TMP/tail.gz" "$DATA/omega6-2.ck.gz"
+  [ "$size" -lt "$MAXGZ" ] || die "omega6-v2.ck.gz would be $size bytes (> $MAXGZ): split it (freeze + a second file) first" 4
+  cp "$TMP/tail.gz" "$CKGZ"
   cp "$TMP/roots" "$ROOTS_FILE"
   echo "volume: $(awk '$1 == "lines" { print $2 }' "$d") lines; frozen prefix OK"
-  echo "omega6-2.ck.gz: $old -> $(wc -l < "$TMP/tail") lines ($size bytes); dropped $dropped partial/duplicate/garbage lines"
+  echo "omega6-v2.ck.gz: $old -> $(wc -l < "$TMP/tail") lines ($size bytes); dropped $dropped partial/duplicate/garbage lines"
   echo "roots:"; sed 's/^/  /' "$ROOTS_FILE"
   [ -s "$ROOTS_FILE" ] || echo "  (none finished yet)"
-  echo "Now commit notes/data/omega6-2.ck.gz and notes/data/omega6-roots.txt on the working branch (PR, never main)."
+  echo "Now commit notes/data/omega6-v2.ck.gz and notes/data/omega6-v2-roots.txt on the working branch (PR, never main)."
 }
 
 # Read-only copy of the StatefulSet workers' progress. Never writes to $OWF_STATE and never starts a process there.
 cmd_read() {
-  S=${OWF_STATE:-/lean/state/owf}
+  S=${OWF_STATE:-/lean/state/owf/v2}
   [ -d "$S" ] && [ -r "$S/omega6.ck" ] && [ -s "$S/omega6.ck" ] \
     || die "cannot read $S/omega6.ck: stop and tell Pablo (do not improvise, do not run owf)" 8
   br=$(git -C "$HERE" symbolic-ref --short HEAD 2>/dev/null || echo "")

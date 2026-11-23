@@ -182,6 +182,7 @@ def family(f,M,sigma,un,ud,q0):
     # primes q>qtop (Mq not abundant) with U q/(q-1) >= 2: go through the exponents of q
     if un>=2*ud: return False
     q=max(q0,qtop+1)
+    if q%2==0: q+=1  # parity fix (2026-11-23): step 2 must visit odd q
     while True:
         if un*q<2*ud*(q-1): return True
         if q>qtop+WIN: return False

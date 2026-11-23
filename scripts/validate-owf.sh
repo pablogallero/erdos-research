@@ -17,6 +17,10 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 gcc -O2 -Wall -o "$TMP/owf" "$HERE/odd_weird_family.c" -lgmp
 
+# Regression test for the star-loop parity bug (2026-11-23), Python and C.
+( cd "$TMP" && python3 -I "$HERE/star_parity_repro.py" > "$TMP/parity.out" 2>&1 ) || { cat "$TMP/parity.out"; echo "FAIL: star_parity_repro.py (parity bug is back)"; exit 1; }
+echo "star_parity_repro: OK (Python and C)"
+
 # Result line without the trailing time (Python) / nfail field (C), plus the failure lines.
 norm() { sed -e "s/, 'nfail': [0-9]*//" -e 's/} [0-9.]*$/}/' -e '/^progress /d' "$1"; }
 

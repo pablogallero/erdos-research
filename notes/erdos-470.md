@@ -6,6 +6,10 @@ numbers? The $10 is for (i) (Guy B2). Lean: `FormalConjectures/ErdosProblems/470
 Mathlib's `Nat.Weird` (abundant ∧ ¬ pseudoperfect). Both parts are still `sorry` there, as are the
 variants `odd_weird_10_pow_21` (Fang) and the Liddy–Riedl variant.
 
+**2026-11-23, parity bug fixed (`notes/omega6-invalidated.md`):** every ω = 6 result below (roots, checkpoints,
+ROOTTEST verdicts) comes from the buggy `family` and is **not evidence**. ω = 4 (1996 nodes) and ω = 5 (706995 nodes) were
+re-checked True with the fix. The workers restart from 3^1 (generation v2, no seed).
+
 **ω = 6 search, operative rule since 2026-11-22 (overrides every "Next"/"resume START3=…"/"launch-next" line below):**
 the search runs by itself in pgal's StatefulSet `owf` (2 workers, `run-root.sh worker`, erdos-research #58), with its data in
 `/lean/state/owf`. A session NEVER runs `owf`, `odd_weird_family.py`, `START3`, `STOP3`, `ROOTTEST` or `launch-next`; it only

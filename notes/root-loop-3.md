@@ -5,6 +5,11 @@ on the power of 3, or a way to handle "3^≥E" at once; (3) with numbers, the E 
 Constraint: the `owf` workers are not touched, and no long runs (one core, `nice 19`, short `timeout`). Everything below
 was run on one core, niced, for at most a few minutes each, with the binary and data in `/tmp` (never `/lean/state/owf`).
 
+> **Update 2026-11-23 (later the same day, task "Arréglalo tú"):** the parity fix IS now applied to the .py and the .c,
+> `scripts/star_parity_repro.py` is a regression test (exit 0 = fixed), and `validate-owf.sh` is ALL OK (ω = 4: 1996 nodes,
+> ω = 5: 706995). The ω = 6 data from the buggy code is set aside (`notes/omega6-invalidated.md`), and the workers restart
+> from 3^1 (generation v2). Lifting (§3) was prototyped and **not adopted**: see §6.
+
 ## 0. Summary
 
 1. **There is a soundness bug in the search (Python and C), and it changes the answer.** In `family`, the star loop
@@ -140,3 +145,32 @@ python3 scripts/roottest_branch_profile.py /lean/state/owf/logs/root-22.log   # 
 #   add `if (mpz_even_p(q)) mpz_add_ui(q, q, 1);` after `if (mpz_cmp(q0, q) > 0) mpz_set(q, q0);` in family()
 #   for E in 22 23 24 25; do ROOTTEST=$E nice -n 19 taskset -c 1 ./owf_fix 5; done
 ```
+
+## 6. Lifting prototype (2026-11-23): tried on one core, not adopted
+
+Prototype: `scripts/owf_lift_prototype.py` (Python, on top of the fixed `odd_weird_family.py`; `LIFT=0` = reference).
+Inside the region tree of 3 it does two things:
+(a) **node lift**: at any node with base M = 3^E·M′, if Δ(M′) > 0 it splits 3^≥E into exact 3^a for a ∈ [E, A) plus
+3^≥A, where 3^A·M′ is abundant, so that part is True like any non-deficient prefix. This is sound whatever the status
+of the other primes.
+(b) **family lift** (all other exponents exact, Δ(M′) < 0): exact families for a < A. At a = A it runs the qchk part,
+then a star loop over q ∈ (qtop_A, Qlim] in which each (q, e) is tested at its own a*(q, e), stopping when a*(e)
+reaches its strict limit. A is the first a with Qlim − qtop_a ≤ WIN. Run with `nice 19`, one core, `timeout` ≤ 100 s.
+
+| case | root by root (fixed) | lifting |
+|---|---|---|
+| ω = 4, full search | True, 1996 nodes, 0.3 s | **False** (nostruct at 3^A·5·11^4: the 11-loop has to go deeper than in any single root, into prefixes whose P(M) is not certifiable) |
+| ω = 4, region tree E = 2, 3, 4, 6 | False at once (as expected, E < E*) | does not finish in 60 s |
+| ω = 5, region tree E = 24 (≥ E* = 24) | True, 29736 nodes, 9.6 s | True, same 29736 nodes, 11.4 s (nothing to lift) |
+| ω = 5, region tree E = 20 and E = 12 | False in seconds | does not finish in 100 s |
+
+**Why it fails:** with 3 in region, the bound uses 3/2 instead of σ(3^a)/3^a. The loops over the exponents of the
+*other* primes then no longer close. Sampled with a SIGALRM peek at E = 20: the loop over 257 inside 3^≥20·5^8·17^5
+was at 257^139 after 20 s and at 257^205 after 45 s. A region subtree (257, ≥e) has two primes in region at once
+(3 and 257), lift (b) does not apply, and lift (a) needs Δ > 0 on a base that stays deficient. To make it work, the lift
+would have to handle 3^≥E together with another region exponent (two-parameter families), and the inner loops would
+need the same E0-type closing argument per prime. That is a new algorithm and needs its own soundness argument. It is not a tweak.
+
+**Decision:** not correct as a complete method (wrong verdict on ω = 4, no verdict on ω = 5 below E*) and not faster,
+so the workers stay on root-by-root with the fix (generation v2), as Pablo specified for this case.
+The theory in §2 still gives where root-by-root must close: E* ≥ 42 for ω = 6.
