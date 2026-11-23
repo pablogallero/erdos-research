@@ -17,3 +17,4 @@ public import ErdosResearch.SubsetSumBitsFast
 public import ErdosResearch.OddWeirdPlans
 public import ErdosResearch.OddWeirdAbundantLeaf
 public import ErdosResearch.SubsetSumUniform
+public import ErdosResearch.PrimeSkip

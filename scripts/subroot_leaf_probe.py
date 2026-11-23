@@ -38,10 +38,10 @@ def allq_fast(n, c, g_, sg):
     for q in list(range(2, min(lo, end))) + [None]:
         if q is None: break
         if not need(q): break
-        if isprime(q) and n % q: return [q]
+        if cand(q) and n % q: return [q]
     q = max(hi + 1, 2, lo if lo > hi else 2)
     while q < end and need(q):
-        if isprime(q) and n % q and not good(q): return [q]
+        if cand(q) and n % q and not good(q): return [q]
         q += 1
     return []
 if os.environ.get('CHECKALLQ') == '1':   # validation against the original loop on small random inputs
@@ -52,6 +52,16 @@ if os.environ.get('CHECKALLQ') == '1':   # validation against the original loop 
         assert bool(allq_slow(n, c, gg_, sg)) == bool(allq_fast(n, c, gg_, sg)), (n, c, gg_, sg)
     print('CHECKALLQ ok 20000', flush=True)
 g['allq'] = allq_fast
+# COMPOSITE=W (session 67): a reflective Lean checker cannot test primality cheaply, so it would enumerate every odd q
+# coprime to the primes <= W (W = 0: every odd q >= 3) instead of the primes. Sound for prime q (they are a subset; leaf
+# values for prime q are identical); composite q only cost time, or a failing composite leaf needs a factor hint.
+# cand() replaces isprime() in the enumeration and in the leaf tests; fails are split by whether the leaf is all-prime.
+_W = int(os.environ.get('COMPOSITE', '-1'))
+_WP = [p for p in range(3, _W + 1) if isprime(p)] if _W >= 0 else []
+def cand(q):
+    if _W < 0: return isprime(q)
+    if q < 3 or q % 2 == 0: return False
+    return all(q == p or q % p for p in _WP)
 sys.argv = ['x', '0']
 h = {'__name__': 'lib'}
 exec(open(os.path.join(d, 'abundant_greedy_probe.py')).read().split('if len(sys.argv) > 3:')[0], h)
@@ -72,7 +82,7 @@ def family_shape(f, M, sigma, un, ud, q0):
     while True:
         if un*q < 2*ud*(q-1): return True
         if q > qtop + WIN: return False
-        if isprime(q):
+        if cand(q):
             e = 1
             while True:
                 s_, pe = sig(q, e), q**e
@@ -90,7 +100,7 @@ def node(f, M, sigma, un, ud, j, q0):
         a, b = un, ud
         for i in range(j): a *= q + 2*i; b *= q + 2*i - 1
         if a < 2*b: return True
-        if isprime(q):
+        if cand(q) and all(q % p for p, _ in f):
             e = 1
             while True:
                 s, pe = sig(q, e), q**e
@@ -182,7 +192,7 @@ if os.environ.get('UNIFORM') == '1':
                 # with M5 r^e abundant for some e, the prime-power step by r plus c <= M5 r^e <= sum D - c.
                 sg5 = s5 + M5; D5 = 2*M5 - sg5; r = sg5 // D5 + 1; r += (r % 2 == 0)
                 while sg5*r >= 2*M5*(r - 1) and r <= sg5 // D5 + WIN:
-                    if isprime(r) and M5 % r:
+                    if cand(r) and M5 % r:
                         e = 2
                         while e <= 200 and sg5*sigpp(r, e) < 2*M5*r**e: e += 1
                         if e <= 200:
@@ -193,5 +203,11 @@ if os.environ.get('UNIFORM') == '1':
                     r += 2
         if best is None or len(nbad) < len(best[1]): best = ((c, gg, b, so, ro), nbad)
         if not nbad: break
+    if best and _W >= 0:
+        allp = lambda t: all(isprime(x[0]) for x in (t if isinstance(t[0], tuple) else [t]))
+        nl = list(abund) + list(defic); npr = sum(all(isprime(p) for p, _ in f) for f in nl)
+        realbad = [b for b in best[1] if b[0] != 'star' and all(isprime(p) for p, _ in (b[1] if isinstance(b[1][0], tuple) else [b[1]]))]
+        print('COMPOSITE', _W, 'leaves', len(nl), 'all-prime leaves', npr, 'overhead %.2fx' % (len(nl) / max(1, npr)),
+              'fails', len(best[1]), 'fails on all-prime leaves (approx.)', len(realbad), flush=True)
     if best:
         print('UNIFORM best plan', best[0], 'leaves', len(abund) + len(defic), 'failing', len(best[1]), best[1][:6], 'star leaves checked', stars[0], flush=True)
