@@ -21,6 +21,8 @@ what was tried, what failed and why, and the next step. Plain language; Lean goe
 - `omega6-job.md`: **since 2026-11-22 the ω = 6 search runs by itself in pgal's StatefulSet `owf` (2 workers), never in a session.**
   A session only runs `sh scripts/owf-queue.sh read` (read-only, from `/lean/state/owf`); never `owf` or `launch-next`.
   The older run instructions are history. `data/omega6-roots.txt` (written by `read`) lists the finished roots.
+- `root-loop-3.md` (2026-11-23): why `ROOTTEST=50` stalled at 5^24, the closing exponent of the ω = 6 loop over 3
+  (≥ 42, Fermat-prime near-ties), and a **parity bug in the star loop of `family`** (the ω = 6 checkpoint is not a proof).
 - `palomar.md`: the Palomar package (Lean v4.35.0, module system, Challenge/Solution, comparator.json,
   formalization.yaml, preflight CI); sessions 14–16.
 - `build-times.md`: time per Lean module; what is in the default `lake build` (Palomar chain) and what is in the
