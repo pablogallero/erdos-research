@@ -1350,3 +1350,26 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   `notes/erdos-1052.md` session 61.
 - **Next:** unchanged from session 60 (`read` first; then measure a reflective leaf in Python; cheap certificates for
   abundant 5-prime nodes). Remaining roots grow ≈ 90M nodes each (17, 18), ≈ 3 h per root per worker.
+
+## Session 62 (2026-11-23, 05:37–~06:10 UTC): read; cheap Lean leaf for ABUNDANT 5-prime nodes (no owf run)
+
+- `sh scripts/owf-queue.sh read` (exit 0, no FOUND/CLOSED/ERROR): no new root finished (finished roots v_3 ∈ {1..18}).
+  owf-0 on 3^20 (log at (5,14),(19,8)), owf-1 on 3^19 (log at (5,23),(17,5)). `omega6-2.ck.gz` 9524 → 10513 lines (254 KB),
+  frozen prefix OK, 0 dropped lines.
+- **Measured first (Python, new `scripts/abundant_greedy_probe.py CASES [SEED]`):** abundant 5-prime prefixes shaped like the
+  open roots (3^E, E ∈ {17..30}; the last prime is random below the abundance threshold), plus the real node
+  `3^18·5^17·19^2·97^3·2647` from session 60. A certificate is a strictly decreasing list of proper divisors of N summing to N.
+  Plain greedy (largest first) gives 177/200. Greedy until the remainder is ≤ 2^20, then an exact big-int-bitset subset sum over
+  the unused divisors, gives **500/500** (seeds 7 and 11), with 153 elements on average and at most 585. Every list is asserted
+  (sum, distinct, proper divisor). The sample is not the search's real distribution, so this is indicative only.
+- **Lean (no sorry/native_decide; in `ErdosResearchExtra`, NOT the default build):** new `ErdosResearch/OddWeirdAbundantLeaf.lean`:
+  `ppOK n l` (Bool: decreasing, each `d < n ∧ n % d = 0`, sum = n; only GMP arithmetic, no divisor enumeration of n),
+  `pseudoperfect_of_ppOK`, and the instance **`pseudoperfect_real_abundant_node`** (241-element list) with
+  `not_weird_of_real_abundant_node_dvd` (no multiple of `3^18·5^17·19^2·97^3·2647` is weird). The module compiles in ≈ 20 s
+  (the `decide +kernel` is instant). The list was pasted from `python3 -I scripts/abundant_greedy_probe.py 1 7 emit` (wrapped to 96 chars).
+- Consequence for a Lean ω = 6 route: abundant nodes are cheap leaves (milliseconds each). The expensive ones are still the
+  deficient nodes (plan decider, minutes per node in the kernel; session 60).
+- **Next:** (1) `read` first; alert Pablo on exit 5. (2) Measure, in Python, a reflective `chk`-style checker for one small
+  sub-root, with `ppOK` (abundant) and the plan decider (deficient) as leaves. Count the leaves and estimate the kernel cost of
+  `gapCertM` per deficient leaf; if that is minutes, look for a cheaper deficient leaf (e.g. reuse one base interval across
+  the sibling last primes). NEVER run owf in a session.
