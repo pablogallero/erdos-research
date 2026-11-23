@@ -1520,3 +1520,30 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   `x ≥ e`). (3) One level up: loop over the 4th prime with an `IntervalGap` step for each (`intervalGap_mul_prime_pow`), so a
   3-prime prefix gets ONE certificate (`subtreeOK3`), timed on `3^17·5^2·43^2`. (4) Lean `lastOK` is the hot spot: replace the
   `List.range B` scan by the closed form of session 63 (`allq_fast`) if instances get slow. NEVER run owf in a session.
+
+## Session 69 (2026-11-23, 15:54–~16:15 UTC): the exponent loop, a whole n·q^e·r family in Lean (no owf run)
+
+- `sh scripts/owf-queue.sh read` (exit 0, no FOUND/CLOSED/ERROR): no new root (v_3 ∈ {1..20} done). owf-0 is on 3^22 (43.6M nodes),
+  owf-1 on 3^21 (87.0M). `omega6-2.ck.gz` 15890 → 16506 lines (410 KB), frozen prefix OK. Palomar unchanged.
+- **New `ErdosResearch/SubsetSumExpLoop.lean`** (ErdosResearchExtra only; ≈ 43 s; no sorry/native_decide; axioms
+  propext/choice/Quot.sound; check-lean-sources OK; Extra OK, 9068 jobs; default OK, 9066 jobs):
+  - `abOK_succ` / `abOK_of_le`: the abundant interval test for `n q^e` is **monotone in e** (the step conditions do not depend
+    on e). So one success covers every larger exponent.
+  - `eLoop` (with `leafOK` before stopping) and `qeLoop` (over odd q, `skipB`): sound for EVERY e ≥ 1.
+  - `not_abundant_limit`: if σ(n) q (r+1) ≤ 2n(q−1) r, then `n q^e r` is not abundant for any e. `limit_mono`: the condition is
+    monotone in r.
+  - `eLoop0` (exponent loop for `n q^e` itself: deficient until the abundant test holds), `rLoop` (for fixed q: r from q+2,
+    stop at the first r where the limit holds; otherwise IntervalGap for `n r` by one step, then `eLoop0` on q), `pqLoop` (over q).
+  - Instance **`not_weird_late_prefix_mul_pow_mul_all`**: for n = 3^3·11·13^10·17^2·23, all primes q < r with q odd, q, r ∤ n, and
+    **every exponent e ≥ 1**, `n q^e r` is not weird. There are three ranges: q < 35 by `qeLoop` (σ(n)/n·(q+1)/q ≥ 2, already
+    abundant at e = 1), 37 ≤ q < 71 by `pqLoop` (n q^e is deficient for every e; Python: 143 prime pairs, max e = 3), and q ≥ 71
+    by `not_weird_tail`. Kernel: ~10 s for both loops. Session 68 had e = 1 only.
+- **Failed (minor):** `pqLoop` from q = 35 is false: 35 = 5·7 divides P1000, so `skipB` does not skip it, and its r loop needs
+  > 200 steps (R ≈ 940). Fix: start at 37 and prove q ≠ 35 from primality. Also, in `not_abundant_limit` I first did
+  `rw [pow_succ]` after `set`, which left `(q'+2)^e` unfolded.
+- Elementary; new only as a formalisation. Not a new result on #470.
+- **Next:** (1) `read` first (alert Pablo on exit 5; on CLOSED, start the paper task with the literature check first). (2) One level
+  up: `subtreeOK3`, i.e. a loop over the 4th prime p with exponent f, an `IntervalGap` step for each `n p^f`, then the
+  `qeLoop`/`pqLoop`/tail block from this session as the leaf. Exponent-f regions work the same way (abundant monotone,
+  limit-deficient pairs). Time it on `3^17·5^2·43^2`. (3) If a block gets slow, use a cheaper `lastOK` (session 63's closed form).
+  NEVER run owf in a session.
