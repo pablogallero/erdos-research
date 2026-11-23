@@ -6,6 +6,7 @@
 #   deficient -> family plan decider (multi_plan, raise_late_plan.py); #divisors of n is the kernel-cost proxy.
 # Env: SKIPAB=1 skips the abundant certificates; DSAMPLE=k tests every k-th deficient node only.
 # STARS=1 (with UNIFORM=1) also checks the sixth prime with exponent >= 2.
+# J=3 (session 64): PREFIX has 3 primes; leaves are 4/5-prime nodes, all extra primes checked as steps of one M3 certificate.
 # Usage: python3 -I scripts/subroot_leaf_probe.py 'p^e*p^e*p^e*p^e' LIMB MAXLEAVES REPO_DIR   (under ulimit -v). Python only.
 import os, sys, io, contextlib, time
 from math import gcd
@@ -100,7 +101,7 @@ def node(f, M, sigma, un, ud, j, q0):
                 e += 1
         q += 2
 t0 = time.time(); gg = gcd(S4, M4)
-try: r = node(f4, M4, S4, S4//gg, M4//gg, 2, max(p for p, _ in f4) + 2); cut = False
+try: r = node(f4, M4, S4, S4//gg, M4//gg, int(os.environ.get('J', '2')), max(p for p, _ in f4) + 2); cut = False
 except StopIteration: r = None; cut = True
 print('prefix', PRE, 'tree shape', r, 'cut at MAXLEAVES' if cut else 'complete', 'abundant', len(abund),
       'deficient', len(defic), 'enum %.1fs' % (time.time() - t0), flush=True)
@@ -167,7 +168,12 @@ if os.environ.get('UNIFORM') == '1':
         nbad = []; stepq = 0
         for f, M5 in list(abund.items()) + [(f, v[0]) for f, v in defic.items()]:
             q = f[-1][0]; s5 = sigma(M5) - M5
-            if not (q*gg + 2*c <= S4c + 1 and M4 + 2*c <= (q + 1)*S4c + 1): nbad.append(('step', f[-1])); continue
+            # J=3 (session 64): a 3-prime prefix; every extra prime of the leaf is a prime-power step (same c, g)
+            Mc, Sc, okst = M4, S4c, True
+            for (pq, pe) in f[len(f4):]:
+                if not (pq*gg + 2*c <= Sc + 1 and Mc + 2*c <= (pq + 1)*Sc + 1): okst = False; break
+                Sc = (Sc + Mc)*sigpp(pq, pe) - Mc*pq**pe; Mc *= pq**pe
+            if not okst: nbad.append(('step', f[len(f4):])); continue
             if f in abund:
                 if not (c <= M5 <= s5 - c): nbad.append(('abund', f[-1]))
             elif allq_fast(M5, c, gg, s5 + M5): nbad.append(('defic', f[-1]))

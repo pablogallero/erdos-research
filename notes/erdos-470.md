@@ -1418,3 +1418,37 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   soundness proof built on the four session-63 lemmas; time it in the kernel on `3^1·5^2·11·13` (16 leaves), then on
   `3^18·5^17·19^2·97^3` (1087 leaves). (3) Measure how many distinct M4 certificates one root needs (= number of 4-prime
   prefixes with room for 2 primes). NEVER run owf in a session.
+
+## Session 64 (2026-11-23, 08:42–~10:15 UTC): one certificate per 3-prime sub-tree; certificate count per root (no owf run)
+
+- `sh scripts/owf-queue.sh read` (twice, exit 0, no FOUND/CLOSED/ERROR): **root 3^19 DONE** (nfail 0) ⇒ finished roots v_3 ∈ {1..19}.
+  owf-0 on 3^20 (log at (5,24),(17,12)), owf-1 on 3^21 (log at (5,9),(17,18)) at 09:39. `omega6-2.ck.gz` 11278 → 13054 lines,
+  frozen prefix OK, 0 dropped lines. Board/Palomar unchanged. No Lean changes this session.
+- **How many M4 certificates per root (session 63 Next (3)):** new `scripts/m4_count_probe.py E SAMPLE SEED CK.gz…` takes the
+  depth-3 checkpoint keys of root 3^E and replays only the SHAPE of `search1`/`family` below each (pp tests assumed; finished
+  roots have nfail 0, so this is the real control flow; it decides and writes nothing). Root 3^16: 2554 depth-3 keys;
+  252 keys replayed (stopped by me) give 18618 four-prime prefixes with j = 2 ⇒ **≈ 1.9·10^5 M4 certificates per root** (upper
+  estimate: region and exact keys share subtrees). At ≥ seconds of kernel time each, that is days per root: per-M4 certificates
+  are too many.
+- **Key finding: certify the 3-prime prefix M3 instead.** `scripts/subroot_leaf_probe.py` has a new `J=3` mode (prefix with 3
+  primes; every extra prime of a leaf is a prime-power step with the same (c, g), i.e. `stepsOK` from SubsetSumSteps; `J=2`
+  unchanged, re-checked on session 63's prefixes: 16 and 1087 leaves, 0 failing). With `UNIFORM=1 STARS=1`, ONE
+  `IntervalGap M3` (small base ≤ 10^6, then raises only; no steps needed) decides every leaf of the 3-prime sub-tree:
+  root 3^16 (7 prefixes = the sample of the count probe): 7/7, e.g. `3^16·5^11·19^8` 28475 leaves + 2077 stars,
+  `3^16·5^3·17^5` 68572 leaves + 4539 stars, **0 failing**. Roots 3^17/3^18 (14 random checkpoint prefixes, seed 641):
+  12/12 that finished, 0 failing (up to 28062 leaves); 2 (`3^18·5^16·17^11`, `3^18·5^13·17^10`, ≈ 155k leaves) did not
+  finish the Python check in 300 s; rerun with more time: both pass, 155277 leaves + 9976 stars and 154288 + 9663 stars,
+  plan (283, 6, base 21675, raises 3, 5, 17), **0 failing** (≈ 6 min each). So 14/14 random prefixes pass.
+  Plans are tiny: (c, g) ∈ {(23,2), (37,2), (57,2), (68,2), (79,3), (283,6), (899,3)}, bases 819 … 22743.
+  ⇒ ≈ 2.5k certificates per root (the depth-3 keys), each a small base bitset + 2–3 raises, ≈ 75× fewer than M4.
+- **Lean side:** nothing new needed for one leaf: `IntervalGap M3` + `stepsOK c g M3 S3 [(p,e),(q,f)]` (SubsetSumSteps) +
+  `not_weird_mul_prime_of_intervalGap` / the interval test already compose. 2-prime prefixes (`J=4`, `3^16·5^9`): the
+  Python enumeration did not finish in 580 s, so this was not measured.
+- **Honest gap (unchanged):** the leaf certificates are the cheap part. A Lean replay of a root still needs a reflective checker
+  proving that the search's ENUMERATION covers every ω = 6 odd abundant number in the sub-tree (the chk-style soundness of
+  sessions 4/10, with bounds as in `search1`/`family`, the star loop and region nodes). That is the main remaining work.
+- **Next:** (1) `read` first; alert Pablo on exit 5. (2) Reflective `subtreeOK3 M3 S3 c g j q0 un ud` in ErdosResearchExtra:
+  runs the j = 3 → 1 loops of `search1`/`family` with `stepsOK` and the leaf tests as the only checks (no primality: odd
+  stride, steps are sound for composites? NO, `intervalGap_mul_prime_pow` needs q prime; so either test primality with a cheap
+  kernel certificate or prove a composite-q variant); soundness from SubsetSumSteps/Uniform. Measure it first in Python on
+  `3^17·5^2·43^2` (20 leaves) and `3^18·7^13·19^8` (53 leaves). NEVER run owf in a session.
