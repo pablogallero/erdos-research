@@ -18,3 +18,4 @@ public import ErdosResearch.OddWeirdPlans
 public import ErdosResearch.OddWeirdAbundantLeaf
 public import ErdosResearch.SubsetSumUniform
 public import ErdosResearch.PrimeSkip
+public import ErdosResearch.SubsetSumFifthLoop

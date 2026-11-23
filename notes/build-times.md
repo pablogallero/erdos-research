@@ -64,3 +64,5 @@ Sums: everything 1804 s; default build without OddWeirdPlans **1333 s**; the mod
   Per module in that build: OddWeirdFourChunks 287 s, UnitaryPerfect 92, SixOdd 65, **FourOdd 63 (was 235)**,
   OddWeirdFourData 59, FiveOdd 48, OddWeirdThree 40, OddWeirdFourCore 36, the rest ≤ 25 s each.
 - Next target if more margin is needed: OddWeirdFourChunks (287 s, 72 `decide +kernel` chunks).
+- Session 68: new `ErdosResearch/SubsetSumFifthLoop.lean` in **ErdosResearchExtra only** (≈ 25–38 s); the default build is
+  unchanged (9066 jobs, incremental 48 s).
