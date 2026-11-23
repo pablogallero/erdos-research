@@ -1551,3 +1551,17 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   `qeLoop`/`pqLoop`/tail block from this session as the leaf. Exponent-f regions work the same way (abundant monotone,
   limit-deficient pairs). Time it on `3^17·5^2·43^2`. (3) If a block gets slow, use a cheaper `lastOK` (session 63's closed form).
   NEVER run owf in a session.
+
+## Session 72 (2026-11-23, 23:00 UTC): v2 workers not deployed, so nothing to read (no owf run, no Lean)
+
+- `sh scripts/owf-queue.sh read` returned **exit 8**: `/lean/state/owf/v2` does not exist. Per the standing rule: stop and tell
+  Pablo → board card **#175**.
+- Read-only look at `/lean/state/owf` (generation 1, which had the parity bug): the old workers are **still running**
+  (owf-0 on 3^22, at (5,28),(17,13); owf-1 on 3^23, at (5,19),(17,11); omega6.ck modified 22:59). Roots 21 DONE at
+  18:54 (skip 110). None of this is evidence (see `notes/omega6-invalidated.md`). The pgal side of session 71 (replicas 0,
+  new image from main f1cfed4, OWF_FIRST=1, OWF_GEN=v2, replicas 2) has not been done yet. It is outside this repo.
+- Decision: no repo data changes (there is no v2 data to export), and no new Lean, given the short session and the
+  pending redeploy.
+- **Next:** `read`. If it still gives exit 8, check card #175 and continue with Lean `subtreeOK3` (session 69 "Next", item 2),
+  which does not depend on the workers. If it gives exit 0, commit `notes/data/omega6-v2.ck.gz` and `omega6-v2-roots.txt`.
+  Alert Pablo on exit 5. NEVER run owf in a session.
