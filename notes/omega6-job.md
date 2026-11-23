@@ -1,5 +1,11 @@
 # ω = 6 search: StatefulSet workers (since 2026-11-22)
 
+> **2026-11-23: generation v2.** The star-loop parity bug is fixed (`notes/omega6-invalidated.md`). The workers restart
+> from an EMPTY checkpoint at 3^1 in `$OWF_DATA/v2` (session view `/lean/state/owf/v2`). There is no seed and no
+> frozen prefix (FROZEN = 0). `read` writes `notes/data/omega6-v2.ck.gz` + `notes/data/omega6-v2-roots.txt`.
+> Everything below about the 36729-line frozen seed, `omega6-2.ck.gz` and roots 15/16 describes generation 1
+> (buggy code, kept as `notes/data/*-con-fallo.*`, not evidence).
+
 The long search for Erdős #470 (odd weird numbers with ω = 6, `scripts/odd_weird_family.c`) no longer runs inside
 research sessions, and sessions no longer launch it. It runs **by itself** in the StatefulSet `owf` deployed from the
 pgal repo, with **2 workers** (pods `owf-0` and `owf-1`), each running `deploy/owf/run-root.sh worker`

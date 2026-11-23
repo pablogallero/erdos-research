@@ -12,17 +12,20 @@
 #                       API needed: claims and outcomes live in the volume (claims.txt, omega6-roots.txt).
 #                       Stops taking roots after a FOUND, CLOSED or ERROR outcome until a person looks.
 #
-# Volume layout ($OWF_DATA, default /data):
+# Volume layout ($OWF_DATA/$OWF_GEN, default /data/v2):
+#   Generation v2 (2026-11-23) = search with the star-loop parity fix, started from an EMPTY checkpoint at 3^1.
+#   The files of generation 1 (top level of $OWF_DATA: omega6.ck, omega6-roots.txt, claims.txt, logs/) were made
+#   by the buggy code: they are left untouched there, marked "con fallo" in notes/omega6-invalidated.md, and
+#   are never read by this script.
 #   omega6.ck          plain checkpoint shared by all roots (append-only; one line per subtree decided True)
 #   omega6-roots.txt   one line per finished root: "E OUTCOME UTC-date stats"
 #   logs/root-E.log    owf stdout+stderr of every attempt
 #   .lock              flock for seeding and for omega6-roots.txt
 set -u
-DATA=${OWF_DATA:-/data}
-SEED=${OWF_SEED:-/opt/owf/seed}
+DATA=${OWF_DATA:-/data}/${OWF_GEN:-v2}
 OWF=${OWF_BIN:-/usr/local/bin/owf}
 K=${OWF_K:-6}
-FROZEN=36729   # lines of the frozen notes/data/omega6.ck.gz (never rewritten)
+FROZEN=0       # no seed since generation v2: the whole checkpoint is the tail
 CK=$DATA/omega6.ck
 ROOTS=$DATA/omega6-roots.txt
 LOCK=$DATA/.lock
@@ -31,15 +34,14 @@ TERM_MSG=${OWF_TERM_MSG:-/dev/termination-log}
 die() { echo "run-root: $*" >&2; exit "${2:-64}"; }
 
 seed() {
-  # Seed the checkpoint once from the image (frozen part + omega6-2). Later the volume is the source of truth.
+  # No seed (generation v2): the checkpoint starts empty; afterwards the volume is the source of truth.
+  # The old seed (notes/data/omega6.ck.gz + omega6-2.ck.gz) came from the buggy code and was removed.
   mkdir -p "$DATA/logs" || die "cannot write $DATA" 65
   (
     flock 9 || exit 65
-    if [ ! -s "$CK" ]; then
-      zcat "$SEED/omega6.ck.gz" "$SEED/omega6-2.ck.gz" > "$CK.tmp" || exit 65
-      [ "$(wc -l < "$CK.tmp")" -ge "$FROZEN" ] || exit 65
-      mv "$CK.tmp" "$CK" || exit 65
-      echo "run-root: seeded $CK with $(wc -l < "$CK") lines" >&2
+    if [ ! -e "$CK" ]; then
+      : > "$CK" || exit 65
+      echo "run-root: started an empty checkpoint $CK" >&2
     fi
     touch "$ROOTS"
   ) 9>>"$LOCK" || die "seeding failed" 65
@@ -105,7 +107,7 @@ worker() {
   # Queue worker (pgal deploy/owf.yaml: StatefulSet owf, 2 replicas). OWF_WORKER is the pod name, stable
   # across restarts, so a restarted worker resumes its own unfinished root first.
   ME=${OWF_WORKER:-$(hostname)}
-  FIRST=${OWF_FIRST:-15}
+  FIRST=${OWF_FIRST:-1}
   MAXFAIL=${OWF_MAXFAIL:-5}
   CLAIMS=$DATA/claims.txt
   seed
@@ -141,7 +143,7 @@ worker() {
 
 export_dump() {
   # Read-only. Prints the frozen-prefix hash, the roots file and the tail (complete lines only) as gzip+base64.
-  [ -s "$CK" ] || die "no checkpoint at $CK" 66
+  [ -e "$CK" ] || die "no checkpoint at $CK" 66
   echo "OWF-EXPORT 1"
   echo "lines $(wc -l < "$CK")"
   echo "frozen-sha256 $(head -n "$FROZEN" "$CK" | sha256sum | cut -d' ' -f1)"

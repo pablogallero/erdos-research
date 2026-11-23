@@ -778,6 +778,7 @@ static int family(int L, const mpz_t M, const mpz_t sigma, const mpz_t un, const
   }
   mpz_add_ui(q, qtop, 1);
   if (mpz_cmp(q0, q) > 0) mpz_set(q, q0);
+  if (mpz_even_p(q)) mpz_add_ui(q, q, 1); /* parity fix (2026-11-23): step 2 must visit odd q */
   for (;;) {
     /* un*q < 2ud(q-1) */
     mpz_mul(t, un, q);

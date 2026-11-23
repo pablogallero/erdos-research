@@ -18,6 +18,9 @@ what was tried, what failed and why, and the next step. Plain language; Lean goe
   prime-power step, bitset certificate, exponent-raising step, step lists, greedy gap bound, late raise) as building
   blocks for a Lean family search.
   `data/roottest50.ck.gz` (session 32): resumable checkpoint of `ROOTTEST=50` (region subtree of root 3^50), same format.
+- **`omega6-invalidated.md` (2026-11-23): the star-loop parity bug is fixed. Every ω = 6 result before the fix (roots 3^1…3^20,
+  the seed checkpoint, ROOTTEST=50) is invalid. The data is kept as `data/*-con-fallo.*`, the seed checkpoint was removed, and the
+  workers restart from 3^1 in generation `v2` (`data/omega6-v2*.gz`). The ω = 6 lines below describe generation 1 (buggy).**
 - `omega6-job.md`: **since 2026-11-22 the ω = 6 search runs by itself in pgal's StatefulSet `owf` (2 workers), never in a session.**
   A session only runs `sh scripts/owf-queue.sh read` (read-only, from `/lean/state/owf`); never `owf` or `launch-next`.
   The older run instructions are history. `data/omega6-roots.txt` (written by `read`) lists the finished roots.
