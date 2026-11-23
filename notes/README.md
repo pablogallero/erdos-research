@@ -23,3 +23,5 @@ what was tried, what failed and why, and the next step. Plain language; Lean goe
   The older run instructions are history. `data/omega6-roots.txt` (written by `read`) lists the finished roots.
 - `palomar.md`: the Palomar package (Lean v4.35.0, module system, Challenge/Solution, comparator.json,
   formalization.yaml, preflight CI); sessions 14–16.
+- `build-times.md`: time per Lean module; what is in the default `lake build` (Palomar chain) and what is in the
+  non-default lib `ErdosResearchExtra` (research modules, built explicitly by the CI).

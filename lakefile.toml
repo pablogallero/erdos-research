@@ -19,3 +19,10 @@ roots = ["Challenge"]
 [[lean_lib]]
 name = "Solution"
 roots = ["Solution"]
+
+# Research modules not needed by Solution (SubsetSum*, the OddWeirdPlans certificates). Not a default target, so
+# that a clean serial `lake build` stays well under the checker's limit (notes/build-times.md); the Lean CI builds it
+# explicitly.
+[[lean_lib]]
+name = "ErdosResearchExtra"
+roots = ["ErdosResearchExtra"]

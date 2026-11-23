@@ -91,3 +91,12 @@ of the commit on main + the path `comparator.json`.
 ## Still to do
 
 - Nothing on the Palomar side unless Pablo replies on card #106.
+
+## Re-check (2026-11-23 00:5x UTC, session 60 review)
+
+- A review asked to "do the Palomar work first" because the session-60 diff did not contain it. It does not need
+  redoing: it has been in main since PR #15 / `0005a6db` (session 18). Current main =
+  `ad13f82ea42c648a8cac96c7fd2e613b7d331a41`: `lean-toolchain` v4.35.0, Mathlib `rev = "v4.35.0"`, `module` in every
+  .lean (`scripts/check-lean-sources.py` OK), `Challenge.lean`, `Solution.lean`, `comparator.json` (root),
+  `formalization.yaml` v0.4, preflight workflow. On that commit **Lean = success** and **Palomar preflight = success**
+  (GitHub API, `actions/runs?branch=main`). Palomar files unchanged; Pablo already has the hand-over (card #106).
