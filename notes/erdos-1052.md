@@ -558,3 +558,17 @@ Following step 2 of session 7, I re-checked every open prize problem (teorth `pr
 them) and **switched to #470 (odd weird numbers)**. The reasons and the first Lean steps are in
 `notes/erdos-470.md`. #1052 is paused: its formalisation package (ω ≤ 7 classification, finiteness,
 explicit bound, equivalence with bounded ω) is complete, and anything new needs ≥ 9 odd primes.
+
+## Session 61 (2026-11-23): `arith_sorted_5` made reflective (build-time fix, same theorems)
+
+- Why: the clean serial `lake build` was at 1065 s against the checker's 1200 s limit (card #156), and
+  `UnitaryPerfectFourOdd` (generated tree, ~900 lines) cost 235 s of it.
+- What: `upnCheck`, `upnCheck_sound` and helper lemmas moved (unchanged) from `UnitaryPerfectFiveOdd.lean` into
+  `UnitaryPerfectFourOdd.lean`. `arith_sorted_5` (same name and statement) is now proved by splitting by hand along the
+  one solution branch (3, 5, 7, 13, ·) and giving the 8 other branches to `upnCheck … = true` by `decide +kernel`. On
+  the solution branch `omega` gives y₅ = 64. Tactic macros `upn_side` and `upn_eq` close the side conditions.
+- Result: FourOdd 235 s → 62 s, FiveOdd 65 → 54 s (`lake env lean`, this machine, Mathlib load included). The full
+  `lake build` is OK (9066 jobs). The three Solution theorems use only propext/Classical.choice/Quot.sound. The
+  Challenge/Solution statements and comparator.json are unchanged. `scripts/check-lean-sources.py` OK.
+- `scripts/upn_case_tree.py` no longer reproduces any file in the repo (kept as history of the method).
+- Nothing new mathematically.

@@ -55,3 +55,12 @@ Sums: everything 1804 s; default build without OddWeirdPlans **1333 s**; the mod
   checker (Pablo/PGAL, outside the repo), or (b) speeding up OddWeirdFourChunks and UnitaryPerfectFourOdd (for example, a
   reflective checker like `fchk` instead of the generated tree in FourOdd). That would take a session of its own.
 - On GitHub (4 cores, 60 min) the Lean CI is green on main.
+
+## Session 61 (2026-11-23): UnitaryPerfectFourOdd made reflective
+
+- `arith_sorted_5` now uses `upnCheck` (moved from FiveOdd) instead of the generated case tree (`notes/erdos-1052.md`,
+  session 61). Same theorem names and statements; comparator OK (con-ron, nanoda, Lean kernel).
+- **Clean serial `timeout 1200 lake build`: OK in 965 s** (rc 0, 9066 jobs, 04:23–04:39 UTC; was 1065 s). The margin is now ~20 %.
+  Per module in that build: OddWeirdFourChunks 287 s, UnitaryPerfect 92, SixOdd 65, **FourOdd 63 (was 235)**,
+  OddWeirdFourData 59, FiveOdd 48, OddWeirdThree 40, OddWeirdFourCore 36, the rest ≤ 25 s each.
+- Next target if more margin is needed: OddWeirdFourChunks (287 s, 72 `decide +kernel` chunks).

@@ -1340,3 +1340,13 @@ module was removed. Measured per-module times (`notes/build-times.md`): here the
 and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to the non-default lib `ErdosResearchExtra`
 (built explicitly by the Lean CI), and `Solution.lean` imports only what it needs. Clean serial `lake build` now OK in 1065 s. **New research Lean goes into
 `ErdosResearchExtra.lean`, not the root.**
+
+## Session 61 (2026-11-23, 03:46–~05:15 UTC): read + faster Palomar build (no owf run)
+
+- `sh scripts/owf-queue.sh read` (exit 0, no FOUND/CLOSED/ERROR): **roots 3^17 (00:43 UTC) and 3^18 (03:38 UTC) DONE**, nfail 0
+  ⇒ finished roots v_3 ∈ {1..18}. owf-0 on 3^20, owf-1 on 3^19. `omega6-2.ck.gz` 5265 → 9524 lines (228 KB); checked: gzip -t
+  OK, 0 duplicates with the frozen file, old file is a byte-exact prefix, only tuple characters.
+- No #470 Lean this session. The time went to the build margin (card #156), see `notes/build-times.md` and
+  `notes/erdos-1052.md` session 61.
+- **Next:** unchanged from session 60 (`read` first; then measure a reflective leaf in Python; cheap certificates for
+  abundant 5-prime nodes). Remaining roots grow ≈ 90M nodes each (17, 18), ≈ 3 h per root per worker.
