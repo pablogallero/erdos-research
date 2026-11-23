@@ -1,6 +1,8 @@
 module
 
-public import ErdosResearch
+public import ErdosResearch.UnitaryPerfectSixOdd
+public import ErdosResearch.UnitaryPerfectFinite
+public import ErdosResearch.OddWeirdFour
 
 @[expose] public section
 

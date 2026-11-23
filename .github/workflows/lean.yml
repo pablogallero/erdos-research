@@ -19,3 +19,6 @@ jobs:
       - name: "Check Lean source requirements (Palomar: module header, line limits)"
         run: python3 scripts/check-lean-sources.py
       - uses: leanprover/lean-action@24581d74d674803a25a81b10b059c5c0cdd344c6  # v1.6.2
+      # Research modules outside the default targets (notes/build-times.md): checked here explicitly.
+      - name: Build non-default research modules
+        run: lake build ErdosResearchExtra

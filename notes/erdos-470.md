@@ -1334,3 +1334,9 @@ of `sh scripts/owf-queue.sh read`. They change because the pgal `owf` StatefulSe
 0 duplicates, the old file is a byte-exact prefix, every line is a checkpoint tuple (digits, brackets, commas) with no
 other content and no secrets. Palomar: already in main and green (see notes/palomar.md, re-check 2026-11-23).
 Next step unchanged (session 60 "Next"), but any Lean certificate must be cheap (< 1 min) before it enters the build.
+
+**Session 60 follow-up 2 (review, 2026-11-23 ~02:30 UTC):** the checker's clean `lake build` still timed out after the
+module was removed. Measured per-module times (`notes/build-times.md`): here the build is serial, OddWeirdPlans takes 471 s
+and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to the non-default lib `ErdosResearchExtra`
+(built explicitly by the Lean CI), and `Solution.lean` imports only what it needs. Clean serial `lake build` now OK in 1065 s. **New research Lean goes into
+`ErdosResearchExtra.lean`, not the root.**

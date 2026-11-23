@@ -14,16 +14,3 @@ public import ErdosResearch.OddWeirdFourCore
 public import ErdosResearch.OddWeirdFourChunks
 public import ErdosResearch.OddWeirdFour
 public import ErdosResearch.OddWeirdLastPrime
-public import ErdosResearch.SubsetSumChain
-public import ErdosResearch.SubsetSumGlue
-public import ErdosResearch.SubsetSumPrimeStep
-public import ErdosResearch.SubsetSumPrimePow
-public import ErdosResearch.SubsetSumCert
-public import ErdosResearch.SubsetSumRaise
-public import ErdosResearch.SubsetSumSteps
-public import ErdosResearch.SubsetSumGreedy
-public import ErdosResearch.SubsetSumLate
-public import ErdosResearch.SubsetSumLastOK
-public import ErdosResearch.SubsetSumDivsDesc
-public import ErdosResearch.SubsetSumBitsFast
-public import ErdosResearch.OddWeirdPlans
