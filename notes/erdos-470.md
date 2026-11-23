@@ -1452,3 +1452,41 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   stride, steps are sound for composites? NO, `intervalGap_mul_prime_pow` needs q prime; so either test primality with a cheap
   kernel certificate or prove a composite-q variant); soundness from SubsetSumSteps/Uniform. Measure it first in Python on
   `3^17·5^2·43^2` (20 leaves) and `3^18·7^13·19^8` (53 leaves). NEVER run owf in a session.
+
+## Session 67 (2026-11-23, 12:48–~13:40 UTC): no primality certificates needed in a reflective checker (no owf run)
+
+- `sh scripts/owf-queue.sh read` (exit 0, no FOUND/CLOSED/ERROR): no new root (finished roots v_3 ∈ {1..19}). owf-0 on 3^20
+  (103.0M nodes, log at (5,29),(17,11)), owf-1 on 3^21 (61.4M nodes, log at (5,18),(17,14)). `omega6-2.ck.gz` 13054 → 14144
+  lines, frozen prefix OK, 0 dropped lines. Board: #143/#156 open, no reply. Palomar files unchanged.
+- **Resolves session 64's open point** ("steps need q prime: certify primality or prove a composite-q variant?"): neither is needed.
+  A checker that runs over EVERY odd q and skips q only when a cheap test PROVES q composite covers all primes. The extra
+  composites are decided too, which is sound and only costs time; a composite that fails a check would need a factor hint. The test is one gcd with a primorial P:
+  skip iff `gcd q P ≠ 1 ∧ ¬ q ∣ P`. Lean (ErdosResearchExtra, not the default build; no sorry/native_decide; standard axioms;
+  ≈ 12 s): new `ErdosResearch/PrimeSkip.lean`, `not_prime_of_skip` (valid for ANY P), Boolean `skipB`, `prime_imp_not_skipB`.
+- **Measured (Python, `COMPOSITE=W` in `scripts/subroot_leaf_probe.py`; `cand()` = "odd, coprime to the odd primes ≤ W, and
+  coprime to the prefix" replaces `isprime` in the enumeration, the region loop and the leaf tests; default unchanged):**
+
+  | prefix (J=3) | W | leaves (prime-only run) | leaves | failing |
+  |---|---|---|---|---|
+  | `3^17·5^2·43^2` | 0 | 20 | 50 | 16 (at composites such as 49) |
+  | same | 7 / 30 | 20 | 20 / 20 | 0 / 0 |
+  | `3^18·7^13·19^8` | 7 / 30 / 100 | 53 | 63 / 53 / 53 | 0 |
+  | `3^16·5^11·19^8` | 30 | 28475 (+2077 stars) | 36103 | 5026 (all at composites, e.g. 4661 = 59·79) |
+  | same | 100 | 28475 | 29158 | 532 (all at composites ≥ 101², e.g. 10201, 10403) |
+  | same | **1000** | 28475 | **28475** | **0** (2079 stars: 2 harmless composites) |
+
+  Two effects show up for small W. First, a composite q fails a leaf test (a spurious failure, which a hint can fix). Second, the
+  `family` region loop returns False on a composite, so the search drops to exact exponents and the tree grows. With W = 1000,
+  composites appear only from 1009² ≈ 10^6, and the enumeration is exactly the prime one. In Lean this is a single GMP gcd
+  with a ≈ 1400-bit primorial per q, so it is cheap.
+  | `3^18·5^16·17^11` | −1 (primes) | — | 154288 (+9663 stars) | 0 |
+  | same | **1000** | 154288 | 154299 (+9703 stars) | **0** (11 + 40 composites, all pass) |
+
+  (Correction to session 64: 154288 + 9663 stars belongs to `3^18·5^16·17^11`. The 155277 + 9976 pair belongs to
+  `3^18·5^13·17^10`, so session 64 swapped the two.) This is indicative only: it covers 4 prefixes, it replays the shape
+  with pp tests assumed, and it is not the search.
+- **Next:** (1) `read` first, and alert Pablo on exit 5. (2) Reflective `subtreeOK3` in ErdosResearchExtra: the `search1`/`family` loops
+  below a 3-prime prefix with `skipB q P₁₀₀₀` as the only primality device, `stepsOK`-style steps and the leaf tests; its
+  soundness rests on `prime_imp_not_skipB` and SubsetSumSteps/Uniform. Start with `3^17·5^2·43^2` (20 leaves) and time it in the kernel.
+  (3) Add a hint list (composites to skip, each with a factor) in case a larger q range ever shows a composite failure.
+  NEVER run owf in a session.
