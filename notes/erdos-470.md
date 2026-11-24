@@ -1707,3 +1707,50 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   work with `lastOKR` instead of `lastOK` (scan length = q < lo plus (hi, B)), so the census reports a realistic Lean cost per prefix.
   (3) Stars (r^h, h ≥ 2) in the staircase (session 63's `pseudoperfect_star_of_intervalGap`). (4) Lean `stairOK` for one pair (p, q)
   with bounded r (soundness from `not_abundant_limit`, `abOK_of_le`, the range lemma), then `subOK` with `lastOKR`. NEVER run owf in a session.
+
+## Session 76 (2026-11-24, 05:46–~06:40 UTC): strip_fast brute-checked; lastOKR cost; stars reduced to one test per point (no owf run)
+
+- `sh scripts/owf-queue.sh read` → **exit 8** again (`/lean/state/owf/v2/omega6.ck` missing). Comment on card **#175**. No owf, no
+  data changes. Palomar unchanged (done since session 18).
+- **(1) Soundness check of `strip_fast`, including session 75's new `decide_q` branch** (the open item). New
+  `scripts/plimit_strip_check.py`: spies on every `strip_fast` call that returns True and, for f ≤ FE and the RMAX smallest + RMAX
+  largest bad r in [r_lo, R) (found by trial division from both ends; R is never sieved), checks that every abundant point has its
+  own IntervalGap certificate. It also checks that the 20 bad r just above R are never abundant.
+  `3^22·7^11·13^2` p = 19 (FE 6, RMAX 200, 4038 calls): **9354475 abundant, 0 uncertified, 0 abundant above R**;
+  `3^16·5^11·19^8` (17 p, FE 4): 385895/0; `3^18·5^16·17^11` (p = 19…47, 257, 263; FE 4): 2488545/0.
+  **Mutation:** `CHECKCG=c,g` (verify with a stricter c) flags 3980 and 11063 points, so the checker can see unsoundness. (`CG` + `FORCE=1`
+  does not work as a mutation: with a large c the decider fails before it reaches strip_fast.)
+- **(2) Kernel work with `lastOKR`.** `scripts/plimit_probe.py` now also counts `lastqR`, the q values Lean's `lastOKR` scans (q < lo
+  plus (hi, B)) at the same points, next to `lastq` (`lastOK`). BOUNDED=1 FASTSTRIP=1, whole 3-prime sub-trees:
+
+  | prefix | time | pts | lastq (lastOK) | lastqR (lastOKR) |
+  |---|---|---|---|---|
+  | 3^16·5^11·19^8 | 1 s | 14848 | 296674 | 2 |
+  | 3^18·5^16·17^11 | 40 s | 79307 | 5.49·10^7 | 10 |
+  | 3^16·5^18·17^4 | 65 s | 77378 | 1.86·10^9 | 11 |
+  | 3^20·5^21·17^7 | 91 s | 79238 | 5.58·10^7 | 10 |
+  | 3^20·5^26·17^13 | 130 s | 79240 | 5.60·10^7 | 10 |
+
+  So with `lastOKR` the last-prime scans vanish. Reason: when lastOK is True, every q in the scanned ends either divides n or makes nq
+  non-abundant. The Lean cost per prefix is now set by ≈ 8·10^4 points (GMP chain + stepOK) and ≈ 2.6·10^4 pairs. The per-point kernel
+  cost is not measured yet (it needs a Lean `stairOK`).
+- **(3) Stars r^h, h ≥ 2: one test per deficient point.** Excess E(h) = σ(M)σ(r^h) − 2M r^h of M r^h (r ∤ M) satisfies
+  E(h+1) = r E(h) + σ(M). Hence: (a) M r abundant and certified ⇒ every M r^h certified (same stepOK, excess only grows);
+  (b) E(h) ≥ 1 and c ≤ σ(M) ⇒ E(h+1) ≥ c, so only the first abundant h0 can lack a certificate; (c) a star that is not already
+  abundant at h = 1 needs σ(M) ≤ rD < 2M (D = 2M − σ(M)), so there is **exactly one candidate r* = ⌈σ/D⌉**.
+  Lean (ErdosResearchExtra only; no sorry/native_decide; axioms propext/Classical.choice/Quot.sound; module 23 s; `lake build
+  ErdosResearchExtra` OK, 9072 jobs; default `lake build` OK, 9066; check-lean-sources OK): new `ErdosResearch/SubsetSumStar.lean`,
+  pure algebra with s for σ(M): `starExcess_succ`, `starExcess_ge_of_pos`, `starExcess_ge_of_ge`, `star_window`, **`star_r_unique`**.
+  Not yet linked to `Nat.sigma`/`IntervalGap`, which will be done with `pseudoperfect_star_of_intervalGap` in the checker.
+  Numerical check of the algebra (throwaway, /tmp): 57448 random (M, r), 0 violations.
+  New `scripts/plimit_star_probe.py` (limit-deficient p only, p, q over the decide_p ranges, f, e ≤ 5): every r* that is a bad prime > q
+  has a certified first abundant star: `3^16·5^11·19^8` 7224/7224, `3^22·7^11·13^2` 266/266, `3^18·5^16·17^11` 33992/33992,
+  `3^16·5^18·17^4` 34906/34906, `3^20·5^26·17^13` 34147/34147, `3^17·5^2·43^2` 18/18, `3^18·7^13·19^8` 70/70. **0 uncertified.**
+  Not covered: non-limit-deficient p (decide_p's f-loop), points with f or e > 5, and the boundary r* ∈ {R−1, R} on limit strips
+  at large f (r*(f) → ⌈λ/(1−λ)⌉ as f → ∞). Indicative.
+- **Failed (minor):** the star probe first looped forever on non-limit-deficient p (no two-prime tail exists), and trial division on huge r*
+  was slow (Miller–Rabin now). The CG/FORCE mutation was useless (see (1)).
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit the omega6-v2 files; 5 ⇒ alert). (2) Stars in the decider itself: the r* test at every enumerated
+  deficient point, plus the strip boundary (one r, a 2-D (f, h) staircase) and the f-loop p; brute-check against
+  `plimit_star_probe.py`. (3) Lean `stairOK` for one bounded pair (`not_abundant_limit`, `abOK_of_le`, the range lemma,
+  `lastOKR`, star lemmas), to measure the per-point kernel cost. NEVER run owf in a session.

@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import subok_cost_probe as SP
 
 CAP = int(os.environ.get('CAP', '400'))       # max exponent tried in any 1-D loop (fail beyond: incomplete, not unsound)
-W = dict(pts=0, lastq=0, strips=0, triples=0, pairs=0, rsteps=0, win=0)
+W = dict(pts=0, lastq=0, lastqR=0, strips=0, triples=0, pairs=0, rsteps=0, win=0)
 
 def sig_pp(p, e): return (p ** (e + 1) - 1) // (p - 1)
 def isprime(x): return x > 2 and x % 2 == 1 and all(x % d for d in range(3, int(x ** 0.5) + 1, 2))
@@ -52,9 +52,20 @@ def point(C, parts, free_r):
     if S <= N:                                                     # deficient (or perfect: S = N impossible for odd > 1? keep exact)
         if not free_r: return True                                 # not abundant, nothing above it
         if S == N: return False
-        v, k = SP.lastOK(N, S, C.c, C.g, (N + S) // (N - S) + 1); W['lastq'] += k
+        Bq = (N + S) // (N - S) + 1
+        v, k = SP.lastOK(N, S, C.c, C.g, Bq); W['lastq'] += k
+        if v: W['lastqR'] += lastOKR_scan(N, S, C.c, C.g, Bq)
         return v and ok
     return False                                                   # abundant without an interval certificate
+
+def lastOKR_scan(N, S, c, g, B):
+    """Session 76: q values Lean's lastOKR (SubsetSumLastRange.lean) scans for the same B: q < lo plus (hi, B), with lo the
+    least lo meeting its two lower-end conditions and hi = min(largest hi meeting the two upper-end conditions, B - 1)."""
+    d = N - S
+    lo = max(0, SP.cdiv(N + 2 * c - 1, S) - 1 if S > 0 else 10 ** 30, SP.cdiv(c, N))
+    hi = min((S + 1 - 2 * c) // g, (S + N - c) // d, B - 1)
+    if lo > hi: return B                                           # no closed-form range: full scan (as lastOK)
+    return lo + max(0, B - 1 - hi)
 
 def row_limit_def(C, fixed, p):
     """sigma(m) p <= 2 m (p-1) for m = n * fixed: m p^f not abundant for every f."""
