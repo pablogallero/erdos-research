@@ -1882,3 +1882,43 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   σ(M_f) q ≤ 2 M_f (q−1), decide every (e, r) in closed form (generalise `pointOK` to a row: D_e = M_f q^e − S_e grows
   monotonically in e; find the monotone direction of each condition first, in Python). (3) Then `stairOK` = corners (`stepAbOK`) +
   finite deficient points (`stepPointOK`) + rows/cols, timed on `3^16·5^11·19^8`, p = 97. (4) Stars. NEVER run owf in a session.
+
+## Session 81 (2026-11-24, 12:33–~13:10 UTC): limit row in Lean; generic `pairOK` closes whole pairs (p, q) (no owf run)
+
+- **Read:** `sh scripts/owf-queue.sh read` → exit 8 again (`/lean/state/owf/v2` missing). Comment on card #175. No owf run, no data
+  changes. Palomar: done since session 18, unchanged.
+- **Monotone directions (paper, then Lean):** fix `m` (= n p^f) with `IntervalGap m S c g` and a prime q ∤ m. With
+  `T_e = σ(m q^e)`, `M_e = m q^e`: `T_{e+1} = q T_e + σ(m)`, `M_{e+1} = q M_e`. Then
+  (a) `σ(m) q (r₁+2) ≤ 2 (r₁+1) m (q−1)` (limit with margin) ⇒ `(r₁+2) T_e < 2 (r₁+1) M_e` for EVERY e (via `ppSum_exact'`), which
+  gives deficiency and "abundant only for r ≤ r₁" on the whole row; (b) `2 r₁ M + c ≤ (r₁+1) T`, `(r₀+2) M + 2c ≤ (r₀+1) T + 1`
+  (needs c ≥ 1), `r₁ g + 2c ≤ S + 1`, `c ≤ M r₀` all propagate from e to e+1 (they are the remaining `pointOK` conditions
+  rewritten in T). The q-step conditions do not depend on e (`intervalGap_mul_prime_pow`). One `r₁ = ⌊L⌋` (L = limit of
+  σ/D along the row) serves the whole row from some e₀ on: the window ((σ_e − c)/D_e, σ_e/D_e) shrinks to 0 below L.
+- **Lean** (ErdosResearchExtra only; no sorry/native_decide; standard axioms; module 38 s (12 s CPU), 0 warnings;
+  `lake build ErdosResearchExtra` OK 9076 jobs; default `lake build` OK 9066; check-lean-sources OK): new
+  `ErdosResearch/SubsetSumRow.lean`.
+  - `rowOK m S c g q r₀ r₁ e₀` (checked at e₀ only) + **`not_weird_of_rowOK`**: ¬(m q^e r).Weird for every e ≥ e₀ and every prime
+    r ≥ r₀, r ∤ m q^e. `stepRowOK` / `not_weird_of_stepRowOK`: the same after prime-power steps from a prefix certificate.
+  - Instances below the late prefix n = 3^3·23·13^10·17^2·11 ((c, g) = (2295, 5)): `not_weird_late_prefix_row` (n·37·307^e·r,
+    e ≥ 3, r₁ = 7196), `not_weird_late_prefix_row_two` (e = 2, point, r₁ = 7195), `not_weird_late_prefix_row_all` (all e ≥ 1),
+    `pseudoperfect_late_prefix_corner` (n·37²·307), and **`not_weird_late_prefix_pair_all`: no n·37^f·307^e·r is weird for ALL
+    f, e ≥ 1 and every prime r** (row f = 1 is limit-deficient; for f ≥ 2 the corner (2, 1) is abundant and pseudoperfect ⇒ up-set).
+    This is the first whole 2-D pair of the staircase in Lean. (p, q) chosen by a throwaway scan in /tmp/s81 (not in the repo).
+  - Elementary; new only as a formalisation. Not a new result on #470.
+- **Shapes of real pairs (Python, read-only; throwaway wrapper /tmp/s81/tools/shape.py around `plimit_probe.stair`,
+  `BOUNDED=1 FASTSTRIP=1`, LIMB 1e5):** free-r pairs by (e_inf, f_inf): `3^16·5^11·19^8`: (1,1) 1544, (1,2) 585, (1,3) 12,
+  (2,2) 1; `3^22·7^11·13^2`: (1,1) 22, (1,2) 4, (2,2) 2. So e_inf = 1 (no limit row in e) is ≈ 99.9 % / 93 %. (The bounded
+  pairs, L2 < 2, go through `stair_bounded` and are not counted here.)
+- **Lean, generic pair** (same checks; `ErdosResearch/SubsetSumPair.lean`, 16 s): `pairOK n S c g p q F fr ec e0 r1` for shape
+  e_inf = 1: columns f < F (`stepRowOK` from e₀(f) + `stepPointOK` points below), corners (fr, 1) and (F, ec) (`stepAbOK` +
+  `not_weird_of_upset`), box [F, fr) × [1, ec) point by point (`stepAbOK || stepPointOK`); **`not_weird_of_pairOK`**: ¬(n p^f q^e r).Weird
+  for ALL f, e ≥ 1 and every prime r ∤ n p^f q^e. Instances: (37, 307) again from one Boolean (`not_weird_late_prefix_pairOK`), and
+  (41, 167) (`not_weird_late_prefix_pairOK_41_167`: F = 1, corners (2,1), (1,2), deficient box point (1,1) with r₁ = 472739).
+- **Failed (minor):** the first version used `nlinarith` (94 s, 80 s of it in nlinarith); replaced by `linarith` with explicit
+  product hints (each inequality is linear once multiplied by q) ⇒ 38 s.
+- **Not covered:** stars r^h (h ≥ 2); shape e_inf ≥ 2 (limit rows in e: same lemma with p, q swapped, the number then written
+  n·q^e·p^f); bounded pairs (L2 < 2, `stair_bounded`: r bounded over the whole pair); a generator from `plimit_probe` to
+  `pairOK` data; the loops over p and q (a sub-tree = all pairs below a 3-prime prefix).
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit the omega6-v2 files; 5 ⇒ alert). (2) A generator `scripts/pair_cert_gen.py` (from `plimit_probe.stair`'s
+  data) emitting `pairOK` instances; time the kernel on all free-r pairs of one p of `3^16·5^11·19^8` (watch the 1-min/module rule; use
+  ErdosResearchExtra). (3) Shape e_inf ≥ 2 by symmetry. (4) Bounded pairs in Lean (`stair_bounded`). (5) Stars. NEVER run owf in a session.
