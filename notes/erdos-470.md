@@ -1754,3 +1754,32 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   deficient point, plus the strip boundary (one r, a 2-D (f, h) staircase) and the f-loop p; brute-check against
   `plimit_star_probe.py`. (3) Lean `stairOK` for one bounded pair (`not_abundant_limit`, `abOK_of_le`, the range lemma,
   `lastOKR`, star lemmas), to measure the per-point kernel cost. NEVER run owf in a session.
+
+## Session 77 (2026-11-24, 07:25–~07:45 UTC): star lemmas linked to σ; star probe covers the f-loop p (no owf run)
+
+- **Read:** `sh scripts/owf-queue.sh read` → exit 8 (`/lean/state/owf/v2/omega6.ck` missing). Comment on card #175. No owf run and no
+  data changes. Palomar: done since session 18, unchanged.
+- **Lean** (ErdosResearchExtra only; no sorry/native_decide; `star_prime_unique` uses only propext/Classical.choice/Quot.sound; module 28 s,
+  0 warnings; `lake build ErdosResearchExtra` OK, 9072 jobs; check-lean-sources OK; the default build does not import this module):
+  `ErdosResearch/SubsetSumStar.lean` gains `sigma_mul_prime_pow` (σ(M r^h) = σ(M)·geom r h for r prime, r ∤ M), `starExcess_eq`,
+  `abundant_iff_starExcess_pos`, and **`star_prime_unique`**: for deficient M, at most one prime r ∤ M has M r not abundant while
+  some M r^h is abundant. The session-76 algebra now speaks about `Nat.sigma`. Elementary; new only as a formalisation.
+- **Python:** `scripts/plimit_star_probe.py` has a new mode `FLOOP=1` (optional `FCAP`). For a non-limit-deficient p it loops over f = 1..f0−1
+  (n p^{f0} is the first abundant power, so nothing below it needs a star). For each f, q runs over (p, Q_f) with ρ_f Q_f² ≤ 2 (Q_f − 1)².
+  Results (LIMB 10^5, every p, 0 uncertified everywhere, nothing skipped, no f-capped p):
+
+  | prefix | FE | star candidates | certified |
+  |---|---|---|---|
+  | 3^17·5^2·43^2 | 5 | 18 | 18 |
+  | 3^18·7^13·19^8 | 5 / 10 | 70 / 290 | all |
+  | 3^22·7^11·13^2 | 5 / 10 | **1916** (session 76, without the f-loop p: 266) / 4306 | all |
+  | 3^16·5^11·19^8 | 5 / 10 | 7224 / 29462 | all |
+  | 3^18·5^16·17^11, 3^16·5^18·17^4, 3^20·5^26·17^13 | 5 | 33992, 34906, 34147 (no f-loop p) | all |
+
+  These results are indicative only (sampled exponents, Python). Still not covered: the strip boundary r* ∈ {R−1, R} at large f, and e > FE.
+  **Mutation test** (`CHECKC=x` replaces c = 37 in the certificate test with x): on `3^22·7^11·13^2`, x = 10^12 and 10^18 still give 0
+  uncertified (the first abundant excesses are huge, σ ≈ 10^40). x = 10^31 flags 474/1916 and x = 10^39 flags 1241/1916, so the probe does
+  detect failures, and the real certificates (c = 37) have a very large margin.
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit the omega6-v2 files; 5 ⇒ alert). (2) Stars inside the decider (`plimit_probe.py`):
+  the r* test at each enumerated deficient point plus the strip boundary, checked against `plimit_star_probe.py FLOOP=1`, plus a mutation
+  test. (3) Lean `stairOK` for one bounded pair, to measure the per-point kernel cost. NEVER run owf in a session.
