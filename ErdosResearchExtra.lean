@@ -20,3 +20,4 @@ public import ErdosResearch.SubsetSumUniform
 public import ErdosResearch.PrimeSkip
 public import ErdosResearch.SubsetSumFifthLoop
 public import ErdosResearch.SubsetSumExpLoop
+public import ErdosResearch.SubsetSumBlock

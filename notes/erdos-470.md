@@ -1565,3 +1565,35 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
 - **Next:** `read`. If it still gives exit 8, check card #175 and continue with Lean `subtreeOK3` (session 69 "Next", item 2),
   which does not depend on the workers. If it gives exit 0, commit `notes/data/omega6-v2.ck.gz` and `omega6-v2-roots.txt`.
   Alert Pablo on exit 5. NEVER run owf in a session.
+
+## Session 73 (2026-11-23/24, 23:59–~00:40 UTC): `subtreeOK3` in Lean, general form (no owf run)
+
+- `sh scripts/owf-queue.sh read` → **exit 8** again (`/lean/state/owf/v2` missing). Commented on card **#175**; no owf, no
+  cluster changes, no data changes.
+- New `ErdosResearch/SubsetSumBlock.lean` (ErdosResearchExtra only; no sorry/native_decide; axioms propext/choice/Quot.sound;
+  module 97 s, no warnings; Extra OK 9069 jobs, default `lake build` OK 9066 jobs; check-lean-sources OK):
+  - `qBlock`: ONE loop over odd `q`; each `q` passes `eLoop` (abundant from some exponent on) OR `rLoop` (prefix `n r`, then
+    the exponent of `q`). This replaces session 69's three hand-picked ranges (the composite 35 just needs `rLoop` fuel 2000).
+  - `blockOK` + `not_weird_of_blockOK`: `qBlock` below `Q = q₀ + 2k` and `not_weird_tail` at `Q`. For all primes `q < r`
+    (`q` odd, `q ≥ q₀`, `q, r ∤ n`) and every `e ≥ 1`: `n q^e r` is not weird.
+  - `fLoop` (exponent `f` of the previous prime `p`, adaptive: stop at the first `f` where `n p^f` is abundant with an interval,
+    monotone by `abOK_of_le`; before that, `blockOK` for `n p^f` from `q = p + 2`), `pLoop` (odd `p`, `skipB`),
+    `not_weird_ptail` (three-prime region bound: `σ(n) Q (Q+1) ≤ 2 n (Q−1)²` ⇒ no `n p^f q^e r` with primes `Q ≤ p < q, r`
+    is weird; uses `p/(p−1) ≤ Q/(Q−1)` and then `not_weird_tail` on `n p^f`).
+  - **`not_weird_of_subOK`**: under `IntervalGap n S c g` and the Boolean `subOK`, for all primes `p < q < r` (`p` odd,
+    `p ≥ p₀`, none dividing `n`) and all `f, e ≥ 1`, `n p^f q^e r` is not weird. This is the soundness of `subtreeOK3`.
+    **Not covered:** the last prime squared or higher (`r^h`, `h ≥ 2`, the "stars"), and `p` whose `n p^f` stays deficient
+    for every `f` (then `fLoop` runs out of fuel and returns `false`, which is sound but incomplete).
+  - Instance `not_weird_late_prefix_block`: session 69's family from ONE `decide +kernel` on `blockOK` (`q` from 5 to 71,
+    `K = 40`, `Kr = 2000`).
+- **Failed / not done:** no `subOK` instance. `#eval` of `fLoop` on the late prefix (`p = 37`, `Kq = 100`, `Kr = 2000`) did
+  not finish in 400 s (interpreted). Reason: for `p` just past the abundance threshold, `σ(n p)/(n p) ≈ 1.99`, so the
+  `q`-tail needs `Q` in the hundreds and every `q` below runs `rLoop` with large fuel. The late prefix (5 primes) is also not
+  what the search needs (3-prime prefixes `M3`).
+- Elementary; new only as a formalisation. Not a new result on #470.
+- **Next:** (1) `read` (exit 8 ⇒ check #175; exit 0 ⇒ commit `omega6-v2.ck.gz` + `omega6-v2-roots.txt`; exit 5 ⇒ alert Pablo).
+  (2) Measure `fLoop` cost in Python first (port `eLoop`/`rLoop`/`lastOK`, or reuse `scripts/subroot_leaf_probe.py` counts):
+  how many `(p, f, q)` and `r` steps per 3-prime prefix. (3) Cheaper `rLoop`: replace the `r` loop by the closed limit bound
+  (`allq_fast`, session 63) so that `rLoop` does not iterate r one by one. (4) Stars (`r^h`, `h ≥ 2`): a fourth layer, or
+  `pseudoperfect_star_of_intervalGap`. (5) IntervalGap for a real `M3` (`3^17·5^2·43^2`) via `late_cert_gen.py`, then a `subOK`
+  instance. NEVER run owf in a session.
