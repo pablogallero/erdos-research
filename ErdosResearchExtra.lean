@@ -26,3 +26,4 @@ public import ErdosResearch.SubsetSumLastRange
 public import ErdosResearch.SubsetSumStar
 public import ErdosResearch.SubsetSumMono
 public import ErdosResearch.SubsetSumPoint
+public import ErdosResearch.SubsetSumStairPoint
