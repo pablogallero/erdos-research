@@ -17,7 +17,7 @@
 # Staircase on (f, e) (both >= 1): e_inf = first row whose limit (in f) is > 2, f_inf = first such column;
 #   rows e < e_inf and columns f < f_inf are strips; f_row = first f with abOK on row e_inf, e_col = first e with abOK on
 #   column f_inf; the box [f_inf, f_row) x [e_inf, e_col) is checked point by point; the rest is abundant by monotonicity.
-# Env: FASTSTRIP=1 swapped loops in strips with free r; QTRACE=1 one line per q; CAP max exponent.
+# Env: FASTSTRIP=1 swapped loops in strips with free r; BOUNDED=1 pairs with L2 < 2 by one staircase for all r (session 75); QTRACE=1 one line per q; CAP max exponent.
 # Usage: python3 -I scripts/plimit_probe.py --plan 'p^e*p^e*p^e' LIMB p [p ...]      (c, g from plan4, as subok_cost_probe)
 #        python3 -I scripts/plimit_probe.py N S c g p [p ...]
 #        p = 0 (with --plan): every prime p above the prefix up to the three-prime tail.
@@ -124,6 +124,95 @@ def strip_fast(C, fixed, p, r_lo, order):
         if cert_hi >= top: return True                             # every bad r < R certified from this f on
     return False
 
+SIEVE = bytearray()
+def bad_sieve(C, X):
+    """bytearray s with s[r] = 1 iff r < X is an odd prime not dividing n (cached; grows on demand)."""
+    global SIEVE
+    if len(SIEVE) < X:
+        X = max(X, 2 * len(SIEVE))
+        s = bytearray([1]) * X; s[0:2] = b'\x00\x00'
+        for i in range(2, int(X ** 0.5) + 1):
+            if s[i]: s[i * i::i] = bytearray(len(range(i * i, X, i)))
+        s[2] = 0
+        for i in range(3, min(X, 10 ** 6), 2):
+            if s[i] and C.n % i == 0: s[i] = 0
+        SIEVE = s
+    return SIEVE
+
+def stair_bounded(C, p, q, R):
+    """BOUNDED=1: pair (p, q) with pair limit L2 < 2, so only primes r in (q, R) matter, all at once. Staircase on (f, e)
+    over M = n p^f q^e (always deficient here); per point, M r is abundant iff r <= ab_hi = (sigma-1)//D, certified (IntervalGap
+    chain n -> p^f -> q^e -> r) iff r in [cert_lo, cert_hi]; a 'bad' prime (odd prime, r not dividing n) that is abundant but
+    not certified is a failure (returned). Row e (q^e fixed, p free) only needs r < R_e (its limit bound), column f likewise;
+    a point where every relevant bad r is certified ends its row/column (certification is monotone in each exponent).
+    Returns (ok, info)."""
+    s = bad_sieve(C, R + 1)
+    lo0 = s.find(1, q + 2, R)
+    if lo0 < 0: return True, 'no r'
+    def top_below(X):                                              # largest bad prime in [q+2, min(X, R)) or -1
+        return s.rfind(1, q + 2, min(X, R))
+    def rbound(fixed, x):                                          # relevant r for the line where x is free: r < bound
+        N, S, _ = chain(C, fixed)
+        A, B = (S + N) * x, 2 * N * (x - 1)
+        if A >= B: return R
+        return min(R, -(-A // (B - A)))
+    def check(f, e, top):
+        """Point (f, e), relevant bad r in [q+2, top]. Returns 'full' (every such r certified), 'ok', or ('fail', r)."""
+        W['pts'] += 1
+        M, S, ok = chain(C, [(p, f), (q, e)])
+        sg = S + M; D = 2 * M - sg
+        if D <= 0: return ('fail', 'M abundant')
+        ab_hi = min((sg - 1) // D, top)
+        if ab_hi < lo0: return 'ok'
+        if not ok: r = s.find(1, q + 2, ab_hi + 1); return ('fail', r) if r >= 0 else 'ok'
+        cert_hi = min((sg - C.c) // D, (S + 1 - 2 * C.c) // C.g)
+        cert_lo = max(-(-(M + 2 * C.c - 1) // S) - 1, -(-C.c // M))
+        r = s.find(1, q + 2, min(cert_lo, ab_hi + 1))
+        if r >= 0: return ('fail', r)
+        if cert_hi < ab_hi:
+            W['win'] += ab_hi - cert_hi
+            r = s.find(1, max(q + 2, cert_hi + 1), ab_hi + 1)
+            if r >= 0: return ('fail', r)
+        return 'full' if cert_hi >= top else 'ok'
+    def line(start, fixedfun, varfun, top):
+        """1-D loop: exponent k from start until 'full'."""
+        for k in range(start, CAP):
+            v = check(*varfun(k), top)
+            if v == 'full': return True, k
+            if v != 'ok': return False, (varfun(k), v)
+        return False, ('cap',)
+    topR = top_below(R)
+    if topR < 0: return True, 'no r'
+    e_s = 1                                                        # rows e < e_s: R_e <= topR
+    while True:
+        Re = rbound([(q, e_s)], p)
+        if Re > topR: break
+        t = top_below(Re)
+        if t >= 0:
+            ok, info = line(1, None, lambda f, e=e_s: (f, e), t)
+            if not ok: return False, ('row', e_s, info)
+        e_s += 1
+        if e_s > CAP: return False, 'ecap'
+    f_s = 1
+    while True:
+        Rf = rbound([(p, f_s)], q)
+        if Rf > topR: break
+        t = top_below(Rf)
+        if t >= 0:
+            ok, info = line(e_s, None, lambda e, f=f_s: (f, e), t)
+            if not ok: return False, ('col', f_s, info)
+        f_s += 1
+        if f_s > CAP: return False, 'fcap'
+    ok, f_row = line(f_s, None, lambda f: (f, e_s), topR)
+    if not ok: return False, ('corner-row', f_row)
+    ok, e_col = line(e_s, None, lambda e: (f_s, e), topR)
+    if not ok: return False, ('corner-col', e_col)
+    for f in range(f_s, f_row):
+        for e in range(e_s, e_col):
+            v = check(f, e, topR)
+            if v not in ('ok', 'full'): return False, ('box', f, e, v)
+    return True, (e_s, f_s, f_row, e_col)
+
 def stair(C, p, q, rfix):
     """All (f, e) >= (1, 1) for n p^f q^e (r^1 if rfix, else r free > q)."""
     free_r = rfix is None
@@ -165,6 +254,8 @@ def decide_q(C, pre, q):
     if (S + N) * q <= 2 * N * (q - 1):                             # q limit-deficient: r bounded, 1-D line in e per r
         A, B = (S + N) * q, 2 * N * (q - 1)
         if A == B: return False
+        if os.environ.get('BOUNDED') == '1':                       # session 75: same strip, closed-form r-ranges per e
+            return strip_fast(C, pre, q, q + 2, lambda fx, qe: fx + [qe])
         R = A // (B - A) + 1; r = q + 2
         k = len(pre)
         while r < R:
@@ -212,6 +303,12 @@ def decide_p(C, p):
             if L2n <= 2 * L2d:                                     # r bounded
                 if L2n == 2 * L2d: fails.append((q, 'L2=2')); q += 2; continue
                 R = L2n // (2 * L2d - L2n) + 1
+                if os.environ.get('BOUNDED') == '1':
+                    W['triples'] += 1
+                    okb, info = stair_bounded(C, p, q, R)
+                    if not okb: fails.append((q, 'bounded', info))
+                    if os.environ.get('QTRACE') == '1': print('   q=%d R=%d bounded %s %s' % (q, R, okb, info), flush=True)
+                    q += 2; continue
                 r = q + 2
                 while r < R:
                     if isprime(r) and C.n % r:
