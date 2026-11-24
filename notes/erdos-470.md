@@ -1857,3 +1857,28 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   loop over the staircase points, `intervalGap_mul_prime_pow` twice plus `pointOK` at each point, limit rows/columns via
   `not_abundant_of_limit`, up-set step via `stepCond_mul`; measure the kernel time on `3^16·5^11·19^8`, p = 97. (3) Then the star layer.
   NEVER run owf in a session.
+
+## Session 80 (2026-11-24, 11:22–~11:40 UTC): staircase points after steps; the up-set is free (no owf run)
+
+- **Read:** `sh scripts/owf-queue.sh read` → exit 8 again (`/lean/state/owf/v2/omega6.ck` missing). Comment on card #175. The old
+  gen-1 workers (parity bug, not evidence) are still running; last root DONE: 3^23 (06:41 UTC). No owf run, no data changes. Palomar:
+  done since session 18, unchanged.
+- **Lean** (ErdosResearchExtra only; no sorry/native_decide; standard axioms; module ≈ 20 s, 0 warnings; `lake build ErdosResearchExtra`
+  OK, 9075 jobs; check-lean-sources OK; the default build does not import it): new `ErdosResearch/SubsetSumStairPoint.lean`.
+  - `stepPointOK n S c g r₀ r₁ l` = `stepsOK` along a list of prime-power steps `l` + `pointOK` at the end point;
+    `not_weird_of_stepPointOK`: IntervalGap n + Boolean ⇒ ¬(M r).Weird for every prime r ≥ r₀, r ∤ M (M = n·∏ steps).
+  - `stepAbOK` + `pseudoperfect_of_stepAbOK` (abundant point: c ≤ M, M + c ≤ ∑D M ⇒ M pseudoperfect), via
+    `pseudoperfect_of_intervalGap`.
+  - **`not_weird_of_upset`:** if the minimal abundant point n p^f₀ q^e₀ is pseudoperfect, then every n p^f q^e m (f ≥ f₀, e ≥ e₀,
+    m ≥ 1) is not weird. So the region above the staircase needs NO step conditions: one pseudoperfect point per minimal corner
+    (simpler than the `stepCond_mul` route planned in session 79).
+  - Instances on the late prefix n = 3^3·23·13^10·17^2·11 (c, g) = (2295, 5): `not_weird_late_prefix_pair_point` (deficient
+    point n·37·307: every prime r, r₁ = 6686), `pseudoperfect_late_prefix_pair_point` (n·37·41), `not_weird_late_prefix_37_41`
+    (no n·37^f·41^e·m weird, f, e ≥ 1). The (p, q) were picked by a throwaway scan in /tmp (not in the repo). Elementary; new only
+    as a formalisation.
+- **Not done:** the quantification over all (f, e) of a pair (finite set of deficient points below the staircase + limit rows /
+  columns, where for fixed f all e stay deficient and r must be handled in closed form per f, as in `strip_fast`), and stars.
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit the omega6-v2 files; 5 ⇒ alert). (2) Lean limit row: for fixed f with
+  σ(M_f) q ≤ 2 M_f (q−1), decide every (e, r) in closed form (generalise `pointOK` to a row: D_e = M_f q^e − S_e grows
+  monotonically in e; find the monotone direction of each condition first, in Python). (3) Then `stairOK` = corners (`stepAbOK`) +
+  finite deficient points (`stepPointOK`) + rows/cols, timed on `3^16·5^11·19^8`, p = 97. (4) Stars. NEVER run owf in a session.
