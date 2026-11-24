@@ -23,3 +23,4 @@ public import ErdosResearch.SubsetSumExpLoop
 public import ErdosResearch.SubsetSumBlock
 public import ErdosResearch.SubsetSumStrip
 public import ErdosResearch.SubsetSumLastRange
+public import ErdosResearch.SubsetSumStar
