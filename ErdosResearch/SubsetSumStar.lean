@@ -16,7 +16,9 @@ For `M` odd and `r` prime with `r ∤ M`, `σ(M r^h) = σ(M) σ(r^h)` and `σ(r^
 * `starExcess_ge_of_pos`: `E h ≥ 1`, `c ≤ s` ⇒ `E (h+1) ≥ c` (only the first abundant exponent can lack a certificate);
 * `starExcess_ge_of_ge`: `c ≤ E h` (`0 ≤ c`) ⇒ `c ≤ E (h+k)` for every `k`;
 * `star_window`: `E h > 0` for some `h` ⇒ `r (2M − s) < 2M`;
-* `star_r_unique`: with `D = 2M − s > 0`, at most one `r` has `M r` not abundant (`E 1 ≤ 0`) and some `M r^h` abundant.
+* `star_r_unique`: with `D = 2M − s > 0`, at most one `r` has `M r` not abundant (`E 1 ≤ 0`) and some `M r^h` abundant;
+* `sigma_mul_prime_pow`, `starExcess_eq`, `abundant_iff_starExcess_pos`, `star_prime_unique`: the link with `Nat.sigma`
+  (session 77).
 
 So per deficient point `M` the stars need one test at `r* = ⌈s / D⌉` (`scripts/plimit_star_probe.py`).
 Elementary; new only as a formalisation. Not a new result on #470.
@@ -102,5 +104,40 @@ theorem star_r_unique {s M r₁ r₂ h₁ h₂ : ℕ} (hD : (s : ℤ) < 2 * M) (
   have a' := lt_of_mul_lt_mul_right a hDpos.le
   have b' := lt_of_mul_lt_mul_right b hDpos.le
   omega
+
+/-! ### Link with `σ` -/
+
+open ArithmeticFunction in
+/-- For `r` prime with `r ∤ M`, `σ(M r^h) = σ(M) (1 + r + ⋯ + r^h)`. -/
+theorem sigma_mul_prime_pow {M r : ℕ} (hr : r.Prime) (hrM : ¬ r ∣ M) (h : ℕ) :
+    ((sigma 1 (M * r ^ h) : ℕ) : ℤ) = (sigma 1 M : ℤ) * geom r h := by
+  have hc : M.Coprime (r ^ h) :=
+    Nat.Coprime.pow_right h ((Nat.coprime_comm).1 ((Nat.Prime.coprime_iff_not_dvd hr).2 hrM))
+  rw [isMultiplicative_sigma.map_mul_of_coprime hc, sigma_one_apply_prime_pow hr]
+  unfold geom; push_cast; rfl
+
+open ArithmeticFunction in
+/-- `starExcess (σ M) M r h` is the excess `σ(M r^h) − 2 M r^h`. -/
+theorem starExcess_eq {M r : ℕ} (hr : r.Prime) (hrM : ¬ r ∣ M) (h : ℕ) :
+    starExcess (sigma 1 M) M r h = ((sigma 1 (M * r ^ h) : ℕ) : ℤ) - 2 * ((M * r ^ h : ℕ) : ℤ) := by
+  unfold starExcess; rw [sigma_mul_prime_pow hr hrM]; push_cast; ring
+
+open ArithmeticFunction in
+/-- `M r^h` is abundant iff its star excess is positive. -/
+theorem abundant_iff_starExcess_pos {M r : ℕ} (hr : r.Prime) (hrM : ¬ r ∣ M) (h : ℕ) :
+    2 * (M * r ^ h) < sigma 1 (M * r ^ h) ↔ 0 < starExcess (sigma 1 M) M r h := by
+  rw [starExcess_eq hr hrM]; zify; constructor <;> intro H <;> linarith
+
+open ArithmeticFunction in
+/-- **One candidate, in terms of `σ`.** For deficient `M`, at most one prime `r ∤ M` has `M r` not abundant and some
+`M r^h` abundant. -/
+theorem star_prime_unique {M r₁ r₂ h₁ h₂ : ℕ} (hM : sigma 1 M < 2 * M)
+    (hr₁ : r₁.Prime) (hr₂ : r₂.Prime) (hd₁ : ¬ r₁ ∣ M) (hd₂ : ¬ r₂ ∣ M)
+    (hn₁ : ¬ 2 * (M * r₁ ^ 1) < sigma 1 (M * r₁ ^ 1)) (hn₂ : ¬ 2 * (M * r₂ ^ 1) < sigma 1 (M * r₂ ^ 1))
+    (ha₁ : 2 * (M * r₁ ^ h₁) < sigma 1 (M * r₁ ^ h₁)) (ha₂ : 2 * (M * r₂ ^ h₂) < sigma 1 (M * r₂ ^ h₂)) :
+    r₁ = r₂ := by
+  rw [abundant_iff_starExcess_pos hr₁ hd₁] at hn₁ ha₁
+  rw [abundant_iff_starExcess_pos hr₂ hd₂] at hn₂ ha₂
+  exact star_r_unique (by exact_mod_cast hM) hr₁.two_le hr₂.two_le (not_lt.1 hn₁) (not_lt.1 hn₂) ha₁ ha₂
 
 end ErdosResearch.SubsetSumStar
