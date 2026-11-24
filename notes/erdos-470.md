@@ -1597,3 +1597,66 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   (`allq_fast`, session 63) so that `rLoop` does not iterate r one by one. (4) Stars (`r^h`, `h ≥ 2`): a fourth layer, or
   `pseudoperfect_star_of_intervalGap`. (5) IntervalGap for a real `M3` (`3^17·5^2·43^2`) via `late_cert_gen.py`, then a `subOK`
   instance. NEVER run owf in a session.
+
+## Session 74 (2026-11-24, 01:25–~02:30 UTC): `subOK` measured on real prefixes; the limit-deficient gap; staircase decider (no owf run)
+
+- `sh scripts/owf-queue.sh read` → **exit 8** again (`/lean/state/owf/v2` missing). Comment on card **#175**. No owf, no cluster,
+  no data changes. Palomar: done since session 18, unchanged.
+- New `scripts/subok_cost_probe.py` (Python): exact port of session 73's Booleans (`subOK`/`pLoop`/`fLoop`/`blockOK`/`qBlock`/
+  `eLoop`/`rLoop`/`eLoop0`/`leafOK`/`lastOK`, same short-circuit order) with kernel-work counters. `lastOK` in closed form
+  (`SELFTEST=1`: 20000 random cases, 0 mismatches vs. the literal loop). It reproduces `blockOK_late_prefix = true`
+  (91k `lastOK` q-steps, ~2.2k loop iterations). `--plan 'p^e*…' LIMB` takes (c, g) for a real prefix from session 64's `plan4`.
+- **Findings on `subOK` (session 73):**
+  1. `skipB q P1000` does NOT skip squarefree composites whose prime factors all divide `P1000` (15, 21, 35, 533 = 13·41, …),
+     because `P % q = 0`. On the late prefix, `p = 35` fails at `q = 533`. Fix: also skip when some small `s < q` divides `q`
+     (`SKIP=small`, same results as an exact primality oracle). Lean: `skipS` + `prime_imp_not_skipS` (below).
+  2. **Main gap:** a prime `p` is *limit-deficient* when `σ(n) p ≤ 2 n (p − 1)`; then `n p^f` is deficient for EVERY `f`, so
+     `fLoop` never stops (fuel ⇒ false). On real 3-prime prefixes this is almost every `p`: `3^17·5^2·43^2` (σ/n = 1.904,
+     c = 37, g = 2, three-prime tail Q = 63) has p ∈ {47, 53, 59, 61}, all four limit-deficient, all `ffuel`. So `subOK` as
+     written covers essentially nothing in the search.
+  3. Small bases (3·5·7, 3·5·11, …) also fail `stepOK` (p·g + 2c > S + 1). This is an artefact of tiny S; real prefixes have S ≈ 10^12+.
+- New `scripts/plimit_probe.py` (Python): a **staircase decider** for the sub-tree below a prefix (all primes p < q < r, all
+  f, e ≥ 1, `r^1`; stars still excluded). Tools: (a) abundant with interval via the IntervalGap chain n → p^f → q^e (→ r),
+  which is an up-set in (f, e) because the excess grows (A(f+1) = p·A(f) + σ(m)); (b) **limit strips**: `σ(m) p ≤ 2 m (p − 1)` ⇒
+  `m p^f` not abundant for every f (a whole row/column); with a free r it bounds r (`not_abundant_limit`); (c) `lastOK` at
+  deficient corner points with a free r. Per (p, q): the pair limit `σ(n)/n · p/(p−1) · q/(q−1)` ≤ 2 ⇒ r is bounded and each
+  (p, q, r) is a 2-D staircase; > 2 ⇒ 2-D staircase with free r. Non-limit-deficient p use the exponent loop (like `fLoop`)
+  with a q-level decider (q limit-deficient ⇒ r bounded plus a 1-D line in e; otherwise an e-loop with `lastOK` points).
+  - `3^17·5^2·43^2`: **all 4 p closed**; work 4 exact points, 9 strips, 38 triples (< 0.1 s).
+    **Brute-force cross-check** (`scripts/plimit_bruteforce.py`; p ≤ 61, q < 400, f, e ≤ 8, r < 4000; 12.4M points, 3710 abundant): **0 uncovered** (every
+    abundant point has its own interval certificate, or its r-free prefix is certified by abOK/lastOK).
+  - `3^18·7^13·19^8` (σ/n = 1.847, c = 56, g = 3): all 4 p closed, but 57947 exact points and 153k r-steps (3 s in Python):
+    too many for one `decide +kernel`, unless the points get cheaper (most are 1-D lines in a strip, `rsteps` dominates).
+  - Near-perfect prefixes `3^16·5^11·19^8` (σ/n = 1.979) and `3^18·5^16·17^11` (σ/n = 1.992): the first 16 (resp. 40) p are
+    trivial (n·p is already abundant with an interval at f = 1), but the first limit-deficient p (97, resp. 257, thresholds
+    95.9999 and 255.9999: the Fermat family of session 70) did not finish in 15 min (resp. ~10 min, killed): the pair region
+    runs q into the thousands, with a free r. These are exactly the configurations that make the real search slow too.
+  - **`FASTSTRIP=1` (swapped loops in the strips with free r):** for each f, with M = m p^f deficient, σ = σ(M), D = 2M − σ:
+    M r is abundant ⇔ r D < σ, and certified (abOK of M r) ⇔ stepOK and r D ≤ σ − c. Both are r-intervals (closed form, cf.
+    `pseudoperfect_mul_prime_of_range`, session 63), and certification is monotone in f, so stop at the first f where every
+    prime r < R is certified. `3^18·7^13·19^8`: **57947 exact points → 32 f-steps, and ≤ 12 window r (0 < excess < c)** to test one
+    by one; same result (all p closed). `3^17·5^2·43^2` unchanged (4 points). Final version: no list of primes r; per f only
+    the interval ends (`cert_lo`, `cert_hi` = min((σ − c)/D, (S + 1 − 2c)/g), `ab_hi` = (σ − 1)/D) plus the window
+    (cert_hi, ab_hi] scanned for primes; stop when cert_hi ≥ the largest prime r < R. `3^18·7^13·19^8`: 32 f-steps, **0 window
+    primes**, 0.0 s.
+  - Near-boundary `3^16·5^11·19^8`, p = 97 (ρ_p = σ(n)/n · 97/96 = 1.99978): two-prime tail Q = 18429, 2085 q, 1117 with pair
+    limit > 2. With the closed-form strips, **all 1117 free-r staircases pass** (q up to 9209; every q takes ≤ 0.01 s).
+    The first q with pair limit ≤ 2 (q = 9221, L2 = 1.99999986) has an r bound R ≈ 1.4·10^7, i.e. ~10^6 separate (p, q, r)
+    staircases: **not feasible as written**. Fix (not done): the same swap one level up: for bounded r, run the (f, e)
+    staircase with closed-form r-ranges per point (abundant ⇔ r < σ/D, certified ⇔ r ≤ (σ − c)/D), target "every prime
+    r < R certified". A 5-min run confirms it: through q = 9209 quickly, then no progress on q = 9221.
+  Indicative only (Python, few prefixes; brute force only on the first one).
+- New `ErdosResearch/SubsetSumStrip.lean` (ErdosResearchExtra only; no sorry/native_decide): `not_abundant_of_limit` (the strip
+  lemma: `σ(m) p ≤ 2 m (p − 1)`, `p ∤ m` ⇒ `m p^f` not abundant for all f) and `skipS`/`prime_imp_not_skipS` (small-divisor
+  composite test). Elementary; new only as a formalisation.
+- **Not done / failed:** no Lean staircase checker yet. With bounded r near the boundary (q = 9221 for p = 97 above), the probe
+  makes one staircase per r (~10^6) and does not finish. First version of the probe: an unbounded q loop for p that are not
+  limit-deficient (fixed: exponent loop), and an r list built by trial division up to 1.7·10^7 (fixed: closed form).
+- **Next:** (1) `read` (exit 8 ⇒ #175; exit 0 ⇒ commit `omega6-v2.ck.gz` + `omega6-v2-roots.txt`; exit 5 ⇒ alert).
+  (2) Python: bounded-r triples by the same swap: an (f, e) staircase with closed-form r-ranges per point, target "every prime
+  r < R certified" (rows/columns whose r-limit stays below R are strips again). Then `3^16·5^11·19^8` in full, and the
+  Fermat-type `3^18·5^16·17^11` (p = 257). Brute-force `3^18·7^13·19^8` as was done for the first prefix.
+  (3) Count how many 3-prime prefixes per root are "easy" (like 3^17·5^2·43^2 and 3^18·7^13·19^8) vs near-boundary.
+  (4) Lean: `stairOK` with soundness from `not_abundant_of_limit`, `not_abundant_limit`, `abOK_of_le` (in both exponents;
+  needs `abOK` monotone in an exponent that is not the last, i.e. a commuted chain), the range lemma
+  `pseudoperfect_mul_prime_of_range` for the strips, `lastOK`; and `skipB || skipS` in the loops. NEVER run owf in a session.
