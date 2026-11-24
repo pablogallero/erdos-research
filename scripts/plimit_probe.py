@@ -2,7 +2,7 @@
 # (sigma(n) p <= 2 n (p-1), so n p^f is deficient for EVERY f and Lean's fLoop never stops). Python only; it measures
 # whether a staircase design closes real sub-trees, and how much work it needs. Decides nothing about #470 (no owf).
 #
-# Target (same as Lean's subOK, stars r^h with h >= 2 excluded): for all primes p < q < r, none dividing n, all f, e >= 1,
+# Target (same as Lean's subOK; stars r^h with h >= 2 only with STARS=1, session 78): for all primes p < q < r, none dividing n, all f, e >= 1,
 # N = n p^f q^e r is not weird. Tools (all exact integer tests; m always coprime to the new prime):
 #   * abundant with interval: IntervalGap chain n -> p^f -> q^e (-> r) with stepOK at every prime (c, g kept), then
 #     c <= N and N + c <= sum D(N)  ==> N pseudoperfect, and so are all its multiples (covers every larger r too).
@@ -17,7 +17,7 @@
 # Staircase on (f, e) (both >= 1): e_inf = first row whose limit (in f) is > 2, f_inf = first such column;
 #   rows e < e_inf and columns f < f_inf are strips; f_row = first f with abOK on row e_inf, e_col = first e with abOK on
 #   column f_inf; the box [f_inf, f_row) x [e_inf, e_col) is checked point by point; the rest is abundant by monotonicity.
-# Env: FASTSTRIP=1 swapped loops in strips with free r; BOUNDED=1 pairs with L2 < 2 by one staircase for all r (session 75); QTRACE=1 one line per q; CAP max exponent.
+# Env: STARS=1 (needs BOUNDED=1 FASTSTRIP=1) also stars r^h, h >= 2 (session 78); CHECKC=x mutation of c in the star test; FASTSTRIP=1 swapped loops in strips with free r; BOUNDED=1 pairs with L2 < 2 by one staircase for all r (session 75); QTRACE=1 one line per q; CAP max exponent.
 # Usage: python3 -I scripts/plimit_probe.py --plan 'p^e*p^e*p^e' LIMB p [p ...]      (c, g from plan4, as subok_cost_probe)
 #        python3 -I scripts/plimit_probe.py N S c g p [p ...]
 #        p = 0 (with --plan): every prime p above the prefix up to the three-prime tail.
@@ -27,7 +27,171 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import subok_cost_probe as SP
 
 CAP = int(os.environ.get('CAP', '400'))       # max exponent tried in any 1-D loop (fail beyond: incomplete, not unsound)
-W = dict(pts=0, lastq=0, lastqR=0, strips=0, triples=0, pairs=0, rsteps=0, win=0)
+W = dict(pts=0, lastq=0, lastqR=0, strips=0, triples=0, pairs=0, rsteps=0, win=0, stars=0, starr=0, starf=0)
+# Session 78: STARS=1 also decides stars r^h (h >= 2) of the last prime. Facts (session 76/77, Lean SubsetSumStar.lean): at a
+# deficient M (excess E(h) of M r^h obeys E(h+1) = r E(h) + sigma(M)), M r certified => every M r^h certified (same prime-power
+# step); M r not abundant but some M r^h abundant => r = r* = ceil(sigma/D) with r* D < 2M (unique, star_prime_unique), and
+# only its first abundant h0 needs a test. star_fail does that at the points the free-r code enumerates (point()); the bounded
+# families (strip_fast, stair_bounded) use star_family below, since their r^1 logic never enumerates the star-only r.
+STARS = os.environ.get('STARS') == '1'
+CHECKC = int(os.environ['CHECKC']) if os.environ.get('CHECKC') else None   # mutation test: stricter c in the star test only
+
+def maybe_prime(x):
+    """Miller-Rabin with the first 12 prime bases: exact below 3.3e24; above it a 'probable prime' answer is kept as prime,
+    so the star test is only ever made stricter (a composite r* would just be tested needlessly)."""
+    if x < 2 or x % 2 == 0: return x == 2
+    for b in (3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41):
+        if x % b == 0: return x == b
+    d, k = x - 1, 0
+    while d % 2 == 0: d //= 2; k += 1
+    for b in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):
+        y = pow(b, d, x)
+        if y in (1, x - 1): continue
+        for _ in range(k - 1):
+            y = y * y % x
+            if y == x - 1: break
+        else: return False
+    return True
+
+def star_family(C, parts, dims, rmin, bad):
+    """Stars r^h (h >= 2) over a whole bounded family: points x in N^dims (exponents >= 1), M(x) = chain(parts(x)), every M(x)
+    deficient, with sup sigma/M < 2 (limit at infinity). For a prime r (bad(r), r > rmin), V_h = {x : M(x) r^h abundant} is an
+    up-set (ratio grows in every exponent), and so is the certified set C_h (excess identity; chain/step monotone, the same
+    assumption as the r^1 staircase). A star of r at x is needed only if x is in some V_h but not in V_1. Sufficient (and
+    finite): for h = 2..H every minimal point of V_h is in V_1 or in C_h, where H = max over the minimal points of
+    U = union of the V_h (exact: rho r > 2 (r-1)) of their first abundant h. Candidate r: some point has r^1 not abundant
+    but a star abundant, so sigma/D(base) <= r < sup sigma/D + 1. Returns None, or the first failing r."""
+    one = (1,) * dims
+    N0, T0, _ = chain(C, parts(one))
+    def frees(x):                                                  # which primes vary with each coordinate
+        return [pp for (pp, e1), (_, e2) in zip(parts(one), parts(x)) if e1 != e2]
+    fp = []
+    for k in range(dims):
+        y = list(one); y[k] = 2
+        fp += frees(tuple(y))
+    assert len(fp) == dims
+    def ratio_lim(x, k_free):                                      # (num, den) of the limit of sigma/M as coordinates in k_free -> inf
+        N, T, _ = chain(C, [(pp, e) for pp, e in parts(x) if pp not in [fp[k] for k in k_free]])
+        num, den = T + N, N
+        for k in k_free: num *= fp[k]; den *= fp[k] - 1
+        return num, den
+    An, Ad = ratio_lim(one, range(dims))                           # rho_inf = An/Ad < 2
+    if An >= 2 * Ad: return 'unbounded'
+    sg0 = T0 + N0; D0 = 2 * N0 - sg0
+    r = max(rmin + 1, -(-sg0 // D0))                               # r < sigma0/D0: M r abundant at the base point, so V_1 = all
+    rtop = An // (2 * Ad - An) + 1                                 # r - 1 < sup sigma/D = An/(2Ad - An)
+    def minpts(a, b):                                              # minimal points of {x : sigma(M) a > M b}
+        n_, d_ = An * a, Ad * b
+        if n_ <= d_: return []
+        def mem(x):
+            M, T, _ = chain(C, parts(x)); return (T + M) * a > M * b
+        if dims == 1:
+            f = 1
+            while not mem((f,)): f += 1
+            return [(f,)]
+        res, fbest, e = [], None, 1
+        while True:
+            rn, rd = ratio_lim((1, e), [0])                        # row e (f free)
+            if rn * a > rd * b:
+                f = 1
+                while (fbest is None or f < fbest) and not mem((f, e)): f += 1
+                if fbest is None or f < fbest:
+                    res.append((f, e)); fbest = f
+            if fbest == 1: return res
+            if fbest is not None:
+                cn, cd = ratio_lim((fbest - 1, 1), [1])            # column fbest-1 (e free): never => nothing new
+                if cn * a <= cd * b: return res
+            e += 1
+            if e > 10 * CAP: raise RuntimeError('minpts cap')
+    def check_r(r):                                                # None if every star of r over the family is certified
+            W['starr'] += 1
+            U = minpts(r, 2 * (r - 1))
+            H = 1
+            for x in U:
+                M, T, _ = chain(C, parts(x)); sg = T + M
+                h, sr, rh = 1, r + 1, r
+                while sg * sr <= 2 * M * rh: h += 1; rh *= r; sr = sr * r + 1
+                H = max(H, h)
+            sr, rh = r + 1, r
+            for h in range(2, H + 1):
+                rh *= r; sr = sr * r + 1
+                for x in minpts(sr, 2 * rh):
+                    W['stars'] += 1
+                    M, T, ok = chain(C, parts(x)); sg = T + M
+                    if sg * (r + 1) > 2 * M * r: continue          # in V_1: the r^1 staircase certifies it (and so every h)
+                    c = CHECKC if CHECKC is not None else C.c
+                    E = sg * sr - 2 * M * rh
+                    if not (ok and step(M, T, C.c, C.g, r) and E >= c and c <= M * rh and sg >= c): return r
+            return None
+    if dims == 1:
+        # 1-D: each point has ONE candidate r*(f) = ceil(sigma/D) (star_prime_unique). sigma/D increases to L = An/(2Ad - An);
+        # once sigma/D > ceil(L) - 1, r*(f) = ceil(L) for good, so: star_fail at every point before that, then check_r(ceil(L))
+        # (the up-set argument covers that prime at every point of the line).
+        rinf = -(-An // (2 * Ad - An))
+        f = 1
+        while True:
+            M, T, ok = chain(C, parts((f,))); sg = T + M; D = 2 * M - sg
+            if sg > (rinf - 1) * D: break
+            rr = star_fail(C, M, T, ok, rmin, float('inf'), bad)
+            if rr is not None: return rr
+            f += 1
+            if f > 100 * CAP: return 'fcap'
+        W['starf'] += f - 1
+        if rinf > rmin and rinf % 2 == 1 and bad(rinf): return check_r(rinf)
+        return None
+    if os.environ.get('STARPERR') == '1':                         # session-78 first version: every candidate prime r (slow)
+        while r <= rtop:
+            if r % 2 == 1 and bad(r):
+                rr = check_r(r)
+                if rr is not None: return rr
+            r += 1
+        return None
+    # 2-D: T = {x : sigma/D(x) > ceil(L) - 1} is an up-set where r*(x) = ceil(L) = rinf, covered by check_r(rinf). Outside T:
+    # rows e < e1 (row limit of sigma/D <= rinf - 1) and columns f < f1 are 1-D lines (recursive call); the rest is a finite
+    # box (rows e >= e1 enter T) checked point by point with star_fail.
+    rinf = -(-An // (2 * Ad - An))
+    def inT(x):
+        M, T, _ = chain(C, parts(x)); return T + M > (rinf - 1) * (M - T)
+    def above(rn, rd): return rn > (rinf - 1) * (2 * rd - rn)      # limit sigma/D = rn/(2rd - rn) > rinf - 1
+    e1 = 1
+    while not above(*ratio_lim((1, e1), [0])):
+        rr = star_family(C, lambda x, e=e1: parts((x[0], e)), 1, rmin, bad)
+        if rr is not None: return rr
+        e1 += 1
+        if e1 > 100 * CAP: return 'ecap'
+    f1 = 1
+    while not above(*ratio_lim((f1, 1), [1])):
+        rr = star_family(C, lambda x, f=f1: parts((f, x[0])), 1, rmin, bad)
+        if rr is not None: return rr
+        f1 += 1
+        if f1 > 100 * CAP: return 'fcap'
+    e = e1
+    while not inT((f1, e)):
+        f = f1
+        while not inT((f, e)):
+            W['starf'] += 1
+            M, T, ok = chain(C, parts((f, e)))
+            rr = star_fail(C, M, T, ok, rmin, float('inf'), bad)
+            if rr is not None: return rr
+            f += 1
+        e += 1
+    if rinf > rmin and rinf % 2 == 1 and bad(rinf): return check_r(rinf)
+    return None
+
+def star_fail(C, M, T, ok, rmin, rmax, bad):
+    """Star test at a deficient point M (sum D(M) = T, chain ok). Returns None if no uncertified star with a prime r in
+    (rmin, rmax] satisfying bad(r), else that r."""
+    if not STARS: return None
+    sg = T + M; D = 2 * M - sg
+    if D <= 0: return None
+    r = -(-sg // D)
+    if not (r * D < 2 * M) or r <= rmin or r > rmax or not bad(r): return None
+    W['stars'] += 1
+    c = CHECKC if CHECKC is not None else C.c
+    h, E, rh = 1, sg * (r + 1) - 2 * M * r, r
+    while E <= 0: E = r * E + sg; h += 1; rh *= r
+    if ok and step(M, T, C.c, C.g, r) and E >= c and c <= M * rh and sg >= c: return None
+    return r
 
 def sig_pp(p, e): return (p ** (e + 1) - 1) // (p - 1)
 def isprime(x): return x > 2 and x % 2 == 1 and all(x % d for d in range(3, int(x ** 0.5) + 1, 2))
@@ -55,6 +219,8 @@ def point(C, parts, free_r):
         Bq = (N + S) // (N - S) + 1
         v, k = SP.lastOK(N, S, C.c, C.g, Bq); W['lastq'] += k
         if v: W['lastqR'] += lastOKR_scan(N, S, C.c, C.g, Bq)
+        if v and ok and star_fail(C, N, S, ok, max(x for x, _ in parts), float('inf'), lambda r: maybe_prime(r) and C.n % r) is not None:
+            return False
         return v and ok
     return False                                                   # abundant without an interval certificate
 
@@ -118,6 +284,7 @@ def strip_fast(C, fixed, p, r_lo, order):
     lo = r_lo
     top = R - 1                                                    # every r in [lo, top] must end up certified
     while top >= lo and not bad(top): top -= 1                     # largest bad r below R (a few steps)
+    if STARS and star_family(C, lambda x: order(fixed, (p, x[0])), 1, r_lo - 1, lambda r: maybe_prime(r) and C.n % r) is not None: return False
     if top < lo: return True
     for f in range(1, CAP):
         W['pts'] += 1
@@ -157,7 +324,10 @@ def stair_bounded(C, p, q, R):
     not certified is a failure (returned). Row e (q^e fixed, p free) only needs r < R_e (its limit bound), column f likewise;
     a point where every relevant bad r is certified ends its row/column (certification is monotone in each exponent).
     Returns (ok, info)."""
-    s = bad_sieve(C, R + 1)
+    s = bad_sieve(C, R + 2)
+    if STARS:
+        rs = star_family(C, lambda x: [(p, x[0]), (q, x[1])], 2, q, lambda x: x < len(s) and s[x] == 1)
+        if rs is not None: return False, ('star', rs)
     lo0 = s.find(1, q + 2, R)
     if lo0 < 0: return True, 'no r'
     def top_below(X):                                              # largest bad prime in [q+2, min(X, R)) or -1

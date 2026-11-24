@@ -1783,3 +1783,56 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
 - **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit the omega6-v2 files; 5 ⇒ alert). (2) Stars inside the decider (`plimit_probe.py`):
   the r* test at each enumerated deficient point plus the strip boundary, checked against `plimit_star_probe.py FLOOP=1`, plus a mutation
   test. (3) Lean `stairOK` for one bounded pair, to measure the per-point kernel cost. NEVER run owf in a session.
+
+## Session 78 (2026-11-24, 08:30–~09:35 UTC): stars inside the staircase decider; stepOK monotonicity in Lean (no owf run)
+
+- **Read:** `sh scripts/owf-queue.sh read` → exit 8 (`/lean/state/owf/v2/omega6.ck` missing). Comment on card #175. No owf run and no data
+  changes. Palomar: done since session 18, unchanged.
+- **`scripts/plimit_probe.py STARS=1`** (needs `BOUNDED=1 FASTSTRIP=1`): the decider now also covers the 6th prime as a star r^h (h ≥ 2).
+  Facts used (Lean `SubsetSumStar.lean`): E(h+1) = r E(h) + σ(M); at a deficient M only r* = ⌈σ/D⌉ can have M r* non-abundant but
+  some M r*^h abundant (`star_prime_unique`), and only its first abundant h0 needs a test (E(h0) ≥ c, stepOK(M, r*), c ≤ M r*^h0, σ(M) ≥ c).
+  Where each piece is checked:
+  * free-r points (`point()`: `decide_q` exponent loop, free-r staircase box): `star_fail` at the point (Miller–Rabin for r*; a "probable
+    prime" answer is treated as prime, so the test can only get stricter).
+  * bounded 1-D lines (`strip_fast`: row strips and `decide_q`'s limit-deficient branch): along the line, σ/D increases to
+    L = A/(B−A), so r*(f) = ⌈L⌉ = r∞ once σ/D > ⌈L⌉ − 1. So: `star_fail` at every f before that, then `check_r(r∞)` once.
+  * bounded 2-D pairs (`stair_bounded`): T = {σ/D > r∞ − 1} is an up-set where r* = r∞. Outside T there are finitely many rows and columns
+    (1-D, recursive) plus a finite box (`star_fail` per point); then `check_r(r∞)`.
+  * `check_r(r)`: V_h = {x : M(x) r^h abundant} and the certified set C_h are up-sets (ratio and excess grow in every exponent; chain and
+    stepOK monotone, the same assumption as the r^1 staircase). It checks that every minimal point of V_h (h = 2..H) is in V_1 or C_h. H is
+    the largest h0 over the minimal points of U = {ρ r > 2(r−1)}. Minimal points come from a staircase with exact row/column limits.
+  * First version (`STARPERR=1`, kept): `check_r` for every bad prime r in [σ0/D0, sup σ/D + 1). It is correct but loops up to ~10^9 r
+    on near-perfect strips (it hung at p = 19 of `3^22·7^11·13^2`). Before that, a "+1 on every r-bound" variant never terminated:
+    the star-only primes near the bound are never certified at h = 1, so lines never reach "full" (reverted).
+  * The two-/three-prime tails (Q, Q3) are already star-safe: Q(Q+2) ≤ (Q+1)^2.
+- **Results (LIMB 10^5, all p):**
+
+  | prefix | STARS=0 | STARS=1 |
+  |---|---|---|
+  | 3^17·5^2·43^2 | 4 p, 0 failing | 0 failing, 0.0 s |
+  | 3^18·7^13·19^8 | 0 failing | 0 failing, 0.0 s |
+  | 3^22·7^11·13^2 | 0 failing, 0.7 s | 0 failing, 1.6 s (STARPERR: 12 s, same verdict) |
+  | 3^16·5^11·19^8 (near-boundary) | 0 failing, 9.7 s | 0 failing, 2.3 s |
+  | 3^18·5^16·17^11 (Fermat-type) | 128 p, 0 failing, 93 s | 0 failing, 142 s |
+
+  **Census** (`plimit_root_census.py` with `STARS=1`, the same sample as session 75: roots 3^16/3^20/3^22, 15 each, seed 75, 120 s cap, on a
+  read-only /tmp copy of the gen-1 checkpoint; only prefix SHAPES are used, and the parity bug does not change them): **44/45 closed within
+  120 s, 0 failing**. The timeout `3^20·5^26·17^13` (320 s without stars in session 75) was rerun uncapped: **closed** (128 p, 0 failing, 214 s). So **45/45 closed** with stars.
+- **Mutation tests** (`CHECKC=x` makes the star test stricter; the r^1 logic is unchanged). On `3^22·7^11·13^2`, x = 10^31: the decider
+  fails exactly p ∈ {19, 23, 29, 31, 37, 41, 43, 47}, the same p the independent brute-force probe (`plimit_star_probe.py FLOOP=1`, FE 5)
+  flags per p, and STARPERR gives the same set. x = 10^12: both 0. On `3^16·5^11·19^8`: x = 10^24 gives 0/0; x = 10^32 and 10^39 give
+  34 p flagged by the probe and 34 failing in the decider, and **0 flagged by the probe but passed by the decider**. So the star layer
+  detects failures, and its verdicts agree with brute force on the sampled exponents. All of this is indicative only (Python).
+- **Monotonicity (paper proof, closes the assumption used since session 74):** stepOK(n, S, c, g, q) is
+  `q g + 2c ≤ S + 1 ∧ n + 2c ≤ (q+1) S + 1` with S = ∑D(n). Raising any exponent replaces n by n p with S' = σ(np) − np ≥ p S
+  (σ(np)/(np) ≥ σ(n)/n). Then S' ≥ S, and (q+1)S' + 1 ≥ p((q+1)S) + 1 ≥ p(n + 2c − 1) + 1 ≥ np + 2c (as 2c(p−1) ≥ p−1, which
+  needs c ≥ 1). The step of a prime only depends on the part of the chain before it. So every chain condition, c ≤ N, and the excess (E(f+1) = p E(f) + σ(rest))
+  are monotone in every exponent, and the certified sets are up-sets.
+- **Lean** (ErdosResearchExtra only; no sorry/native_decide; axioms propext/Classical.choice/Quot.sound; module 15 s;
+  `lake build ErdosResearchExtra` OK, 9073 jobs; check-lean-sources OK; the default build does not import it): new
+  `ErdosResearch/SubsetSumMono.lean` has `mul_sum_properDivisors_le` (p·∑D(n) ≤ ∑D(n p)), `stepCond_mono` and `stepCond_mul` (the two
+  stepOK inequalities survive n ↦ n p, for c ≥ 1). Elementary; new only as a formalisation.
+- **Failed:** see the two discarded variants above.
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit the omega6-v2 files; 5 ⇒ alert). (2) Lean `stairOK` for one bounded pair, to measure the
+  per-point kernel cost (r^1 part first; then the star layer: `star_fail` = one test per point, `check_r` = minimal-point lists). (3) Use
+  `stepCond_mul` in that `stairOK` soundness proof (the up-set step). NEVER run owf in a session.
