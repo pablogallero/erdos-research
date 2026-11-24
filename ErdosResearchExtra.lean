@@ -25,3 +25,4 @@ public import ErdosResearch.SubsetSumStrip
 public import ErdosResearch.SubsetSumLastRange
 public import ErdosResearch.SubsetSumStar
 public import ErdosResearch.SubsetSumMono
+public import ErdosResearch.SubsetSumPoint

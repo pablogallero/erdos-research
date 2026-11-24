@@ -1836,3 +1836,24 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
 - **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit the omega6-v2 files; 5 ⇒ alert). (2) Lean `stairOK` for one bounded pair, to measure the
   per-point kernel cost (r^1 part first; then the star layer: `star_fail` = one test per point, `check_r` = minimal-point lists). (3) Use
   `stepCond_mul` in that `stairOK` soundness proof (the up-set step). NEVER run owf in a session.
+
+## Session 79 (2026-11-24, 10:22–~10:45 UTC): one staircase point, every last prime r at once, in Lean (no owf run)
+
+- **Read:** `sh scripts/owf-queue.sh read` → exit 8 again (`/lean/state/owf/v2/omega6.ck` missing). Comment on card #175. The old
+  gen-1 workers (parity bug) are still running: root 23 DONE at 06:41 UTC, which is not evidence. No owf run, no data changes. Palomar: done
+  since session 18, unchanged.
+- **Lean** (ErdosResearchExtra only; no sorry/native_decide; standard axioms; module ≈ 20 s; `lake build ErdosResearchExtra` OK, 9074 jobs; check-lean-sources OK; the default build does not import it): new
+  `ErdosResearch/SubsetSumPoint.lean`. This is the r^1 part of `stairOK` for ONE point. For a deficient M with `IntervalGap M S c g` and D = M − S,
+  M r is abundant ⇔ r D < σ(M) = S + M. Every condition of `not_weird_mul_prime_of_intervalGap` is monotone in r, so the Boolean
+  `pointOK M S c g r₀ r₁` checks them only at the two ends: r₀ (step condition `M + 2c ≤ (r₀+1) S + 1`, `c ≤ M r₀`) and r₁
+  (`σ ≤ (r₁+1) D`, `r₁ g + 2c ≤ S + 1`, `r₁ D + c ≤ σ`). `not_weird_mul_prime_of_pointOK` then gives ¬(M r).Weird for EVERY prime
+  r ≥ r₀, r ∤ M, with no scan. (If the window (σ−c)/D < r < σ/D has a prime, `pointOK` is false and `lastOKR` remains the fallback.)
+  Instance **`not_weird_late_prefix_mul_prime`**: no 3^3·11·13^10·17^2·23·r is weird, for any prime r (r₀ = 2, r₁ = 32; one
+  `decide +kernel`, cost negligible next to the certificate it reuses). It is the same family as session 68's `not_weird_late_prefix_mul_mul` but one
+  level shorter, and it is a closed form. Elementary; new only as a formalisation.
+- **Per-point kernel cost:** the r^1 part of a point is now O(1) GMP comparisons, so the cost per point is dominated by building
+  `IntervalGap` for M (by steps from the prefix certificate, `intervalGap_mul_prime_pow`, also O(1) per step).
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit the omega6-v2 files; 5 ⇒ alert). (2) `stairOK` for one bounded pair (p^f, q^e):
+  loop over the staircase points, `intervalGap_mul_prime_pow` twice plus `pointOK` at each point, limit rows/columns via
+  `not_abundant_of_limit`, up-set step via `stepCond_mul`; measure the kernel time on `3^16·5^11·19^8`, p = 97. (3) Then the star layer.
+  NEVER run owf in a session.
