@@ -27,3 +27,5 @@ public import ErdosResearch.SubsetSumStar
 public import ErdosResearch.SubsetSumMono
 public import ErdosResearch.SubsetSumPoint
 public import ErdosResearch.SubsetSumStairPoint
+public import ErdosResearch.SubsetSumRow
+public import ErdosResearch.SubsetSumPair
