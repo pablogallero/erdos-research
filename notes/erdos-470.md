@@ -1667,3 +1667,43 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   Lean v4.35.0 + Mathlib v4.35.0. `#print axioms`: `not_abundant_of_limit` = [propext, Classical.choice, Quot.sound],
   `prime_imp_not_skipS` = [propext, Quot.sound]. No sorry/native_decide. The GitHub CI builds Extra in the lean.yml step
   "Build non-default research modules" (`lake build ErdosResearchExtra`); that run is what certifies this PR.
+
+## Session 75 (2026-11-24, 03:51–~04:45 UTC): bounded-r pairs by one staircase; real-prefix census; closed-form `lastOKR` (no owf run)
+
+- `sh scripts/owf-queue.sh read` → **exit 8** again (`/lean/state/owf/v2` missing). Comment on card **#175** (the old generation-1
+  workers, with the parity bug, are still running: root 22 DONE 01:48, omega6.ck written 03:51). No owf, no data changes. Palomar
+  unchanged (done since session 18).
+- **`BOUNDED=1` in `scripts/plimit_probe.py` (`stair_bounded`):** a pair (p, q) with pair limit L2 < 2 is now ONE (f, e) staircase
+  for all primes r ∈ (q, R) at once, instead of one staircase per r. Per point M = n p^f q^e (always deficient here): M r abundant
+  ⇔ r ≤ (σ−1)/D, certified ⇔ r ∈ [cert_lo, cert_hi] (the closed forms of `strip_fast`); bad r = odd primes not dividing n, found
+  with a sieve (`bytearray.find`). Row e only needs r < R_e (its limit bound, `not_abundant_limit`), column f likewise; e* / f* =
+  first row/column whose bound exceeds the largest bad r < R; a point where every relevant r is certified ends its line
+  (certification is monotone in each exponent); the box [f*, f_row) × [e*, e_col) is checked point by point.
+  - Same verdicts as session 74 on `3^17·5^2·43^2` and `3^18·7^13·19^8` (all p closed).
+  - **`3^16·5^11·19^8`, p = 97: closed in 0.8 s** (session 74: did not finish, q = 9221 with R ≈ 1.4·10^7). Whole 3-prime
+    sub-tree (all 53 p): closed, 2.1 s. **`3^18·5^16·17^11` (Fermat type, p = 257): all 128 p closed, 43 s.**
+- New `scripts/plimit_bounded_check.py` (brute-force soundness check of `stair_bounded`: for every pair it closes, every abundant
+  n p^f q^e r with f, e ≤ FE and r a bad prime < R must have its own certificate). `3^18·7^13·19^8` FE 8: 8653 abundant, 0
+  uncertified; `3^17·5^2·43^2` FE 10: 3710/0; `3^16·5^11·19^8` p = 97 (FE 5, every 10th pair, 300 smallest + 300 largest r):
+  926318/0; `3^18·5^16·17^11` p = 257, 263 (FE 4, every 20th pair, RMAX 200): 1390250/0. **Mutation test** (`CG=3e12,2` makes
+  certificates fail; a decider forced to answer True): the checker flags 1314/1314, so it can see unsoundness.
+- New `scripts/plimit_root_census.py` (read-only): samples REAL exact deficient 3-prime prefixes of a root from the generation-1
+  checkpoint (only the prefix SHAPE, which the parity bug does not change; copied read-only to /tmp) and runs the decider (stars still
+  excluded). Roots 3^16 / 3^20 / 3^22 have 1846 / 2146 / 2186 such prefixes. Sample 15 each, seed 75, 90 s timeout:
+  **41/45 closed within 90 s** (most in 0.5–4 s); the 4 timeouts were rerun without the 90 s cap: `3^16·5^18·17^4` closed (134 s),
+  `3^20·5^21·17^7` closed (176 s), `3^20·5^26·17^13` closed (320 s); `3^22·7^11·13^2` did not finish in 900 s, stuck at p = 19: `decide_q` (q limit-deficient
+  under a non-limit-deficient p) still iterated r one by one up to R. **Fix:** with `BOUNDED=1` that branch is now `strip_fast`
+  (closed-form r-ranges per e, as in session 74's strips) ⇒ `3^22·7^11·13^2` **closed in 1.0 s**; the three test prefixes give the
+  same verdicts. Not yet brute-checked: this new use of `strip_fast` in `decide_q` (a throwaway check timed out building a
+  sieve up to R; cap R next time).
+  **0 failing p in every prefix that finished.** Indicative (Python, sample of 45, stars excluded).
+- **Kernel cost:** the slow prefixes are dominated by `lastOK` q-scans (`lastq` = 5.6·10^7 to 1.9·10^9 per prefix), which are
+  literal loops in Lean. New `ErdosResearch/SubsetSumLastRange.lean` (ErdosResearchExtra only; no sorry/native_decide; axioms
+  propext/Classical.choice/Quot.sound; module 39 s; `lake build ErdosResearchExtra` OK, 9071 jobs; check-lean-sources OK):
+  `qCond`, `lastOKR n S c g B lo hi` (the 4 range conditions at the two ends, scan only q < lo and hi < q < B) and
+  **`not_weird_mul_prime_of_lastOKR`** (from `pseudoperfect_mul_prime_of_range` + `not_weird_mul_prime_of_intervalGap`).
+  Sanity instance: `3^16·5^11·19^8·97^3` with B = 9214 checks two ends and scans nothing. Elementary; new only as a formalisation.
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit `omega6-v2.ck.gz` + `omega6-v2-roots.txt`; 5 ⇒ alert). (2) Python: count the kernel
+  work with `lastOKR` instead of `lastOK` (scan length = q < lo plus (hi, B)), so the census reports a realistic Lean cost per prefix.
+  (3) Stars (r^h, h ≥ 2) in the staircase (session 63's `pseudoperfect_star_of_intervalGap`). (4) Lean `stairOK` for one pair (p, q)
+  with bounded r (soundness from `not_abundant_limit`, `abOK_of_le`, the range lemma), then `subOK` with `lastOKR`. NEVER run owf in a session.
