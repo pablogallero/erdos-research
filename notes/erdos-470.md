@@ -1922,3 +1922,50 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
 - **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit the omega6-v2 files; 5 ⇒ alert). (2) A generator `scripts/pair_cert_gen.py` (from `plimit_probe.stair`'s
   data) emitting `pairOK` instances; time the kernel on all free-r pairs of one p of `3^16·5^11·19^8` (watch the 1-min/module rule; use
   ErdosResearchExtra). (3) Shape e_inf ≥ 2 by symmetry. (4) Bounded pairs in Lean (`stair_bounded`). (5) Stars. NEVER run owf in a session.
+
+## Session 82 (2026-11-24, 23:00–~23:40 UTC): pair generator; whole q-ranges and q-tails per p in Lean (no owf run)
+
+- **Read:** `sh scripts/owf-queue.sh read` → exit 8 again (`/lean/state/owf/v2/omega6.ck` missing). Comment on card #175: the old
+  gen-1 workers (parity bug) are still running (roots 24 and 25 DONE at 13:46 and 17:44; omega6.ck written at 22:59). That is not evidence.
+  No owf run, no data changes. Palomar: done since session 18, unchanged.
+- **Generator `scripts/pair_cert_gen.py`** (Python, exact; no search, no owf): an exact port of the Lean Booleans `stepsOK`/`ppSum`/
+  `stepsEnd`/`pointOK`/`rowOK`/`stepAbOK`/`pairOK` (r₀ = 2), plus a parameter search (F, f_r, e_c, e₀(f), r₁ minimal) and a Lean emitter.
+  `SELFTEST=1` reproduces both hand-made session-81 instances (same r₁ = 7196/6686/7195). It is self-contained and does not import
+  `plimit_probe` (whose `stair` data does not map 1-1 onto pairOK's parameters).
+  First measurement: one `pairOK` theorem per pair costs **≈ 0.3 s of kernel** (62 pairs for p = 37 in ≈ 25 s).
+- **Key observation:** almost all free-r pairs have the trivial shape (1, 1, 1) (the corner n p q is already abundant with an interval). Late
+  prefix, p < 400, q < 5000: 1439 of 1460. So per p:
+  - if `n p` is already abundant with an interval: one theorem covers EVERY q (`not_weird_of_stepAbOK_single`);
+  - otherwise one **q-range** `[q₀, q₁]` (`rangeOK`: the step for p, then session 63's four end inequalities at n p, linear in q)
+    covers all trivial pairs at once;
+  - **q-tail** `not_weird_qtail`: σ(n)·p·(Q+1) ≤ 2n(p−1)(Q−1) ⇒ no n p^f q^e r with primes q, r ≥ Q is weird (all f, e). Proof:
+    σ(n p^f)(p−1) ≤ σ(n) p^{f+1} (`ppSum_ratio`) and session 68's `not_weird_tail` at m = n p^f. This removes almost all
+    bounded pairs;
+  - p ≥ Q3 (three-prime tail, session 73 `not_weird_ptail`) needs nothing;
+  - only the leftover pairs get a `pairOK`.
+- **Counts (`RANGES=1`, DRY; free-r = L2 > 2):**
+
+  | prefix | Q3 | n p abundant | ranges (pairs) | `pairOK` | e_inf ≥ 2 | q-tails (max Q) | bounded pairs left (q < Q) |
+  |---|---|---|---|---|---|---|---|
+  | late 3^3·11·13^10·17^2·23 | 100 | 29, 31 | 7 (122) | 21 | 0 | 14 (749) | 232 |
+  | real 3^16·5^11·19^8 (c, g) = (12, 2) | 287 | 16 p (23..89) | 18 (1542) | 599 | 1 = (109, 797) | 37 (18429) | 2507 |
+
+  Real prefix: 1542 + 599 + 1 = 2142 free-r pairs, the same as session 81's census. Without the q-tail there are ≈ 824k bounded pairs; with it, 2507.
+  Kernel estimate for the free-r part of the real prefix: 599 × 0.3 s ≈ 3 min, plus the ranges and abundant p (seconds). This needs a Lean
+  IntervalGap for 3^16·5^11·19^8, which does not exist yet.
+- **Lean** (ErdosResearchExtra only; no sorry/native_decide; standard axioms; `lake build ErdosResearchExtra` OK 9079 jobs; default
+  `lake build` OK 9066; check-lean-sources OK):
+  - `ErdosResearch/SubsetSumPairRange.lean` (≈ 15 s): `rangeOK` + **`not_weird_of_rangeOK`** (all primes q ∈ [q₀, q₁], all f, e, m ≥ 1),
+    `not_weird_of_stepAbOK_single`, `ppSum_ratio`, **`not_weird_qtail`**.
+  - `ErdosResearch/SubsetSumPairGen.lean` (GENERATED, `RANGES=1 LEAN=late python3 -I scripts/pair_cert_gen.py 272154582410129991
+    256030928920159929 2295 5 29 400 5000`, byte-identical on rerun; ≈ 35 s): below the late prefix, 2 `ab` + 14 `qtail` + 7 `range` +
+    21 `pair` theorems. Together with `not_weird_ptail` (p ≥ 100), they cover every pair (p, q) with p < q primes > 23 of that sub-tree, with r to the
+    first power, EXCEPT the 232 bounded pairs below their q-tails. The stars r^h (h ≥ 2) are also outside. There is no single combined
+    theorem yet: it is 44 separate statements. Elementary; new only as a formalisation.
+- **Failed (minor):** with no p cutoff the module took 68 s (67 q-tails for p ≥ Q3, which are useless), so the generator now stops at Q3.
+  The first DRY run used the wrong n (typo): its numbers were discarded. `lake env lean` on a module whose dependency had changed
+  gave "unknown identifier" (stale olean); `lake build` the dependency first.
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit omega6-v2 files; 5 ⇒ alert). (2) Bounded pairs below the q-tail in Lean (`stair_bounded`:
+  r bounded per pair; there are 232 / 2507 of them, so measure their kernel cost with a Lean `boundedOK` for one pair). (3) A combined
+  theorem per prefix (all p, q at once: p-loop with `ab`/`range`/`qtail` + the pairOK leftovers). (4) A Lean IntervalGap for a real 3-prime
+  prefix (3^16·5^11·19^8: base + raises as in session 58). (5) e_inf ≥ 2 by symmetry; stars. NEVER run owf in a session.
