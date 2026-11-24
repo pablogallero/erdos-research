@@ -1660,3 +1660,10 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   (4) Lean: `stairOK` with soundness from `not_abundant_of_limit`, `not_abundant_limit`, `abOK_of_le` (in both exponents;
   needs `abOK` monotone in an exponent that is not the last, i.e. a commuted chain), the range lemma
   `pseudoperfect_mul_prime_of_range` for the strips, `lastOK`; and `skipB || skipS` in the loops. NEVER run owf in a session.
+- **Verification of Extra (review follow-up, 2026-11-24 ~02:50 UTC):** the default `lake build` does NOT compile
+  `SubsetSumStrip` (only `ErdosResearchExtra.lean` imports it), so it was checked on the Extra target:
+  `/opt/lean-locked/bin/lake build ErdosResearchExtra` → rc 0, "Build completed successfully (9070 jobs)"; the module itself,
+  elaborated from scratch with `lake env lean ErdosResearch/SubsetSumStrip.lean` → rc 0, no errors and no warnings (27 s), against
+  Lean v4.35.0 + Mathlib v4.35.0. `#print axioms`: `not_abundant_of_limit` = [propext, Classical.choice, Quot.sound],
+  `prime_imp_not_skipS` = [propext, Quot.sound]. No sorry/native_decide. The GitHub CI builds Extra in the lean.yml step
+  "Build non-default research modules" (`lake build ErdosResearchExtra`); that run is what certifies this PR.
