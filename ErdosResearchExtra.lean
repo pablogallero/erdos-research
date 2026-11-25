@@ -35,3 +35,6 @@ public import ErdosResearch.OddWeirdPrefixIG
 public import ErdosResearch.SubsetSumQuad
 public import ErdosResearch.SubsetSumQuadGenA
 public import ErdosResearch.SubsetSumQuadGenB
+public import ErdosResearch.SubsetSumWindow
+public import ErdosResearch.SubsetSumLateTree
+public import ErdosResearch.SubsetSumPointStar
