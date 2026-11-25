@@ -2221,3 +2221,17 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
 - main `b70ebf3a68649ba2cfd30db3fb6b3dcf13b7abcb`: "Lean" and "Palomar preflight" both green (GitHub API). Palomar package
   unchanged since session 18.
 - **Next:** unchanged from session 88.
+
+## Session 92 (2026-11-25, 20:14–~20:40 UTC): v2 workers running; next work chosen (Mathlib upstream)
+
+- `sh scripts/owf-queue.sh read` → **exit 0** (the v2 workers are deployed). Generation-2 roots **3^1…3^8 DONE**, nfail 0
+  (root 8: 142.8M nodes, 12:57→19:34 for roots 1–8 on 2 workers). owf-0 is on 3^10, owf-1 on 3^9. No FOUND/CLOSED/ERROR.
+  Files `notes/data/omega6-v2.ck.gz` (22284 lines, 433 KB, gzip OK, 0 dups) and `omega6-v2-roots.txt` are new and must be in the PR.
+  Card #175 closed. **Size:** the single .gz was going to exceed `read`'s 900 KB cap within about a day, so `read`
+  now writes fixed parts of 40000 lines (`omega6-v2.ck.gz`, `omega6-v2-2.ck.gz`, …; frozen once full). Tested on a fake volume:
+  split into 3 parts at 10000 lines, the concatenation equals the volume, a rerun is idempotent (byte-identical), an append
+  rewrites only the last parts, and a tampered frozen part makes it exit 4. A real `read` afterwards gave exit 0 (22369 lines, 1 part).
+- Pace: the v2 root costs grow (≈ 2.5 h of worker time for root 8), and the loop closes at E ≥ 42 (root-loop-3.md),
+  so expect several days to weeks. Nothing to do in sessions but `read`.
+- Next work (card #192 closed, decided by me as the task asked): **Mathlib upstream** of the general lemmas, see
+  `notes/mathlib-upstream.md` and `ErdosResearch/Upstream.lean`. Card #197 asks Pablo to approve a Mathlib PR.
