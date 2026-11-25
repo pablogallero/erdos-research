@@ -2046,3 +2046,51 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   r*_e ≠ r∞, then design the Lean row lemma, regenerate the leaves with star versions and reuse the same dispatch. (3) The real
   prefix 3^16·5^11·19^8: same pipeline (pair_cert_gen + quad_probe + late_tree_gen generalised to a prefix argument); ≈ 12–15 min
   of kernel ⇒ split into ≤ 1 min modules, or ask Pablo whether CI (Extra) can afford it. NEVER run owf.
+
+## Session 85 (2026-11-25, 03:11–~03:45 UTC): stars on whole rows, quadrants, pairs and tails in Lean (no owf run)
+
+- **Read:** `sh scripts/owf-queue.sh read` → exit 8 again (`/lean/state/owf/v2/omega6.ck` not readable). Comment on card #175.
+  No owf run, no data changes. Palomar: done since session 18, unchanged.
+- **Measured first (Python, new `scripts/star_row_probe.py`):** for every line of the late prefix's 276 leaves (755 rows/columns
+  of pairOK/boundedOK leaves, 232 quadrants, 92 relevant deficient points), the star-only candidate r*_e = ⌈σ_e/D_e⌉ is already the
+  limit r∞ = ⌈L⌉ at the line's start: **0 transient points**. r* is constant on each 8×8 quadrant box, and at all 232 quadrant corners r*
+  equals ⌈L₂⌉ (so it is constant on the whole quadrant). Where r∞ is prime, the first abundant power is h = 2 at the start, and that corner is certified.
+  **Why (explains session 84's worry):** `rowOK` gives session 79's `pointOK` at EVERY point of the row with the SAME r₁. `pointOK`
+  forces r ≤ r₁ to be certified at h = 1 and r ≥ r₁ + 2 to be "far", so the only candidate on the whole row is R = r₁ + 1. It is not
+  only an upper bound.
+- **Lean (ErdosResearchExtra only; no sorry/native_decide; standard axioms; module ≈ 40 s, 0 warnings; `lake build
+  ErdosResearchExtra` OK 9087 jobs; default `lake build` OK 9066; check-lean-sources OK):** new `ErdosResearch/SubsetSumRowStar.lean`:
+  - `not_weird_pow_of_pointOK` (pointOK decides every M r^k except the candidate r = r₁ + 1, which is left to a hypothesis);
+    `pointOK_of_rowOK`; `rowOK_of_quadOK`.
+  - `rowStarOK` = rowOK && (R even ∨ R ∣ m ∨ skipS R L ∨ corner m·q^{e₀}·R² pseudoperfect (stepAbOK) ∨ R = q); **`not_weird_of_rowStarOK`**
+    / `not_weird_of_stepRowStarOK`: ¬(m q^e r^k).Weird for every e ≥ e₀, every prime r ≥ r₀ with r ∤ m q^e, and **every k ≥ 1** (k ≥ 2 with prime R:
+    `not_weird_of_upset` from the corner).
+  - `quadStarOK` (the same candidate test on top of quadOK, corner n p^{f₀} q^{e₀} R²) + **`not_weird_of_quadStarOK`** (whole quadrant, every k).
+  - Instances below the late prefix: rows n·37·349^e (R = 1879 prime, corner) and n·37·307^e (R = 7197 = 3·2399, skipS); quadrants
+    (37, 449) (R = 2267 prime) and (37, 389) (R = 10325, skipS [5]).
+  - `ROWSTAR=1 python3 -I scripts/star_row_probe.py`: the Booleans hold on ALL lines of the late prefix: rows 388 even, 242 skipS,
+    29 R | m, 94 corners, 2 R = q; quadrants 115 even, 71 skipS, 9 R | n, 37 corners; 0 FAIL. Elementary; new only as formalisation.
+- **Failed (minor):** `positivity` cannot use the local `0 < n` (use `Nat.mul_pos`); `hRq ▸` rewrote the wrong side (use `rw [hRq]`).
+  The first ROWSTAR run showed 2 failures, where R equals the row's own prime q; fixed by adding the `R = q` branch.
+- **Also this session (same rules; Extra OK 9089 jobs, default OK 9066, check-lean-sources OK, standard axioms, 0 warnings in new modules):**
+  - `ErdosResearch/SubsetSumTailStar.lean` (≈ 32 s): `not_weird_tail_star` (σ(n)Q² ≤ 2n(Q−1)² ⇒ no n q^e r^k with primes q, r ≥ Q even
+    abundant), `not_weird_qtail_star` (below p^f), `not_weird_ptail_star` (three primes ≥ Q, σ(n)Q³ ≤ 2n(Q−1)³). Proof: `ppSum_ratio` once
+    per prime. Instances on the late prefix: q-tail p = 37 with Q = 750; p-tail Q = 101 (both checked by `norm_num`).
+  - `ErdosResearch/SubsetSumPairStar.lean` (≈ 17 s): `pairStarOK`/**`not_weird_of_pairStarOK`** and `boundedStarOK`/**`not_weird_of_boundedStarOK`**
+    (same lists as pairOK/boundedOK with stepRowStarOK, quadStarOK and session 84's stepPointStarOK). Instances (37, 307) and (53, 151) for
+    every power r^k. Probe: session 84's `firstOK` point test also passes at the 215 deficient points whose odd candidate is composite
+    (plus the 92 prime ones), so `stepPointStarOK` needs no skipS branch here.
+- **Still missing for "stars below the late prefix" in Lean (updated):** only regenerating the generated modules (PairGen, QuadGenA/B,
+  LateTree) with pairStarOK/boundedStarOK/star tails (windows end at the star tails: q-tails +≤ 1, p-tail 101), giving `not_weird_late_subtree_star`. Measured (throwaway /tmp script): moving the q-tails to the star values adds exactly ONE
+  new pair, (89, 107) (107 ∈ [Q, Q*) = [107, 108)), which needs its own leaf; p-tail 100 → 101 adds nothing (100 is not prime).
+  **Decision:** regeneration not started this session (3 emitters + late_tree_gen parser + 4 modules ≈ 3 min of build; too risky
+  to leave half-done before the 04:46 cut-off).
+- **Superseded by the line above (kept for the record):** (a) regenerate the 276 leaves with star Booleans: rows → `stepRowStarOK`,
+  points → `stepPointStarOK` (session 84), quadrants → `quadStarOK`. The pairOK/boundedOK wrappers need star versions (`pairStarOK`, `boundedStarOK`:
+  the same lists, with the star Booleans). (b) Star tails: the q-tail and the 3-prime p-tail use (Q+1)/Q for r; for r^h the factor is Q/(Q−1).
+  Python: q-tails shift by ≤ 1 (e.g. p = 37: Q 749 → 750), the p-tail Q3 100 → 101. So new lemmas `not_weird_qtail_star`/`not_weird_ptail_star` (ratio
+  σ/N < ρ·(Q/(Q−1))²) and the windows end one higher. (c) rangeOK and abundant corners already allow any cofactor m (stars included).
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit omega6-v2 files; 5 ⇒ alert). (2) (pairStarOK/boundedStarOK and star tails are DONE, see above)
+  regenerate SubsetSumPairGen/QuadGenA/B/LateTree with star versions (check kernel time stays < ~1 min per module), giving
+  `not_weird_late_subtree_star` (all k). (3) Then the real prefix 3^16·5^11·19^8 (≈ 12–15 min of kernel ⇒ split modules or ask Pablo).
+  NEVER run owf. Do not commit `.lake`.
