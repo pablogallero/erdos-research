@@ -1,0 +1,42 @@
+# Session 88 lifting census (scripts/lift_census.py on a read-only COPY of the gen-1 checkpoint; prefix SHAPES only,
+# gen-1 has the parity bug: not evidence). Kernel figures are estimates from the session-87 cost model.
+## triples
+51339 exact deficient 3-prime prefixes, 20 distinct prime triples; triples per root: {1: 5, 2: 12, 3: 15, 4: 17, 5: 18, 6: 19, 7: 18, 8: 19, 9: 19, 10: 19, 11: 19, 12: 19, 13: 19, 14: 19, 15: 19, 16: 19, 17: 19, 18: 19, 19: 19, 20: 19, 21: 19, 22: 19, 23: 19, 24: 19, 25: 19, 26: 19, 27: 12, 28: 12}
+(3, 5, 17) 9530 L = 1.992188
+(3, 5, 19) 7225 L = 1.979167
+(3, 5, 23) 5079 L = 1.960227
+(3, 5, 29) 4125 L = 1.941964
+(3, 5, 31) 3366 L = 1.937500
+(3, 7, 11) 3356 L = 1.925000
+(3, 7, 13) 3205 L = 1.895833
+(3, 5, 37) 3084 L = 1.927083
+(3, 5, 41) 2323 L = 1.921875
+(3, 7, 17) 1918 L = 1.859375
+(3, 7, 19) 1913 L = 1.847222
+(3, 5, 43) 1859 L = 1.919643
+(3, 5, 47) 1362 L = 1.915761
+(3, 5, 11) 718 L = 2.062500
+(3, 5, 13) 571 L = 2.031250
+(3, 5, 53) 552 L = 1.911058
+(3, 11, 13) 500 L = 1.787500
+(3, 7, 23) 403 L = 1.829545
+(3, 5, 7) 230 L = 2.187500
+(3, 11, 17) 20 L = 1.753125
+## flips CAP 3000 NS 40 SEED 11
+relative gap (L-rho)/L in [1e-2, 1e-1): 39 prefixes, flipped pairs median 1122 max 28307, zero flips 0
+relative gap (L-rho)/L in [1e-3, 1e-2): 167 prefixes, flipped pairs median 11 max 22097, zero flips 20
+relative gap (L-rho)/L in [1e-4, 1e-3): 174 prefixes, flipped pairs median 2 max 6877, zero flips 57
+relative gap (L-rho)/L in [1e-5, 1e-4): 96 prefixes, flipped pairs median 1 max 224, zero flips 32
+relative gap (L-rho)/L in [1e-6, 1e-5): 67 prefixes, flipped pairs median 0 max 108, zero flips 53
+relative gap (L-rho)/L in [1e-7, 1e-6): 50 prefixes, flipped pairs median 0 max 1, zero flips 48
+relative gap (L-rho)/L in [1e-8, 1e-7): 32 prefixes, flipped pairs median 0 max 0, zero flips 32
+relative gap (L-rho)/L in [1e-9, 1e-8): 17 prefixes, flipped pairs median 0 max 0, zero flips 17
+relative gap (L-rho)/L in [1e-10, 1e-9): 7 prefixes, flipped pairs median 0 max 0, zero flips 7
+relative gap (L-rho)/L in [1e-11, 1e-10): 5 prefixes, flipped pairs median 0 max 0, zero flips 5
+relative gap (L-rho)/L in [1e-12, 1e-11): 3 prefixes, flipped pairs median 0 max 0, zero flips 3
+relative gap (L-rho)/L in [1e-13, 1e-12): 2 prefixes, flipped pairs median 0 max 0, zero flips 2
+relative gap (L-rho)/L in [1e-14, 1e-13): 1 prefixes, flipped pairs median 0 max 0, zero flips 1
+## families
+TH 1e+06: 51339 prefixes -> 4078 families (all-free 14); kernel estimate per prefix 14344 h, per family 592 h (gain 24.2x)
+TH 1e+07: 51339 prefixes -> 6681 families (all-free 12); kernel estimate per prefix 14344 h, per family 1074 h (gain 13.4x)
+TH 1e+08: 51339 prefixes -> 9500 families (all-free 10); kernel estimate per prefix 14344 h, per family 1613 h (gain 8.9x)
