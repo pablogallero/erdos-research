@@ -2161,3 +2161,39 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   unless a q-aggregation for bounded pairs cuts the cost ≥ 1000×. Measure in Python first: per p, do consecutive bounded q share
   (f₀, e₀) and a monotone r₁ formula, so that a q-range lemma covers them? First data (real prefix 3^16·5^11·19^8, per p: bounded q, quadrant corner (f₀, e₀), rows, cols): p = 97: 968 bounded q, 719 with shape (4, 2, 3 rows, 1 col) and 215 with (5, 2, 4, 1), interleaved near the q-tail; p = 101: 239 q, (3, 2) 128 + (4, 2) 100; p = 199: 26/27 q are (2, 2). So shapes are nearly constant over long q-runs, but r₁ varies with q. A q-range lemma would need its conditions to be monotone in q, so that only the endpoints are checked (as `pointOK` is in r); that is not checked yet. (3) Otherwise, consider the shortlist of other problems
   (docs/candidatos-siguiente-problema.md; still waiting for Pablo). NEVER run owf. Do not commit `.lake`.
+
+## Session 88 (2026-11-25, 06:57–~07:30 UTC): lifting census: prefix exponents aggregate only 13–24× (no owf run, no Lean)
+
+- **Read:** `sh scripts/owf-queue.sh read` → exit 8 again (`/lean/state/owf/v2/omega6.ck` not readable). Comment on card #175.
+  No owf run, no data changes. Palomar: done since session 18, unchanged.
+- **Question:** session 87 found that a Lean replay of ω = 6 costs ≈ 1.4·10^4 kernel-hours. Is there an aggregation that saves
+  ≥ 1000×? Session 87's census already hinted at one: prefixes with the same primes but different exponents have almost the
+  same pair layer (every 3^a·5^b·17^h has 14131–14135 bounded pairs). So, before q-aggregation, I measured aggregation over the
+  **prefix exponents** ("lifting": one certificate for all exponents above thresholds, valid for every ratio ρ = σ(n)/n in
+  [ρ₀, L), L = ∏ p/(p−1)).
+- **New `scripts/lift_census.py CKFILE triples | flips CAP NS SEED | families TH…`** (Python; read-only on a /tmp COPY of the
+  gen-1 checkpoint, prefix SHAPES only; never runs owf). Output: `notes/data/lift-census-s88.txt`.
+  - **triples:** the 51339 exact deficient 3-prime prefixes of roots 3^1..3^28 use only **20 prime triples** (19 per root from
+    3^6 on). (3,5,17) has 9530 and (3,5,19) has 7225. Three triples have L > 2, namely (3,5,7), (3,5,11) and (3,5,13): there n is
+    eventually abundant, so they have finitely many deficient prefixes (1519 in total).
+  - **flips** (pair categories pab / bounded / free / q-tail for q < 3000, at ρ versus at L): once the relative gap (L−ρ)/L < 10^-6, the
+    category map equals the limit one (115/117 sampled prefixes with 0 flips, max 1). At gaps of 10^-3 to 10^-2 the median is 11
+    flips; at 10^-2 to 10^-1 it is 1122. So the pair layer does stabilise in the exponents. Caveat: only q < 3000 was checked, and
+    pairs near the q-tail can flip at any gap (the tail moves with ρ).
+  - **families** (exponent e of p FREE iff p^(e+1) ≥ TH, otherwise fixed): 51339 prefixes give 4078 families (TH 10^6), 6681 (10^7)
+    and 9500 (10^8). Only 10–14 families are all-free. Most prefixes have one small exponent somewhere (e.g. 19^1, 47^2), so the
+    gap stays ≥ 10^-6 and the family keeps that exponent fixed.
+  - **Kernel estimate** (session-87 cost per prefix by triple, charged ONCE per family, which is optimistic: a uniform
+    certificate must hold on a whole ρ-interval and is likely to cost more than one prefix): 14344 h → **592 h (TH 10^6, 24×)**,
+    1074 h (10^7, 13×), 1613 h (10^8, 9×).
+- **Conclusion (decision):** lifting gives 1–1.5 orders of magnitude, not 3. Session 87's q-runs (two shapes over ~1000 q for
+  p = 97) suggest at most about another order from q-aggregation. Even combined, that leaves ≥ 50–100 kernel-hours plus new
+  ρ-interval lemmas that do not exist yet. **I stop developing the Lean replay of the full ω = 6 search.** If the v2 workers close
+  ω = 6, the result is computational evidence (validated C/Python), and the Lean modules certify only sample sub-trees. That
+  is honest and enough for a "partial result" note, which would in any case only reproduce Liddy–Riedl's ω ≥ 6 → ω ≥ 7 as
+  evidence. Nothing here is a new theorem.
+- **Failed:** the first probe (bounded-pair r₁ at L vs at the prefix) was too slow (trial division up to q-tails ≈ 10^7 at L)
+  and compared the wrong direction (bounded at L ⇒ bounded at ρ, not the converse). It was replaced by the category map with a sieve.
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit the omega6-v2 files; 5 ⇒ alert). (2) #470 Lean work is parked: only maintenance and
+  the paper task if v2 closes. (3) The research value now lies in another problem: `docs/candidatos-siguiente-problema.md` is still
+  waiting for Pablo's choice. Do not start a candidate without it. NEVER run owf. Do not commit `.lake`.
