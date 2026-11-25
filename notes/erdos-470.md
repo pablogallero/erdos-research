@@ -2094,3 +2094,33 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   regenerate SubsetSumPairGen/QuadGenA/B/LateTree with star versions (check kernel time stays < ~1 min per module), giving
   `not_weird_late_subtree_star` (all k). (3) Then the real prefix 3^16·5^11·19^8 (≈ 12–15 min of kernel ⇒ split modules or ask Pablo).
   NEVER run owf. Do not commit `.lake`.
+
+## Session 86 (2026-11-25, 04:34–~05:00 UTC): the late prefix's whole 3-prime sub-tree with stars, as ONE Lean theorem (no owf run)
+
+- **Read:** `sh scripts/owf-queue.sh read` → exit 8 again (`/lean/state/owf/v2/omega6.ck` not readable). Comment on card #175.
+  No owf run, no data changes. Palomar: done since session 18, unchanged.
+- **Done (Lean, ErdosResearchExtra only; no sorry/native_decide; axioms propext/Classical.choice/Quot.sound; 0 warnings in the
+  new/changed modules; `lake build ErdosResearchExtra` OK 9093 jobs; default `lake build` OK 9066; check-lean-sources OK):**
+  - New `scripts/late_star_gen.py` (`pair` / `quadA` / `quadB`; byte-identical on rerun): rewrites every generated leaf of
+    sessions 82–83 into its star version, with the **same certificate parameters**, `pairOK` → `pairStarOK`, `boundedOK` →
+    `boundedStarOK`, skip list `LSKIP` = odd primes < 260 (every odd composite candidate < 263² is skipped) and `fuel := 12`.
+    Star q-tails: least Q with (S+n)·p·Q² ≤ 2n(p−1)(Q−1)² (`not_weird_qtail_star`); only p = 89 moves (107 → 108), and its new
+    bounded pair **(89, 107)** gets a leaf from `quad_probe.pair` (same pipeline).
+    Generated: `ErdosResearch/SubsetSumPairGenStar.lean` (21 pairs + 14 star q-tails + (89, 107), 30 s),
+    `SubsetSumQuadGenAStar.lean` (116 bounded pairs, 48 s), `SubsetSumQuadGenBStar.lean` (116, 43 s).
+  - `scripts/late_tree_gen.py` gains `STAR=1` (the default output is still byte-identical to `SubsetSumLateTree.lean`):
+    generated `ErdosResearch/SubsetSumLateTreeStar.lean` (44 s) with **`not_weird_late_subtree_star`**: for all primes
+    23 < p < q < r not dividing n = lateN = 3^3·23·13^10·17^2·11 and all **f, e, k ≥ 1**, n·p^f·q^e·r^k is not weird. It dispatches
+    to the star leaves, the abundant/range theorems of `SubsetSumPairGen` (any cofactor, reused as they are), the star q-tails
+    and `not_weird_ptail_star` (Q = 101). So session 84's gap ("stars r^h, h ≥ 2, not covered") is closed for this prefix.
+  - **Fix in `SubsetSumRowStar.quadStarOK`:** new branch `R = q ∧ 1 ≤ e₀` (as in `rowStarOK`; then R ∣ n·p^f·q^e, so R cannot be
+    the last prime). It was needed exactly by the new pair (89, 107): its quadrant candidate is R = r₁ + 1 = 107 = q. The two
+    session-85 quadrant instances still hold (an earlier branch fires).
+  - Elementary; new only as a formalisation. Still only ONE (late, not real) 3-prime prefix.
+- **Failed (minor):** first kernel run of `SubsetSumPairGenStar` failed only on (89, 107) (the missing R = q branch above);
+  an indentation slip in the `late_tree_gen.py` edit (caught before generating).
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit omega6-v2 files; 5 ⇒ alert). (2) The real prefix 3^16·5^11·19^8 with the same
+  pipeline (pair layer + bounded pairs + star rewrite + tree), generalising `late_tree_gen.py`/`late_star_gen.py` from
+  the hard-coded late prefix to a PREFIXES table (as `quad_probe.py` already has). Session 83 estimated ≈ 12–15 min of kernel for the
+  bounded pairs alone: split into modules of < ~1 min each and measure the total before committing; if it exceeds what the
+  CI can absorb, ask Pablo (card) before adding it to ErdosResearchExtra. NEVER run owf. Do not commit `.lake`.

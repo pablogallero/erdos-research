@@ -66,3 +66,6 @@ Sums: everything 1804 s; default build without OddWeirdPlans **1333 s**; the mod
 - Next target if more margin is needed: OddWeirdFourChunks (287 s, 72 `decide +kernel` chunks).
 - Session 68: new `ErdosResearch/SubsetSumFifthLoop.lean` in **ErdosResearchExtra only** (≈ 25–38 s); the default build is
   unchanged (9066 jobs, incremental 48 s).
+- Session 86: four new GENERATED modules in **ErdosResearchExtra only** (star leaves and the star sub-tree theorem):
+  SubsetSumPairGenStar 30 s, SubsetSumQuadGenAStar 48 s, SubsetSumQuadGenBStar 43 s, SubsetSumLateTreeStar 44 s
+  (+ SubsetSumRowStar rebuilt, ≈ 40 s). Extra OK (9093 jobs); default build unchanged (9066 jobs).

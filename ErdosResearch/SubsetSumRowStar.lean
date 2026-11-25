@@ -203,11 +203,12 @@ theorem rowOK_of_quadOK {n S c g p q r₀ r₁ f₀ e₀ f : ℕ} (hn : 0 < n) (
   · exact le_trans hq1 (Nat.add_le_add_right (ppSum_mono hp.one_lt.le f hf) 1)
   · exact row_limit hp.two_le hlim f
 
-/-- `quadOK` plus the quadrant's single star-only candidate `R = r₁ + 1`. -/
+/-- `quadOK` plus the quadrant's single star-only candidate `R = r₁ + 1` (session 86: also the branch `R = q`, as in
+`rowStarOK`; then `R ∣ n·p^f·q^e`, so `R` is not a possible last prime). -/
 def quadStarOK (n S c g p q r₀ r₁ f₀ e₀ : ℕ) (L : List ℕ) : Bool :=
   quadOK n S c g p q r₀ r₁ f₀ e₀ &&
     ((decide ((r₁ + 1) % 2 = 0) && decide (2 < r₁ + 1)) || decide (n % (r₁ + 1) = 0) || skipS (r₁ + 1) L ||
-      stepAbOK n S c g [(p, f₀), (q, e₀), (r₁ + 1, 2)])
+      stepAbOK n S c g [(p, f₀), (q, e₀), (r₁ + 1, 2)] || (decide (r₁ + 1 = q) && decide (1 ≤ e₀)))
 
 /-- **A whole quadrant of a bounded pair, every last prime power.** -/
 theorem not_weird_of_quadStarOK {n S c g p q r₀ r₁ f₀ e₀ f e r k : ℕ} {L : List ℕ} (hn : 0 < n) (hg : 1 ≤ g)
@@ -236,7 +237,7 @@ theorem not_weird_of_quadStarOK {n S c g p q r₀ r₁ f₀ e₀ f e r k : ℕ} 
   · obtain rfl : k = 1 := by omega
     rw [pow_one]
     exact not_weird_of_quadOK hn hg h hp hq hquad hf he hr hrM hr₀
-  rcases hstar with ((⟨hev, h2lt⟩ | hdiv) | hskip) | hab
+  rcases hstar with (((⟨hev, h2lt⟩ | hdiv) | hskip) | hab) | ⟨hRq, he₀⟩
   · exact absurd (hr.eq_one_or_self_of_dvd 2 (Nat.dvd_of_mod_eq_zero hev)) (by omega)
   · exact absurd (Dvd.dvd.mul_right (Dvd.dvd.mul_right (Nat.dvd_of_mod_eq_zero hdiv) _) _) hrM
   · rw [prime_imp_not_skipS hr] at hskip
@@ -252,6 +253,9 @@ theorem not_weird_of_quadStarOK {n S c g p q r₀ r₁ f₀ e₀ f e r k : ℕ} 
     have hd : n * p ^ f₀ * q ^ e₀ * (r₁ + 1) ^ 2 ∣ n * p ^ f * q ^ e * (r₁ + 1) ^ k :=
       mul_dvd_mul (mul_dvd_mul (mul_dvd_mul_left n (pow_dvd_pow p hf)) (pow_dvd_pow q he)) (pow_dvd_pow _ hk2)
     exact fun hw => hw.2 (hps.of_dvd hd hpos)
+  · have hdq : r₁ + 1 ∣ n * p ^ f * q ^ e := by
+      rw [hRq]; exact Dvd.dvd.mul_left (dvd_pow_self q (by omega : e ≠ 0)) _
+    exact absurd hdq hrM
 
 /-- **Instance (quadrant, prime candidate).** Below the late prefix, the bounded pair `(37, 449)`: quadrant `f ≥ 5`,
 `e ≥ 3`, `r₁ = 2266`; `R = 2267` is prime and the corner `n·37⁵·449³·2267²` is pseudoperfect. -/
