@@ -36,6 +36,8 @@ DATA=$HERE/notes/data
 CKGZ=$DATA/omega6-v2.ck.gz
 ROOTS_FILE=$DATA/omega6-v2-roots.txt
 MAXGZ=900000   # stay well below the 1 MB per-file limit of the repo
+PART_LINES=${OWF_PART_LINES:-40000}   # checkpoint lines per part (≈ 20 bytes/line gzipped ⇒ ≈ 800 KB); never change it once parts exist
+part_name() { if [ "$1" -eq 1 ]; then echo "$CKGZ"; else echo "$DATA/omega6-v2-$1.ck.gz"; fi; }
 
 die() { echo "owf-queue: $1" >&2; exit "${2:-2}"; }
 need() { eval "v=\${$1:-}"; [ -n "$v" ] || die "set $1"; case "$v" in *'|'*|*'
@@ -159,7 +161,7 @@ cmd_export() {
   parse_dump "$TMP/dump"
 }
 
-# Validate a dump from `run-root.sh export` and write notes/data/omega6-v2.ck.gz and omega6-v2-roots.txt.
+# Validate a dump from `run-root.sh export` and write notes/data/omega6-v2[-i].ck.gz (parts) and omega6-v2-roots.txt.
 parse_dump() {
   d=$1
   [ "$(head -n 1 "$d")" = "OWF-EXPORT 1" ] || die "not an export dump" 4
@@ -176,24 +178,38 @@ parse_dump() {
   # (the frozen file is read in BEGIN: with an empty file, the usual NR == FNR idiom would swallow stdin)
   grep -E "$re" "$TMP/tail.raw" | awk -v F="$TMP/frozen" 'BEGIN { while ((getline l < F) > 0) seen[l] = 1 } !seen[$0]++' > "$TMP/tail"
   dropped=$(( $(wc -l < "$TMP/tail.raw") - $(wc -l < "$TMP/tail") ))
-  # Append-only: the committed omega6-v2 must be an exact prefix of the new tail.
-  old=0
-  if [ -f "$CKGZ" ]; then
-    zcat "$CKGZ" > "$TMP/old"
-    old=$(wc -l < "$TMP/old")
-    head -n "$old" "$TMP/tail" | cmp -s - "$TMP/old" \
-      || die "the committed omega6-v2.ck.gz ($old lines) is not a prefix of the volume's tail: refusing to overwrite" 4
-  fi
-  gzip -9 -n -c "$TMP/tail" > "$TMP/tail.gz"
-  size=$(wc -c < "$TMP/tail.gz")
-  [ "$size" -lt "$MAXGZ" ] || die "omega6-v2.ck.gz would be $size bytes (> $MAXGZ): split it (freeze + a second file) first" 4
-  cp "$TMP/tail.gz" "$CKGZ"
+  # Append-only, split in fixed parts of $PART_LINES lines (1 MB limit per file): part 1 is omega6-v2.ck.gz,
+  # part i >= 2 is omega6-v2-i.ck.gz. Every part but the last is full and frozen; the concatenation of the
+  # committed parts must be an exact prefix of the new tail.
+  : > "$TMP/old"; i=1; nold=0
+  while [ -f "$(part_name $i)" ]; do
+    zcat "$(part_name $i)" > "$TMP/p" || die "$(part_name $i) is not valid gzip" 4
+    [ -f "$(part_name $((i + 1)))" ] && [ "$(wc -l < "$TMP/p")" -ne "$PART_LINES" ] \
+      && die "$(part_name $i) is not the last part but has $(wc -l < "$TMP/p") lines (expected $PART_LINES)" 4
+    cat "$TMP/p" >> "$TMP/old"; nold=$i; i=$((i + 1))
+  done
+  old=$(wc -l < "$TMP/old")
+  head -n "$old" "$TMP/tail" | cmp -s - "$TMP/old" \
+    || die "the committed omega6-v2 parts ($old lines) are not a prefix of the volume's tail: refusing to overwrite" 4
+  total=$(wc -l < "$TMP/tail")
+  nparts=$(( (total + PART_LINES - 1) / PART_LINES )); [ "$nparts" -ge 1 ] || nparts=1
+  mkdir -p "$TMP/stage"; : > "$TMP/written"; size=0
+  i=1
+  while [ "$i" -le "$nparts" ]; do
+    sed -n "$(( (i - 1) * PART_LINES + 1 )),$(( i * PART_LINES ))p" "$TMP/tail" > "$TMP/p"
+    if [ "$i" -le "$nold" ] && zcat "$(part_name $i)" | cmp -s - "$TMP/p"; then i=$((i + 1)); continue; fi
+    gzip -9 -n -c "$TMP/p" > "$TMP/stage/$i.gz"
+    size=$(wc -c < "$TMP/stage/$i.gz")
+    [ "$size" -lt "$MAXGZ" ] || die "part $i would be $size bytes (> $MAXGZ): lower PART_LINES for new parts" 4
+    echo "$i" >> "$TMP/written"; i=$((i + 1))
+  done
+  while read -r i; do cp "$TMP/stage/$i.gz" "$(part_name "$i")"; done < "$TMP/written"
   cp "$TMP/roots" "$ROOTS_FILE"
   echo "volume: $(awk '$1 == "lines" { print $2 }' "$d") lines; frozen prefix OK"
-  echo "omega6-v2.ck.gz: $old -> $(wc -l < "$TMP/tail") lines ($size bytes); dropped $dropped partial/duplicate/garbage lines"
+  echo "omega6-v2 parts: $old -> $total lines in $nparts part(s) of <= $PART_LINES lines; rewrote part(s) $(tr '\n' ' ' < "$TMP/written")(last $size bytes); dropped $dropped partial/duplicate/garbage lines"
   echo "roots:"; sed 's/^/  /' "$ROOTS_FILE"
   [ -s "$ROOTS_FILE" ] || echo "  (none finished yet)"
-  echo "Now commit notes/data/omega6-v2.ck.gz and notes/data/omega6-v2-roots.txt on the working branch (PR, never main)."
+  echo "Now commit notes/data/omega6-v2*.ck.gz and notes/data/omega6-v2-roots.txt on the working branch (PR, never main)."
 }
 
 # Read-only copy of the StatefulSet workers' progress. Never writes to $OWF_STATE and never starts a process there.

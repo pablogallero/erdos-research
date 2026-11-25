@@ -3,6 +3,9 @@
 > **2026-11-23: generation v2.** The star-loop parity bug is fixed (`notes/omega6-invalidated.md`). The workers restart
 > from an EMPTY checkpoint at 3^1 in `$OWF_DATA/v2` (session view `/lean/state/owf/v2`). There is no seed and no
 > frozen prefix (FROZEN = 0). `read` writes `notes/data/omega6-v2.ck.gz` + `notes/data/omega6-v2-roots.txt`.
+> **Since session 92 (2026-11-25)** the checkpoint is stored in parts of 40000 lines (`OWF_PART_LINES`, never change it once
+> parts exist; ≈ 780 KB gzipped each): part 1 is `omega6-v2.ck.gz`, part i ≥ 2 is `omega6-v2-i.ck.gz`. Full parts are frozen;
+> `read` rewrites only the parts that changed. Plain checkpoint = `zcat omega6-v2.ck.gz omega6-v2-2.ck.gz …` in order.
 > Everything below about the 36729-line frozen seed, `omega6-2.ck.gz` and roots 15/16 describes generation 1
 > (buggy code, kept as `notes/data/*-con-fallo.*`, not evidence).
 
