@@ -1969,3 +1969,39 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   r bounded per pair; there are 232 / 2507 of them, so measure their kernel cost with a Lean `boundedOK` for one pair). (3) A combined
   theorem per prefix (all p, q at once: p-loop with `ab`/`range`/`qtail` + the pairOK leftovers). (4) A Lean IntervalGap for a real 3-prime
   prefix (3^16·5^11·19^8: base + raises as in session 58). (5) e_inf ≥ 2 by symmetry; stars. NEVER run owf in a session.
+
+## Session 83 (2026-11-25, 00:23–~01:00 UTC): IntervalGap for real prefixes; quadrant lemma; ALL bounded pairs below the late prefix in Lean (no owf run)
+
+- **Read:** `sh scripts/owf-queue.sh read` → exit 8 again (`/lean/state/owf/v2/omega6.ck` not readable). Comment on card #175.
+  No owf run, no data changes. Palomar: done since session 18, unchanged.
+- **IntervalGap for real prefixes** (session 82, item 4). New generator `scripts/prefix_ig_gen.py LIMB NAME 'prefix' ...`
+  (multi_plan → bitset base + steps + raises, like `late_cert_gen.py` but it stops at the IntervalGap, without lastOK; byte-identical on rerun).
+  Generated `ErdosResearch/OddWeirdPrefixIG.lean` (≈ 20 s): `intervalGap_real : IntervalGap (3^16·5^11·19^8) S 57 2` (base 855,
+  raises 3, 5, 19; largest cofactor 204 divisors) and `intervalGap_r22 : IntervalGap (3^22·7^11·13^2) S 79 3` (base 819).
+  The pair layer gives the same counts with c = 57 as with session 82's c = 12 (`pair_cert_gen.py … 57 2 23 287 5000`:
+  16 abundant p, 18 ranges / 1542 pairs, 126 pairOK, 1539 bounded leftovers below q < 5000).
+- **Quadrant lemma for bounded pairs** (session 82, item 2). For a bounded pair (σ(n) p q < 2n(p−1)(q−1)), the largest abundant r,
+  R(f, e), is nondecreasing and bounded, so it is constant on a quadrant. `∑ D(n p^f q^e)` is symmetric (`ppSum_swap`), so session 81's
+  `rowInv` propagates along f as well as e. Lean `ErdosResearch/SubsetSumQuad.lean` (≈ 23 s): `quadOK` (one Boolean at the corner
+  (f₀, e₀), plus the 2-D limit with one r₁) + **`not_weird_of_quadOK`** (no n p^f q^e r is weird, for ALL f ≥ f₀, e ≥ e₀ and all primes
+  r ≥ r₀); helpers `ppSum_mono`, `step2_mono`, `row_limit`, `ppSum_swap`. **`boundedOK` + `not_weird_of_boundedOK`**: a whole bounded
+  pair from one Boolean (quadrant + rows f < f₀ via rowOK in q + columns e < e₀ via rowOK in p + finitely many points; tables
+  `e0r`, `f0c`, `r1`). Instances `not_weird_late_prefix_53_151` (by hand) and `…_53_151'` (via boundedOK).
+- **Generator `scripts/quad_probe.py`** (measurement + Lean emitter; `LEAN=late|real`, `NS=namespace`, slice `K0 K1`):
+  - late prefix: **232/232 bounded pairs** certified (1527 cells); real prefix 3^16·5^11·19^8 with (c, g) = (57, 2): **2507/2507**
+    (17052 cells, ≈ 6.8 per pair).
+  - **Lean, all 232 bounded pairs below the late prefix:** `ErdosResearch/SubsetSumQuadGenA.lean` / `…GenB.lean` (116 theorems each,
+    ≈ 45 s / 40 s; GENERATED, byte-identical on rerun). Each says that no `n·p^f·q^e·r` is weird, for all f, e ≥ 1 and every prime r.
+  - Kernel cost measured on the real prefix (slice of 200 pairs, 2071 cells, in /tmp, NOT committed): 105 s including ≈ 17 s load, so
+    ≈ 0.04 s/cell. All 2507 pairs ≈ 12 min, i.e. ≈ 12 modules: feasible, but too much to add to CI without a decision.
+- **State of the late prefix's 3-prime sub-tree (last prime r to the first power):** every pair (p, q) of primes > 23, p < q, not dividing n,
+  now has a Lean theorem: abundant p / q-ranges / q-tails / pairOK (`SubsetSumPairGen`, 44 theorems), bounded pairs (`SubsetSumQuadGenA/B`,
+  232), p ≥ 100 (`not_weird_ptail`). The q-tails of this prefix are all < 749, far below the probe's QHI = 100000. These are still
+  separate statements, not one combined theorem. Not covered: stars r^h (h ≥ 2).
+- All Lean of this session: ErdosResearchExtra only; no sorry/native_decide; standard axioms; `lake build ErdosResearchExtra` OK
+  (9083 jobs); default `lake build` OK (9066); check-lean-sources OK. Elementary; new only as formalisation.
+- **Failed (minor):** stale olean again after changing SubsetSumQuad (`lake build` the dependency first); `rw [a, b] at h₁ h₂ …`
+  fails if one hypothesis lacks the pattern (split the rewrites).
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit omega6-v2 files; 5 ⇒ alert). (2) One combined theorem for the late prefix's sub-tree
+  (reflective: a p/q loop whose leaf is ab/range/qtail/pairOK/boundedOK, so that the 276 statements become one Boolean). (3) The real prefix:
+  pairs + bounded pairs ≈ 12–15 min of kernel. Decide first whether CI can afford it (Extra), or cut cells. (4) Stars r^h. NEVER run owf.

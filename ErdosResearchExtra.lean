@@ -31,3 +31,7 @@ public import ErdosResearch.SubsetSumRow
 public import ErdosResearch.SubsetSumPair
 public import ErdosResearch.SubsetSumPairRange
 public import ErdosResearch.SubsetSumPairGen
+public import ErdosResearch.OddWeirdPrefixIG
+public import ErdosResearch.SubsetSumQuad
+public import ErdosResearch.SubsetSumQuadGenA
+public import ErdosResearch.SubsetSumQuadGenB
