@@ -2197,3 +2197,11 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
 - **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit the omega6-v2 files; 5 ⇒ alert). (2) #470 Lean work is parked: only maintenance and
   the paper task if v2 closes. (3) The research value now lies in another problem: `docs/candidatos-siguiente-problema.md` is still
   waiting for Pablo's choice. Do not start a candidate without it. NEVER run owf. Do not commit `.lake`.
+
+## Session 89 (2026-11-25, 08:14–~08:20 UTC): upkeep only (no owf run, no Lean, no data changes)
+
+- `sh scripts/owf-queue.sh read` → exit 8 again (/lean/state/owf/v2/omega6.ck missing). Comment on card #175.
+- Board: #175 (v2 deploy) and #192 (choice of the next problem) still unanswered. Per session 88's decision, #470 Lean work stays
+  parked and no shortlist candidate is started without Pablo's choice, so this session adds no research.
+- main `7a601f854f…`: "Lean" and "Palomar preflight" both green (GitHub API). Palomar package unchanged since session 18.
+- **Next:** unchanged from session 88.
