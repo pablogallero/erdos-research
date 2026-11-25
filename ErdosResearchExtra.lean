@@ -41,3 +41,7 @@ public import ErdosResearch.SubsetSumPointStar
 public import ErdosResearch.SubsetSumRowStar
 public import ErdosResearch.SubsetSumTailStar
 public import ErdosResearch.SubsetSumPairStar
+public import ErdosResearch.SubsetSumPairGenStar
+public import ErdosResearch.SubsetSumQuadGenAStar
+public import ErdosResearch.SubsetSumQuadGenBStar
+public import ErdosResearch.SubsetSumLateTreeStar
