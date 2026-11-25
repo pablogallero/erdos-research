@@ -45,3 +45,4 @@ public import ErdosResearch.SubsetSumPairGenStar
 public import ErdosResearch.SubsetSumQuadGenAStar
 public import ErdosResearch.SubsetSumQuadGenBStar
 public import ErdosResearch.SubsetSumLateTreeStar
+public import ErdosResearch.SubsetSumPair2

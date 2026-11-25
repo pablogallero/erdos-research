@@ -2124,3 +2124,40 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   the hard-coded late prefix to a PREFIXES table (as `quad_probe.py` already has). Session 83 estimated ≈ 12–15 min of kernel for the
   bounded pairs alone: split into modules of < ~1 min each and measure the total before committing; if it exceeds what the
   CI can absorb, ask Pablo (card) before adding it to ErdosResearchExtra. NEVER run owf. Do not commit `.lake`.
+
+## Session 87 (2026-11-25, 05:45–~06:15 UTC): Lean kernel-cost census of real prefixes; `pairOK2` (shape e_inf ≥ 2) (no owf run)
+
+- **Read:** `sh scripts/owf-queue.sh read` → exit 8 again (`/lean/state/owf/v2/omega6.ck` not readable). Comment on card #175.
+  No owf run, no data changes. Palomar: done since session 18, unchanged.
+- **Decision:** instead of generating the real prefix 3^16·5^11·19^8 (≈ 12–15 min of kernel, needs Pablo's OK for CI), first
+  measure what the Lean pipeline would cost on MANY real prefixes, i.e. whether a Lean replay of ω = 6 is feasible at all.
+- **New `scripts/lean_cost_census.py CKFILE E SAMPLE SEED LIMB`** (Python; read-only on a /tmp COPY of the gen-1 checkpoint, which is
+  used only for prefix SHAPES because it comes from the buggy code): per sampled exact deficient 3-prime prefix, (c, g) from multi_plan,
+  pair layer (`pair_cert_gen.py RANGES=1`), bounded pairs (`quad_probe.py`), cost model 0.3 s/pairOK + 0.04 s/bounded cell
+  (sessions 82–83). Output: `notes/data/lean-cost-census-s87.txt` (30 prefixes, roots 3^16/3^20/3^22, seed 3).
+  - Census fix: for p with `n p` deficient but `n p^f` eventually abundant (q-tail None), the q's to scan stop at
+    max_{f<F} Q_f (F = first f with `stepAbOK`; q ≥ Q_f is `not_weird_tail` on `n p^f`), not at QHI. Before the fix,
+    3^16·7^7·13^6 looked like 78k pairOK; after it, 3^20·7^12·13 needs QH = 883 and 83 pairOK. No prefix had an uncertified gap.
+  - **Result:** every sampled prefix is closable by the existing pieces plus `pairOK2` (no failures). Kernel estimate per prefix
+    is 2 s to 4630 s, mean ≈ 930 s. The heavy ones are 5^b·17^h prefixes ((c, g) = (283, 6), ≈ 14k bounded pairs, ≈ 90k cells) and
+    5^b·19^h (≈ 2.5k bounded pairs). Roots have 1846 / 2146 / 2186 exact deficient 3-prime prefixes (E = 16 / 20 / 22).
+    ⇒ ≈ 500 kernel-hours per root, ≈ 2·10^4 h for ~40 roots. **A Lean replay of ω = 6 with this design is infeasible by
+    3–4 orders of magnitude.** Bounded pairs dominate (≈ 85 % of the estimate). Per-theorem overhead is not the issue: 0.04 s/cell is
+    the GMP check itself. A gain would need mathematical aggregation over q (closed-form q-ranges of bounded pairs, like
+    `lastOKR` did for lastOK), not engineering.
+- **Shape e_inf ≥ 2** (the row e = 1 is limit-deficient in p): appears in 25 of the 30 prefixes, with 1–7 pairs each, and `pairOK` cannot take it.
+  - New Lean `ErdosResearch/SubsetSumPair2.lean` (ErdosResearchExtra only; no sorry/native_decide; axioms propext/Classical.choice/
+    Quot.sound; 36 s): `pairOK2` (start row `er`; rows e < er = limit rows in p via `stepRowOK` with p and q swapped; corner
+    (fr, er); box [F, fr) × [er, ec)) and **`not_weird_of_pairOK2`** (all f, e ≥ 1, every prime r). With er = 1 it is `pairOK`.
+  - Instance **`not_weird_real_prefix_109_797`**: the only non-bounded pair of the real prefix 3^16·5^11·19^8 that `pairOK` could not
+    take (er = 2, f₀ = 6). So that prefix's whole pair layer is now coverable.
+  - `scripts/pair2_probe.py` (Python twin + finder `find2`): on 6 prefixes (the real one, 3^20·5^20·17^4 with 7 such pairs, …), every
+    old pairOK pair still passes with er = 1, and all 15 e_inf ≥ 2 pairs pass with er = 2.
+  - `lake build ErdosResearchExtra` OK (9094 jobs); check-lean-sources OK. The default build is unchanged (it does not import the module).
+    Elementary; new only as a formalisation.
+- **Failed:** nothing in Lean (compiled first try). The census overcount described above was fixed.
+- **Next:** (1) `read` (exit 8 ⇒ #175; 0 ⇒ commit omega6-v2 files; 5 ⇒ alert). (2) Strategic: Lean can certify single real
+  sub-trees, but not the whole ω = 6 search. If v2 closes, ω = 6 is computational evidence (validated C/Python), not a Lean theorem,
+  unless a q-aggregation for bounded pairs cuts the cost ≥ 1000×. Measure in Python first: per p, do consecutive bounded q share
+  (f₀, e₀) and a monotone r₁ formula, so that a q-range lemma covers them? First data (real prefix 3^16·5^11·19^8, per p: bounded q, quadrant corner (f₀, e₀), rows, cols): p = 97: 968 bounded q, 719 with shape (4, 2, 3 rows, 1 col) and 215 with (5, 2, 4, 1), interleaved near the q-tail; p = 101: 239 q, (3, 2) 128 + (4, 2) 100; p = 199: 26/27 q are (2, 2). So shapes are nearly constant over long q-runs, but r₁ varies with q. A q-range lemma would need its conditions to be monotone in q, so that only the endpoints are checked (as `pointOK` is in r); that is not checked yet. (3) Otherwise, consider the shortlist of other problems
+  (docs/candidatos-siguiente-problema.md; still waiting for Pablo). NEVER run owf. Do not commit `.lake`.
