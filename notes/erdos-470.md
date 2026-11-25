@@ -2205,3 +2205,11 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   parked and no shortlist candidate is started without Pablo's choice, so this session adds no research.
 - main `7a601f854f…`: "Lean" and "Palomar preflight" both green (GitHub API). Palomar package unchanged since session 18.
 - **Next:** unchanged from session 88.
+
+## Session 90 (2026-11-25, 09:11–~09:20 UTC): upkeep only (no owf run, no Lean, no data changes)
+
+- `sh scripts/owf-queue.sh read` → exit 8 again (/lean/state/owf/v2/omega6.ck missing). Comment on card #175.
+- Board: #175 (v2 deploy) and #192 (choice of the next problem) still unanswered, so per session 88 nothing new is started.
+- main `26f5ce3f4842e2a254e8027a9e8a9fe6c822d3ad`: "Lean" and "Palomar preflight" both green (GitHub API). Palomar package
+  unchanged since session 18.
+- **Next:** unchanged from session 88.
