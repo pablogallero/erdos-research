@@ -38,3 +38,6 @@ public import ErdosResearch.SubsetSumQuadGenB
 public import ErdosResearch.SubsetSumWindow
 public import ErdosResearch.SubsetSumLateTree
 public import ErdosResearch.SubsetSumPointStar
+public import ErdosResearch.SubsetSumRowStar
+public import ErdosResearch.SubsetSumTailStar
+public import ErdosResearch.SubsetSumPairStar
