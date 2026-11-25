@@ -1,0 +1,96 @@
+diff -ruN a/Mathlib/Combinatorics/Additive/SubsetSum.lean b/Mathlib/Combinatorics/Additive/SubsetSum.lean
+--- a/Mathlib/Combinatorics/Additive/SubsetSum.lean
++++ b/Mathlib/Combinatorics/Additive/SubsetSum.lean
+@@ -112,4 +112,26 @@
+           (A_pos x (mem_of_mem_erase hx)).lt_of_ne (ne_of_mem_erase hx).symm
+     _ = #A.subsetSum := by rw [subsetSum_erase_zero]
+ 
++/-- **Chain criterion** for subset sums of naturals: if every element of `A` is at most one more
++than the sum of the smaller elements of `A`, then every `m ≤ ∑ A` is a subset sum of `A`. -/
++theorem mem_subsetSum_of_chain (A : Finset ℕ) (hA : ∀ a ∈ A, a ≤ ∑ b ∈ A with b < a, b + 1)
++    {m : ℕ} (hm : m ≤ ∑ a ∈ A, a) : m ∈ A.subsetSum := by
++  induction A using induction_on_max generalizing m with
++  | empty => simp_all
++  | insert a s hlt ih =>
++    have ha : a ∉ s := fun h ↦ lt_irrefl a (hlt a h)
++    have hfa : ∑ b ∈ insert a s with b < a, b = ∑ b ∈ s, b := by
++      rw [filter_insert, ite_eq_right (lt_irrefl a), filter_true_of_mem hlt]
++    have hs : ∀ x ∈ s, x ≤ ∑ b ∈ s with b < x, b + 1 := fun x hx ↦ by
++      have := hA x (mem_insert_of_mem hx)
++      rwa [filter_insert, ite_eq_right (not_lt.mpr (hlt x hx).le)] at this
++    have hai : a ≤ ∑ b ∈ s, b + 1 := hfa ▸ hA a (mem_insert_self a s)
++    rw [sum_insert ha] at hm
++    by_cases h : m ≤ ∑ b ∈ s, b
++    · exact subsetSum_mono (subset_insert a s) (ih hs h)
++    · obtain ⟨B, hB, hBsum⟩ := mem_subsetSum_iff.mp (ih hs (m := m - a) (by omega))
++      refine mem_subsetSum_iff.mpr ⟨insert a B, insert_subset_insert a hB, ?_⟩
++      rw [sum_insert fun h' ↦ ha (hB h'), hBsum]
++      omega
++
+ end Finset
+diff -ruN a/Mathlib/NumberTheory/FactorisationProperties.lean b/Mathlib/NumberTheory/FactorisationProperties.lean
+--- a/Mathlib/NumberTheory/FactorisationProperties.lean
++++ b/Mathlib/NumberTheory/FactorisationProperties.lean
+@@ -9,6 +9,7 @@
+ public import Mathlib.Tactic.NormNum
+ 
+ import Mathlib.Algebra.Order.Field.Basic
++import Mathlib.Combinatorics.Additive.SubsetSum
+ import Mathlib.Algebra.Ring.GeomSum
+ import Mathlib.Tactic.NormNum.Prime
+ 
+@@ -226,6 +227,54 @@
+   have hmn : m * n ≠ 0 := mul_ne_zero hm hn
+   exact Abundant.of_dvd h (Nat.dvd_mul_left n m) hmn
+ 
++theorem Pseudoperfect.pos (h : Pseudoperfect n) : 0 < n := h.1
++
++/-- A nonzero multiple of a pseudoperfect number is pseudoperfect. -/
++theorem Pseudoperfect.of_dvd (h : Pseudoperfect m) (hd : m ∣ n) (hn : n ≠ 0) :
++    Pseudoperfect n := by
++  obtain ⟨-, s, hs, hsum⟩ := h
++  obtain ⟨k, rfl⟩ := hd
++  have hk : 0 < k := Nat.pos_of_ne_zero (by rintro rfl; simp at hn)
++  refine ⟨Nat.pos_of_ne_zero hn, s.image (· * k), fun x hx ↦ ?_, ?_⟩
++  · obtain ⟨i, hi, rfl⟩ := mem_image.mp hx
++    obtain ⟨hdvd, hlt⟩ := mem_properDivisors.mp (hs hi)
++    exact mem_properDivisors.mpr ⟨Nat.mul_dvd_mul_right hdvd k, Nat.mul_lt_mul_of_pos_right hlt hk⟩
++  · rw [sum_image fun x _ y _ hxy ↦ Nat.eq_of_mul_eq_mul_right hk hxy, ← sum_mul, hsum]
++
++theorem Pseudoperfect.mul_left (h : Pseudoperfect n) (hm : m ≠ 0) : Pseudoperfect (m * n) :=
++  h.of_dvd (Nat.dvd_mul_left n m) (mul_ne_zero hm h.pos.ne')
++
++theorem Pseudoperfect.not_deficient (h : Pseudoperfect n) : ¬ Deficient n := by
++  obtain ⟨-, s, hs, hsum⟩ := h
++  have := sum_le_sum_of_subset (f := id) hs
++  simp only [id] at this
++  unfold Deficient
++  omega
++
++theorem Deficient.not_pseudoperfect (h : Deficient n) : ¬ Pseudoperfect n :=
++  fun hp ↦ hp.not_deficient h
++
++theorem Deficient.not_weird (h : Deficient n) : ¬ Weird n := fun hw ↦ by
++  have := hw.1
++  unfold Deficient at h
++  unfold Abundant at this
++  omega
++
++theorem Perfect.not_weird (h : Perfect n) : ¬ Weird n :=
++  fun hw ↦ hw.2 h.pseudoperfect
++
++/-- No divisor of a weird number is pseudoperfect. -/
++theorem Weird.not_pseudoperfect_of_dvd (h : Weird n) (hd : m ∣ n) : ¬ Pseudoperfect m :=
++  fun hm ↦ h.2 (hm.of_dvd hd h.pos.ne')
++
++/-- A number that is not deficient and whose proper divisors satisfy the chain condition of
++`Finset.mem_subsetSum_of_chain` is pseudoperfect. -/
++theorem pseudoperfect_of_chain (hn : n ≠ 0)
++    (hc : ∀ d ∈ n.properDivisors, d ≤ ∑ e ∈ n.properDivisors with e < d, e + 1)
++    (hd : ¬ Deficient n) : Pseudoperfect n := by
++  unfold Deficient at hd
++  exact ⟨Nat.pos_of_ne_zero hn, mem_subsetSum_iff.mp (mem_subsetSum_of_chain _ hc (by omega))⟩
++
+ theorem infinite_even_abundant : {n : ℕ | Even n ∧ n.Abundant}.Infinite := by
+   rw [Set.infinite_iff_exists_gt]
+   intro a

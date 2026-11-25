@@ -2235,3 +2235,10 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
   so expect several days to weeks. Nothing to do in sessions but `read`.
 - Next work (card #192 closed, decided by me as the task asked): **Mathlib upstream** of the general lemmas, see
   `notes/mathlib-upstream.md` and `ErdosResearch/Upstream.lean`. Card #197 asks Pablo to approve a Mathlib PR.
+
+## Session 93 (2026-11-25, 23:00 UTC): read only (no owf run)
+
+- `sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. Gen-2 roots **3^1…3^9 DONE** (root 9 at 20:33, 101.9M nodes,
+  nfail 0). owf-0 on 3^10 (86.2M nodes, at (5,24),(17,11)), owf-1 on 3^11 (71.2M nodes, at (5,19),(19,10)).
+  `omega6-v2.ck.gz` 22369 → 25502 lines (500 KB, part 1 of ≤ 40000 lines), `omega6-v2-roots.txt` + root 9.
+- Session work went to the Mathlib upstream (see notes/mathlib-upstream.md, session 93).

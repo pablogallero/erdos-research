@@ -56,3 +56,30 @@ propext/Classical.choice/Quot.sound; `lake build ErdosResearchExtra` OK, 9095 jo
    plus the Mathlib linters (`lake exe lint-style`), and open the PR as a draft.
 2. Optional, same PR series: `ErdosResearch/SubsetSumGlue.lean` (`glue`, subset sums of a union /
    scaled set) as general `Finset.subsetSum` API, after checking it against master.
+
+## Session 93 (2026-11-25, 23:00 UTC): patch against Mathlib master ready (nothing published)
+
+- Mathlib master = `348837d3aa976624060d7c35c183fff587c5a24a` (2026-11-25 19:52), toolchain `v4.37.0-rc1`.
+  The two target files on master differ from the repo's v4.35.0 copies **only** in docs and `@[oeis …]`
+  attributes, so definitions and every API name used (`mem_subsetSum_iff`, `subsetSum_mono`,
+  `induction_on_max`, `Perfect.pseudoperfect`, `weird_seventy`) are the same.
+- **`notes/mathlib-upstream.patch`** (unified diff against those two master files, `git apply -p1` in a
+  mathlib4 checkout; sha256 8d47171e…d978): `Finset.mem_subsetSum_of_chain` at the end of
+  `Combinatorics/Additive/SubsetSum.lean`; in `NumberTheory/FactorisationProperties.lean` (after
+  `Abundant.mul_left`, plus a private `import Mathlib.Combinatorics.Additive.SubsetSum`):
+  `Pseudoperfect.pos`, `.of_dvd`, `.mul_left`, `.not_deficient`, `Deficient.not_pseudoperfect`,
+  `Deficient.not_weird`, `Perfect.not_weird`, `Weird.not_pseudoperfect_of_dvd`, `pseudoperfect_of_chain`.
+  Lines ≤ 100 characters, `↦`, Mathlib naming.
+- Checked: the patched master `SubsetSum.lean` compiles as is with `lake env lean` against Mathlib v4.35.0
+  (rc 0); the patched `FactorisationProperties.lean` compiles (rc 0) with the `@[oeis]` lines removed and the
+  chain lemma inlined *before* the public section (to mimic the private import; the v4.35 olean of SubsetSum
+  lacks the new lemma). Standalone sanity file (12 pseudoperfect by the chain criterion) also rc 0.
+- **Not checked:** compilation with the master toolchain. `elan toolchain install leanprover/lean4:v4.37.0-rc1`
+  fails: `/opt/elan` is read-only and, with a writable `ELAN_HOME`, the download gets `CONNECT tunnel failed, 403`
+  (the release host is not in the egress). Core lemma names (`filter_insert`, `ite_eq_right`,
+  `filter_true_of_mem`, `sum_image`) could have moved between v4.35 and v4.37-rc1. The Mathlib CI of the PR
+  (or an egress change) will tell. Also not run: `lake exe lint-style` / `#lint`.
+- `ErdosResearch/Upstream.lean` is unchanged (the patch adds `Pseudoperfect.pos` and
+  `Deficient.not_pseudoperfect`); the patch is the canonical text for the PR.
+- Next: if Pablo approves on #197: fork, `git apply -p1 notes/mathlib-upstream.patch`, run Mathlib's CI and
+  linters, open as a DRAFT with the authorship/AI note he chooses.
