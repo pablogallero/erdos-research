@@ -2255,3 +2255,11 @@ part 1). No #470 Lean changes. The session's work went to the second Mathlib pat
 (111.0M nodes, log at (5,29),(19,11)), owf-1 on 3^11 (98.8M nodes, log at (5,26),(17,5)). `notes/data/omega6-v2.ck.gz`
 26046 → 26482 lines (528 KB, part 1). Roots file unchanged. Card #197 (Mathlib PR) still unanswered, so nothing new
 started: both Mathlib patches are ready and #470 Lean stays parked.
+
+## Session 96 (2026-11-26, 12:32–~12:40 UTC): read only (no owf run, no Lean)
+
+`sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. **Gen-2 roots 3^1…3^13 DONE** (nfail 0; 3^10 02:03, 3^11 04:22,
+3^12 08:23, 3^13 11:20 UTC). owf-0 on 3^14 (82.0M nodes, log at (5,21),(17,5)), owf-1 on 3^15 (39.6M nodes, log at (5,11),(17,16)).
+`notes/data/omega6-v2.ck.gz` 26482 → 37016 lines (764 KB, still part 1; part 2 starts automatically at 40000 lines, ≈ 825 KB).
+Pace: ≈ 1.2·10^8 nodes and ≈ 3–5 h per root per worker; with the closing exponent ≥ 42 (session 70) that is ≥ 29 roots left,
+i.e. roughly ≥ 2–3 days of the 2 workers, probably more as roots grow. Card #197 (Mathlib PR) still unanswered: nothing new started.
