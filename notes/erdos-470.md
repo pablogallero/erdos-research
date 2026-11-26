@@ -2291,3 +2291,10 @@ unchanged. Card #197 (Mathlib PR) still unanswered: nothing new started (Mathlib
 owf-0 on 3^14 (115.2M nodes, log at (5,27),(19,7)), owf-1 on 3^15 (86.2M nodes, log at (5,21),(17,7)).
 `notes/data/omega6-v2.ck.gz` 38036 → 38284 lines (797 KB, part 1; gzip -t OK, 0 dups, old file exact prefix). Roots file
 unchanged. Card #197 (Mathlib PR) still unanswered: nothing new started (Mathlib patches ready; #470 Lean replay parked).
+
+## Session 101 (2026-11-26, 17:14–~17:20 UTC): read only (no owf run, no Lean)
+
+`sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. No new root since session 96 (3^1…3^13 DONE, nfail 0).
+owf-0 on 3^14 (123.6M nodes, log at (5,29),(17,8)), owf-1 on 3^15 (93.8M nodes, log at (5,22),(17,15)).
+`notes/data/omega6-v2.ck.gz` 38284 → 38515 lines (804 KB, part 1; gzip -t OK, 0 dups, old file exact prefix). Roots file
+unchanged. Card #197 (Mathlib PR) still unanswered: nothing new started (Mathlib patches ready; #470 Lean replay parked).
