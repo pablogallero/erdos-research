@@ -2270,3 +2270,10 @@ i.e. roughly ≥ 2–3 days of the 2 workers, probably more as roots grow. Card 
 owf-0 on 3^14 (91.0M nodes, log at (5,23),(17,4)), owf-1 on 3^15 (55.0M nodes, log at (5,15),(17,3)).
 `notes/data/omega6-v2.ck.gz` 37016 → 37472 lines (775 KB, part 1). Roots file unchanged. Card #197 (Mathlib PR) still
 unanswered: nothing new started (Mathlib patches ready; #470 Lean replay parked since session 88).
+
+## Session 98 (2026-11-26, 14:24–~14:30 UTC): read only (no owf run, no Lean)
+
+`sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. No new root since session 96 (3^1…3^13 DONE, nfail 0).
+owf-0 on 3^14 (99.0M nodes, log at (5,24),(17,12)), owf-1 on 3^15 (67.0M nodes, log at (5,17),(17,11)).
+`notes/data/omega6-v2.ck.gz` 37472 → 37723 lines (782 KB, part 1). Roots file unchanged. Card #197 (Mathlib PR) still
+unanswered: nothing new started (Mathlib patches ready and re-checked, see notes/mathlib-upstream.md session 98).

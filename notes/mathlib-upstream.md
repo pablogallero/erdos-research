@@ -105,3 +105,10 @@ propext/Classical.choice/Quot.sound; `lake build ErdosResearchExtra` OK, 9095 jo
   reviewers want the extra import (alternative: put the lemmas in a new file
   `Combinatorics/Additive/SubsetSum/Pointwise.lean`).
 - Next: same as session 93. If Pablo approves #197, the two patches can be one PR or two (independent files).
+
+## Session 98 (2026-11-26): patches still current
+
+- GitHub API: last commits on master's `Combinatorics/Additive/SubsetSum.lean` (29c53517, 2026-10-09) and
+  `NumberTheory/FactorisationProperties.lean` (cc12abd2, 2026-11-24) predate the base 348837d3 (2026-11-25),
+  so both patches still apply as they are. Search of open mathlib4 PRs: 0 mention `pseudoperfect`; the 3 hits
+  for `subsetSum` are unrelated chores. Still waiting for #197.
