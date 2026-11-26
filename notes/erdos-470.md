@@ -2306,3 +2306,11 @@ gen-2 roots 3^1…3^14 done. owf-0 now on 3^16 (23.4M nodes, log at (5,8),(17,7)
 `notes/data/omega6-v2.ck.gz` 38515 → 40000 lines (835 KB; gzip -t OK, 0 dups, old file exact prefix): **part 1 is now full and
 frozen**; the next `read` starts `omega6-v2-2.ck.gz` automatically. Roots file + root 14. Card #197 (Mathlib PR) still unanswered:
 nothing new started (Mathlib patches ready; #470 Lean replay parked since session 88).
+
+## Session 103 (2026-11-26, 19:09–~19:15 UTC): read only (no owf run, no Lean)
+
+`sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. No new root since session 102 (3^1…3^14 DONE, nfail 0).
+owf-0 on 3^16 (42.8M nodes, log at (5,12),(17,14)), owf-1 on 3^15 (109.6M nodes, log at (5,25),(17,16)).
+Part 1 `notes/data/omega6-v2.ck.gz` frozen at 40000 lines (byte-identical to HEAD); **new part 2 `notes/data/omega6-v2-2.ck.gz`**
+(396 lines, 10 KB; gzip -t OK, 0 duplicates across both parts). Roots file unchanged. Card #197 (Mathlib PR) still unanswered:
+nothing new started (Mathlib patches ready; #470 Lean replay parked since session 88).
