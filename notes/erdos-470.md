@@ -2248,3 +2248,10 @@ and the Palomar chain alone ≈ 990 s. `SubsetSum*` + `OddWeirdPlans` moved to t
 `sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. Gen-2 roots 3^1…3^9 DONE (nfail 0); owf-0 on 3^10
 (log at (5,27),(17,9)), owf-1 on 3^11 (log at (5,23),(17,8)). `notes/data/omega6-v2.ck.gz` 25502 → 26046 lines (515 KB,
 part 1). No #470 Lean changes. The session's work went to the second Mathlib patch (notes/mathlib-upstream.md, session 94).
+
+## Session 95 (2026-11-26, 01:06–~01:15 UTC): read only (no owf run, no Lean)
+
+`sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. Gen-2 roots 3^1…3^9 DONE (nfail 0); owf-0 on 3^10
+(111.0M nodes, log at (5,29),(19,11)), owf-1 on 3^11 (98.8M nodes, log at (5,26),(17,5)). `notes/data/omega6-v2.ck.gz`
+26046 → 26482 lines (528 KB, part 1). Roots file unchanged. Card #197 (Mathlib PR) still unanswered, so nothing new
+started: both Mathlib patches are ready and #470 Lean stays parked.
