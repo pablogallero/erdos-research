@@ -1,0 +1,75 @@
+--- a/Mathlib/Combinatorics/Additive/SubsetSum.lean	2026-11-26 00:08:32.615855932 +0000
++++ b/Mathlib/Combinatorics/Additive/SubsetSum.lean	2026-11-26 00:09:05.242914084 +0000
+@@ -7,6 +7,7 @@
+ 
+ public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+ public import Mathlib.Algebra.Group.Action.Defs
++public import Mathlib.Algebra.Group.Pointwise.Finset.Basic
+ public import Mathlib.Algebra.Group.Pointwise.Finset.Scalar
+ public import Mathlib.Algebra.Order.Monoid.Defs
+ public import Mathlib.Data.Finset.Powerset
+@@ -62,6 +63,64 @@
+   rintro _ ⟨_, ⟨B, hB, rfl⟩, rfl⟩
+   exact ⟨insert a B, by aesop, by rw [sum_insert (fun h => a_notin_A (hB h))]; simp⟩
+ 
++@[simp] lemma subsetSum_empty : (∅ : Finset M).subsetSum = {0} := by
++  ext x; simp [mem_subsetSum_iff, eq_comm]
++
++@[simp] lemma subsetSum_singleton : ({a} : Finset M).subsetSum = {0, a} := by
++  ext x
++  simp only [mem_subsetSum_iff, subset_singleton_iff, mem_insert, mem_singleton]
++  constructor
++  · rintro ⟨B, rfl | rfl, rfl⟩ <;> simp
++  · rintro (rfl | rfl)
++    · exact ⟨∅, Or.inl rfl, by simp⟩
++    · exact ⟨_, Or.inr rfl, by simp⟩
++
++lemma sum_mem_subsetSum : ∑ x ∈ A, x ∈ A.subsetSum := mem_subsetSum_iff.mpr ⟨A, subset_refl _, rfl⟩
++
++/-- The subset sums of a disjoint union are the sumset of the subset sums. -/
++lemma subsetSum_union {B : Finset M} (h : Disjoint A B) :
++    (A ∪ B).subsetSum = A.subsetSum + B.subsetSum := by
++  ext x
++  simp only [mem_add, mem_subsetSum_iff]
++  constructor
++  · rintro ⟨C, hC, rfl⟩
++    refine ⟨_, ⟨C ∩ A, inter_subset_right, rfl⟩, _, ⟨C ∩ B, inter_subset_right, rfl⟩, ?_⟩
++    rw [← sum_union (disjoint_of_subset_left inter_subset_right
++      (disjoint_of_subset_right inter_subset_right h)), ← inter_union_distrib_left,
++      inter_eq_left.mpr hC]
++  · rintro ⟨_, ⟨C, hC, rfl⟩, _, ⟨D, hD, rfl⟩, rfl⟩
++    exact ⟨C ∪ D, union_subset_union hC hD,
++      sum_union (disjoint_of_subset_left hC (disjoint_of_subset_right hD h))⟩
++
++/-- Inserting a new element: the old subset sums, together with their translates by `a`. -/
++lemma subsetSum_insert (ha : a ∉ A) :
++    (insert a A).subsetSum = A.subsetSum ∪ (a +ᵥ A.subsetSum) := by
++  rw [insert_eq, union_comm, subsetSum_union (disjoint_singleton_right.mpr ha),
++    subsetSum_singleton]
++  ext x
++  simp only [mem_add, mem_insert, mem_singleton, mem_union, mem_vadd_finset, vadd_eq_add]
++  constructor
++  · rintro ⟨y, hy, z, rfl | rfl, rfl⟩
++    · exact Or.inl (by simpa using hy)
++    · exact Or.inr ⟨y, hy, add_comm _ _⟩
++  · rintro (hx | ⟨y, hy, rfl⟩)
++    · exact ⟨x, hx, 0, Or.inl rfl, add_zero x⟩
++    · exact ⟨y, hy, a, Or.inr rfl, add_comm _ _⟩
++
++/-- Subset sums commute with an additive monoid hom that is injective on the set. -/
++lemma subsetSum_image {N : Type*} [DecidableEq N] [AddCommMonoid N] (f : M →+ N)
++    (hf : Set.InjOn f A) : (A.image f).subsetSum = A.subsetSum.image f := by
++  ext y
++  simp only [mem_image, mem_subsetSum_iff]
++  constructor
++  · rintro ⟨C, hC, rfl⟩
++    obtain ⟨D, hDA, rfl⟩ := subset_image_iff.mp hC
++    refine ⟨_, ⟨D, hDA, rfl⟩, ?_⟩
++    rw [map_sum, sum_image fun x hx y hy hxy ↦ hf (hDA hx) (hDA hy) hxy]
++  · rintro ⟨_, ⟨D, hDA, rfl⟩, rfl⟩
++    refine ⟨D.image f, image_subset_image hDA, ?_⟩
++    rw [map_sum, sum_image fun x hx y hy hxy ↦ hf (hDA hx) (hDA hy) hxy]
++
+ variable [LinearOrder M] [IsOrderedCancelAddMonoid M]
+ 
+ lemma nonneg_of_mem_subsetSum (A_nonneg : ∀ x ∈ A, 0 ≤ x) : ∀ x ∈ A.subsetSum, 0 ≤ x := by

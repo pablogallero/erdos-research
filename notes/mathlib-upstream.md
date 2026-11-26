@@ -83,3 +83,25 @@ propext/Classical.choice/Quot.sound; `lake build ErdosResearchExtra` OK, 9095 jo
   `Deficient.not_pseudoperfect`); the patch is the canonical text for the PR.
 - Next: if Pablo approves on #197: fork, `git apply -p1 notes/mathlib-upstream.patch`, run Mathlib's CI and
   linters, open as a DRAFT with the authorship/AI note he chooses.
+
+## Session 94 (2026-11-26, 00:00 UTC): second patch, general `Finset.subsetSum` API (nothing published)
+
+- Decision: card #197 is still unanswered, so I took the low-cost item from session 93 instead of starting
+  anything new. Mathlib master (re-fetched 00:03 UTC) has only `subsetSum_mono`, `subsetSum_erase_zero` and
+  the inclusion `a +ᵥ A.subsetSum ⊆ (insert a A).subsetSum`. The GitHub search for `subsetSum` PRs shows
+  only #31689 (the original file, merged), so nothing open overlaps.
+- New `ErdosResearch/UpstreamSubsetSum.lean` (ErdosResearchExtra only; namespace `ErdosResearch.Upstream`;
+  ≈ 15 s; standard axioms; no sorry/native_decide): `subsetSum_empty`, `subsetSum_singleton` (simp),
+  `sum_mem_subsetSum`, **`subsetSum_union`** (disjoint ⇒ `(A ∪ B).subsetSum = A.subsetSum + B.subsetSum`),
+  **`subsetSum_insert`** (`a ∉ A` ⇒ `A.subsetSum ∪ (a +ᵥ A.subsetSum)`, the equality version of Mathlib's
+  inclusion), **`subsetSum_image`** (additive monoid hom injective on `A`). Any `AddCommMonoid`; these
+  generalise `SubsetSumGlue.subsetSums_union` / `subsetSums_image_mul`. Two sanity examples.
+- **`notes/mathlib-upstream-2.patch`** (sha256 5f69684c…c5cb): the same lemmas inserted into master's
+  `Combinatorics/Additive/SubsetSum.lean` before the ordered section, plus
+  `public import Mathlib.Algebra.Group.Pointwise.Finset.Basic` (needed for `Finset` `+`; no import cycle:
+  only `Mathlib.lean` imports SubsetSum). Checked: `git apply -p1 --check` on master's file OK; the patched
+  master file compiles against v4.35.0 with `lake env lean` (rc 0); lines ≤ 100 chars.
+- Not checked: master toolchain v4.37.0-rc1 (same egress 403 as session 93), Mathlib linters, whether
+  reviewers want the extra import (alternative: put the lemmas in a new file
+  `Combinatorics/Additive/SubsetSum/Pointwise.lean`).
+- Next: same as session 93. If Pablo approves #197, the two patches can be one PR or two (independent files).

@@ -47,3 +47,4 @@ public import ErdosResearch.SubsetSumQuadGenBStar
 public import ErdosResearch.SubsetSumLateTreeStar
 public import ErdosResearch.SubsetSumPair2
 public import ErdosResearch.Upstream
+public import ErdosResearch.UpstreamSubsetSum
