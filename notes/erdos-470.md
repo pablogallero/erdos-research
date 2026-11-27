@@ -2336,3 +2336,10 @@ Roots file unchanged. Card #197 still unanswered: upkeep only (Mathlib patches r
 roots 3^1…3^15 done. owf-0 on 3^16 (104.6M nodes, log at (5,26),(19,9)), owf-1 on 3^17 (6.2M nodes). Part 1 frozen
 (byte-identical to HEAD); part 2 `notes/data/omega6-v2-2.ck.gz` 1892 → 3055 lines (78 KB; gzip OK; 0 duplicates across both
 parts); `omega6-v2-roots.txt` + root 15. Card #197 still unanswered: upkeep only (Mathlib patches ready; #470 Lean replay parked).
+
+## Session 107 (2026-11-27, 01:47–~01:55 UTC): read only (no owf run, no Lean)
+
+`sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. **Gen-2 root 3^16 DONE** (01:31 UTC, 110.8M nodes, nfail 0) ⇒
+roots 3^1…3^16 done. owf-0 on 3^18 (17.2M nodes), owf-1 on 3^17 (33.8M nodes). Part 1 frozen (byte-identical to HEAD); part 2
+`notes/data/omega6-v2-2.ck.gz` 3055 → 4990 lines (121 KB; gzip OK; 0 duplicates across both parts); `omega6-v2-roots.txt` + root 16.
+Card #197 still unanswered: upkeep only (Mathlib patches ready; #470 Lean replay parked).
