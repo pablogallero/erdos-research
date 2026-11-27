@@ -2343,3 +2343,9 @@ parts); `omega6-v2-roots.txt` + root 15. Card #197 still unanswered: upkeep only
 roots 3^1…3^16 done. owf-0 on 3^18 (17.2M nodes), owf-1 on 3^17 (33.8M nodes). Part 1 frozen (byte-identical to HEAD); part 2
 `notes/data/omega6-v2-2.ck.gz` 3055 → 4990 lines (121 KB; gzip OK; 0 duplicates across both parts); `omega6-v2-roots.txt` + root 16.
 Card #197 still unanswered: upkeep only (Mathlib patches ready; #470 Lean replay parked).
+
+## Session 108 (2026-11-27, 02:43 UTC): read only (no owf run, no Lean)
+
+`sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. No new root (gen-2 3^1…3^16 DONE, nfail 0). owf-0 on 3^18
+(36.8M nodes), owf-1 on 3^17 (49.2M nodes). Part 1 frozen (byte-identical to HEAD); part 2 `notes/data/omega6-v2-2.ck.gz`
+4990 → 5611 lines (135 KB; 0 duplicates across both parts). Roots file unchanged. Card #197 still unanswered: upkeep only.
