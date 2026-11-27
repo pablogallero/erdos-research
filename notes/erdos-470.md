@@ -2322,3 +2322,10 @@ owf-0 on 3^16 (89.2M nodes, log at (5,23),(17,13)), owf-1 on 3^15 (139.4M nodes,
 since ≈ 11:20 UTC (≈ 11.5 h), the slowest root so far. Part 1 `notes/data/omega6-v2.ck.gz` frozen at 40000 lines (byte-identical
 to HEAD); part 2 `notes/data/omega6-v2-2.ck.gz` 396 → 1659 lines (45 KB; gzip -t OK, 0 duplicates across both parts). Roots file
 unchanged. Card #197 (Mathlib PR) still unanswered: nothing new started (Mathlib patches ready; #470 Lean replay parked since session 88).
+
+## Session 105 (2026-11-26, 23:55–~00:00 UTC): read only (no owf run, no Lean)
+
+`sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. No new root (3^1…3^14 DONE, nfail 0). owf-0 on 3^16 (97.6M nodes,
+log at (5,25),(17,10)), owf-1 on 3^15 (144.8M nodes, log at (5,31),(17,7); ≈ 12.5 h, slowest root so far). Part 1 frozen
+(byte-identical to HEAD); part 2 `notes/data/omega6-v2-2.ck.gz` 1659 → 1892 lines (53 KB; 0 duplicates across both parts).
+Roots file unchanged. Card #197 still unanswered: upkeep only (Mathlib patches ready; #470 Lean replay parked since session 88).
