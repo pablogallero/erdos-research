@@ -2368,3 +2368,10 @@ Card #197 still unanswered: upkeep only (Mathlib patches ready; #470 Lean replay
 (70.0M nodes), owf-1 on 3^17 (81.2M nodes). Part 1 frozen (byte-identical to HEAD); part 2 `notes/data/omega6-v2-2.ck.gz`
 6468 → 6719 lines (164 KB; old part 2 is an exact prefix; 0 duplicates across both parts). Roots file unchanged.
 Card #197 still unanswered: upkeep only.
+
+## Session 112 (2026-11-27, 06:26 UTC): read only (no owf run, no Lean)
+
+`sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. No new root (gen-2 3^1…3^16 DONE, nfail 0). owf-0 on 3^18
+(78.2M nodes), owf-1 on 3^17 (89.2M nodes). Part 1 frozen (byte-identical to HEAD); part 2 `notes/data/omega6-v2-2.ck.gz`
+6719 → 7019 lines (172 KB; old part 2 is an exact prefix; 0 duplicates across both parts). Roots file unchanged.
+Card #197 still unanswered: upkeep only.
