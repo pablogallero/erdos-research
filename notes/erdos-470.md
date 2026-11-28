@@ -2403,3 +2403,9 @@ parts) + `omega6-v2-roots.txt` (+ roots 17–19). Part 2 reaches its 40000-line 
 `sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. No new root (gen-2 3^1…3^19 DONE, nfail 0). owf-0 on 3^20
 (120.2M nodes), owf-1 on 3^21 (60.4M nodes). Part 1 frozen (unchanged); part 2 `notes/data/omega6-v2-2.ck.gz` 15928 → 16172 lines
 (405 KB; gzip OK; old part an exact prefix; 0 duplicates across parts). Roots file unchanged. Card #197 still unanswered: upkeep only.
+
+## Session 117 (2026-11-28, 00:55 UTC): read only (no owf run, no Lean)
+
+`sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. No new root (gen-2 3^1…3^19 DONE, nfail 0). owf-0 on 3^20
+(126.0M nodes), owf-1 on 3^21 (69.0M nodes). Part 1 frozen (unchanged); part 2 `notes/data/omega6-v2-2.ck.gz` 16172 → 16413 lines
+(413 KB; gzip OK; old part an exact prefix; 0 duplicates across parts). Roots file unchanged. Card #197 still unanswered: upkeep only.
