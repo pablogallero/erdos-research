@@ -2429,3 +2429,10 @@ Card #197 still unanswered: upkeep only.
 owf-0 on 3^22 (34.2M nodes), owf-1 on 3^21 (89.4M nodes). Part 1 frozen (unchanged); part 2 `notes/data/omega6-v2-2.ck.gz`
 18065 → 18384 lines (462 KB; gzip OK; old part an exact prefix; 0 duplicates across parts); roots file unchanged.
 Card #197 still unanswered: upkeep only.
+
+## Session 121 (2026-11-28, 04:44–~04:50 UTC): read only
+
+`sh scripts/owf-queue.sh read` → exit 0, no FOUND/CLOSED/ERROR. No new root (gen-2 3^1…3^20 DONE, nfail 0).
+owf-0 on 3^22 (45.2M nodes), owf-1 on 3^21 (96.2M nodes). Part 1 frozen (unchanged); part 2 `notes/data/omega6-v2-2.ck.gz`
+18384 → 18703 lines (471 KB; gzip OK; old part an exact prefix; 0 duplicates across parts); roots file unchanged.
+Card #197 still unanswered: upkeep only.
